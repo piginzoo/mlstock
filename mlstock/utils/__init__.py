@@ -1,12 +1,26 @@
 import logging
+import os
 import time
 
-from . import utils
+import yaml
 
-CONF = utils.load_config()
+from .. import const
 
 logger = logging.getLogger("函数耗时")
 
+
+def load_config():
+    if not os.path.exists(const.CONF_PATH):
+        raise ValueError("配置文件[conf/config.yml]不存在!(参考conf/config.sample.yml):" + conf.CONF_PATH)
+    f = open(const.CONF_PATH, 'r', encoding='utf-8')
+    result = f.read()
+    # 转换成字典读出来
+    data = yaml.load(result, Loader=yaml.FullLoader)
+    logger.info("读取配置文件:%r", const.CONF_PATH)
+    return data
+
+
+CONF = load_config()
 
 def logging_time(func):
     """

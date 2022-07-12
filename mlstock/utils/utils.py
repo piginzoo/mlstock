@@ -9,15 +9,14 @@ import chinese_calendar
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-import yaml
 from backtrader.plot import Plot_OldSync
 from backtrader_plotting.schemes import Tradimo
 from dateutil.relativedelta import relativedelta
 from pandas import Series
 from sqlalchemy import create_engine
 
-import conf
-import utils
+from mlstock import utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -72,23 +71,19 @@ def uncomply_code(func):
     return wrapper_it
 
 
-def load_config():
-    if not os.path.exists(conf.CONF_PATH):
-        raise ValueError("配置文件[conf/config.yml]不存在!(参考conf/config.sample.yml):" + conf.CONF_PATH)
-    f = open(conf.CONF_PATH, 'r', encoding='utf-8')
-    result = f.read()
-    # 转换成字典读出来
-    data = yaml.load(result, Loader=yaml.FullLoader)
-    logger.info("读取配置文件:%r", conf.CONF_PATH)
-    return data
-
-
 def connect_db():
-    uid = utils.CONF['datasources']['mysql']['uid']
-    pwd = utils.CONF['datasources']['mysql']['pwd']
-    db = utils.CONF['datasources']['mysql']['db']
-    host = utils.CONF['datasources']['mysql']['host']
-    port = utils.CONF['datasources']['mysql']['port']
+    """
+    # https://stackoverflow.com/questions/8645250/how-to-close-sqlalchemy-connection-in-mysql:
+        Engine is a factory for connections as well as a ** pool ** of connections, not the connection itself.
+        When you say conn.close(), the connection is returned to the connection pool within the Engine,
+        not actually closed.
+    """
+
+    uid = utils.CONF['database']['uid']
+    pwd = utils.CONF['database']['pwd']
+    db = utils.CONF['database']['db']
+    host = utils.CONF['database']['host']
+    port = utils.CONF['database']['port']
     engine = create_engine("mysql+pymysql://{}:{}@{}:{}/{}?charset={}".format(uid, pwd, host, port, db, 'utf8'))
     # engine = create_engine('sqlite:///' + DB_FILE + '?check_same_thread=False', echo=echo)  # 是否显示SQL：, echo=True)
     return engine
@@ -166,8 +161,8 @@ def get_yearly_duration(start_date, end_date):
 
 
 def duration(start, end, unit='day'):
-    d0 = utils.utils.str2date(start)
-    d1 = utils.utils.str2date(end)
+    d0 = str2date(start)
+    d1 = str2date(end)
     delta = d1 - d0
     if unit == 'day': return delta.days
     return None
