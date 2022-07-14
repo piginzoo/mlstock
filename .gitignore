@@ -1,7 +1,7 @@
 debug/
 conf/config.yml
 .venv/
-data/
+./data
 .idea/
 __pycache__/
 *.pyc
