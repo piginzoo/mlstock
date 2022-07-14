@@ -3,7 +3,7 @@ from sklearn import linear_model
 
 
 def standarlize(df):
-    scaler = StandardScaler()
+    scaler = StandardScaler() # z = (x - u) / sigma
     scaler.fit(df_train[f_x])
     df_train[f_x] = scaler.transform(df_train[f_x])
     df_test[f_x] = scaler.transform(df_test[f_x])

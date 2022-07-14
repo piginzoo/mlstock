@@ -2,10 +2,31 @@ import logging
 import time
 
 import sqlalchemy
+from sqlalchemy import create_engine
+
+from mlstock.utils.utils import CONF
 
 logger = logging.getLogger(__name__)
 
 EALIEST_DATE = '20080101'  # 最早的数据日期
+
+def connect_db():
+    """
+    # https://stackoverflow.com/questions/8645250/how-to-close-sqlalchemy-connection-in-mysql:
+        Engine is a factory for connections as well as a ** pool ** of connections, not the connection itself.
+        When you say conn.close(), the connection is returned to the connection pool within the Engine,
+        not actually closed.
+    """
+
+    uid = CONF['database']['uid']
+    pwd = CONF['database']['pwd']
+    db = CONF['database']['db']
+    host = CONF['database']['host']
+    port = CONF['database']['port']
+    engine = create_engine("mysql+pymysql://{}:{}@{}:{}/{}?charset={}".format(uid, pwd, host, port, db, 'utf8'))
+    # engine = create_engine('sqlite:///' + DB_FILE + '?check_same_thread=False', echo=echo)  # 是否显示SQL：, echo=True)
+    return engine
+
 
 def is_table_exist(engine, name):
     return sqlalchemy.inspect(engine).has_table(name)

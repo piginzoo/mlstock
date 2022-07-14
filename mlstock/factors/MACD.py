@@ -25,7 +25,7 @@ class MACD(Factor):
     def calculate(self, df):
         return self.__macd(df.close)
 
-    def __macd(x):
+    def __macd(self, x):
         macd, dea, dif = ta.MACD(x,
                                  fastperiod=fastperiod,
                                  slowperiod=slowperiod,

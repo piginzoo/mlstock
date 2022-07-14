@@ -9,18 +9,31 @@ import chinese_calendar
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
+import yaml
 from backtrader.plot import Plot_OldSync
 from backtrader_plotting.schemes import Tradimo
 from dateutil.relativedelta import relativedelta
 from pandas import Series
-from sqlalchemy import create_engine
 
-from mlstock import utils
-
+from mlstock import const
 
 logger = logging.getLogger(__name__)
 
 DB_FILE = "../data/tushare.db"
+
+
+def load_config():
+    if not os.path.exists(const.CONF_PATH):
+        raise ValueError("配置文件[conf/config.yml]不存在!(参考conf/config.sample.yml):" + const.CONF_PATH)
+    f = open(const.CONF_PATH, 'r', encoding='utf-8')
+    result = f.read()
+    # 转换成字典读出来
+    data = yaml.load(result, Loader=yaml.FullLoader)
+    logger.info("读取配置文件:%r", const.CONF_PATH)
+    return data
+
+
+CONF = load_config()
 
 
 class StockQuery():
@@ -65,28 +78,11 @@ def uncomply_code(func):
         if index == -1: return func(*args, **kw)
         args = list(args)
         args[index] = uncompile_stock_code(args[index])
+
         args = tuple(args)
         return func(*args, **kw)
 
     return wrapper_it
-
-
-def connect_db():
-    """
-    # https://stackoverflow.com/questions/8645250/how-to-close-sqlalchemy-connection-in-mysql:
-        Engine is a factory for connections as well as a ** pool ** of connections, not the connection itself.
-        When you say conn.close(), the connection is returned to the connection pool within the Engine,
-        not actually closed.
-    """
-
-    uid = utils.CONF['database']['uid']
-    pwd = utils.CONF['database']['pwd']
-    db = utils.CONF['database']['db']
-    host = utils.CONF['database']['host']
-    port = utils.CONF['database']['port']
-    engine = create_engine("mysql+pymysql://{}:{}@{}:{}/{}?charset={}".format(uid, pwd, host, port, db, 'utf8'))
-    # engine = create_engine('sqlite:///' + DB_FILE + '?check_same_thread=False', echo=echo)  # 是否显示SQL：, echo=True)
-    return engine
 
 
 def str2date(s_date, format="%Y%m%d"):
@@ -375,10 +371,10 @@ def init_logger(file=False, simple=False):
 
 def get_url(host=None, port=None, url=None, token=None):
     if host is None:
-        host = utils.CONF['broker_client']['host']
-        port = utils.CONF['broker_client']['port']
-        url = utils.CONF['broker_client']['url']
-        token = utils.CONF['broker_client']['token']
+        host = CONF['broker_client']['host']
+        port = CONF['broker_client']['port']
+        url = CONF['broker_client']['url']
+        token = CONF['broker_client']['token']
     return f"http://{host}:{port}/{url}?token={token}"
 
 

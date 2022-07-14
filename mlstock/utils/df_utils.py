@@ -5,9 +5,6 @@ import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype as is_datetime
 from tqdm import tqdm
 
-from conf import DATE_COLUMNS
-from datasource import datasource_factory as ds_factory
-from utils import CONF, utils
 
 logger = logging.getLogger(__name__)
 
