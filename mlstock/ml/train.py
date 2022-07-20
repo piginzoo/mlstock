@@ -1,66 +1,77 @@
 import logging
 import math
 import time
-
+import numpy as np
 import pandas as pd
 from sklearn import linear_model
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
 from mlstock.factors.KDJ import KDJ
 from mlstock.factors.MACD import MACD
+from mlstock.factors.balance_sheet import BalanceSheet
 from mlstock.utils import utils
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+import warnings
+
+warnings.filterwarnings("ignore")
 from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
-FACTORS = [MACD, KDJ]
+FACTORS = [MACD, KDJ, BalanceSheet]
+
+
+class StocksInfo:
+    def __init__(self, stocks, start_date, end_date):
+        self.stocks = stocks
+        self.start_date = start_date
+        self.end_date = end_date
 
 
 def main(start_date, end_date, num):
     start_time = time.time()
     datasource = DataSource()
-    df_stocks = data_filter.filter_stocks()
-    df_stocks = df_stocks[:num]
-    df_stocks_data = data_loader.weekly(datasource, df_stocks.ts_code, start_date, end_date)
-    df_stocks = df_stocks.merge(df_stocks_data, on=['ts_code'], how="left")
+    stocks = data_filter.filter_stocks()
+    stocks = stocks[:num]
+
+    stocks_info = StocksInfo(stocks, start_date, end_date)
+
+    df_stocks_data = data_loader.weekly(datasource, stocks.ts_code, start_date, end_date)
+    df_stocks = stocks.merge(df_stocks_data, on=['ts_code'], how="left")
     logger.debug("加载[%d]只股票 %s~%s 的数据 %d 行，耗时%.0f秒", len(df_stocks), start_date, end_date, len(df_stocks),
                  time.time() - start_time)
 
+    df_factors = []
+    factor_names = []
     for factor_class in FACTORS:
-        factor = factor_class(datasource)
-        seris_factor = factor.calculate(df_stocks)
-        df_stocks[factor.name] = seris_factor
+        factor = factor_class(datasource, stocks_info)
+        df_factors.append(factor.calculate(df_stocks))
+        factor_names.append(factor.name)
 
-    # 合并沪深300的周收益率
+    utils.fill
+
+    # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
     df_hs300 = datasource.index_weekly("000300.SH", start_date, end_date)
     df_hs300 = df_hs300[['trade_date', 'pct_chg']]
     df_hs300 = df_hs300.rename(columns={'pct_chg': 'pct_chg_hs300'})
     logger.debug("下载沪深300 %s~%s 数据 %d 条", start_date, end_date, len(df_hs300))
     df_stocks = df_stocks.merge(df_hs300, on=['trade_date'], how='left')
     logger.debug("合并沪深300 %d=>%d", len(df_stocks), len(df_stocks))
-
     # 计算出和基准（沪深300）的超额收益率，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
     df_stocks['rm_rf'] = df_stocks.pct_chg - df_stocks.pct_chg_hs300
     # target即预测目标，是下一期的超额收益
     df_stocks['target'] = df_stocks.groupby('ts_code').rm_rf.shift(-1)
 
-    # 按照0.8:0.2和时间顺序，划分train和test
-    trade_dates = df_stocks.trade_date.sort_values().unique()
-    div_num = math.ceil(len(trade_dates) * 0.8)
-    train_dates = trade_dates[:div_num]
-    test_dates = trade_dates[div_num:]
-    df_train = df_stocks[df_stocks.trade_date.apply(lambda x: x in train_dates)]
-    df_test = df_stocks[df_stocks.trade_date.apply(lambda x: x in test_dates)]
-
     # 某只股票上市12周内的数据扔掉，不需要
+    df_train = df_stocks
     a = pd.to_datetime(df_train.trade_date, format='%Y%m%d')
     b = pd.to_datetime(df_train.list_date, format='%Y%m%d')
     df_train = df_train[a - b > pd.Timedelta(12, unit='w')]
-    a = pd.to_datetime(df_test.trade_date, format='%Y%m%d')
-    b = pd.to_datetime(df_test.list_date, format='%Y%m%d')
-    df_test = df_test[a - b > pd.Timedelta(12, unit='w')]
 
     """
     每一列，都去极值（TODO：是不是按照各股自己的值来做是不是更好？现在是所有的股票）
@@ -92,77 +103,57 @@ def main(start_date, end_date, num):
     scaler = StandardScaler()
     scaler.fit(df_train[feature_names])
     df_train[feature_names] = scaler.transform(df_train[feature_names])
-    df_test[feature_names] = scaler.transform(df_test[feature_names])
 
     # 去除所有的NAN数据
     df_train.dropna(subset=feature_names + ['target'], inplace=True)
-    df_test.dropna(subset=feature_names + ['target'], inplace=True)
-    logger.debug("NA统计：train data：%r,label：%r",
-                 df_train[feature_names].isna().sum(),
-                 df_test[feature_names].isna().sum())
+    logger.debug("NA统计：train data：%r", df_train[feature_names].isna().sum())
 
     # 准备训练用数据，需要numpy类型
     X_train = df_train[feature_names].values
-    X_test = df_test[feature_names].values
     y_train = df_train.target
-    y_test = df_test.target
-
-    # 训练
-    regession = linear_model.LinearRegression()
-    model = regession.fit(X_train, y_train)
 
     # 划分训练集和测试集，测试集占总数据的15%，随机种子为10
     X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.15, random_state=10)
 
     # 使用交叉验证，分成10份，挨个做K-Fold，训练
     cv_scores = []
-    for n in range(20):
+    for n in range(5):
         regession = linear_model.LinearRegression()
         scores = cross_val_score(regession, X_train, y_train, cv=10, scoring='neg_mean_squared_error')
         cv_scores.append(scores.mean())
-    logger.debug("成绩：\n%r",cv_scores)
+    logger.debug("成绩：\n%r", cv_scores)
 
-    # 预测
-    y_pred = regession.predict(X_test)
+    # 做这个是为了人肉看一下最好的岭回归的超参alpha的最优值是啥
+    # 是没必要的，因为后面还会用 gridsearch自动跑一下，做这个就是想直观的感受一下
+    results = []
+    alpha_scope = np.arange(200, 500, 5)
+    for i in alpha_scope:
+        ridge = Ridge(alpha=i)
+        results.append(cross_val_score(ridge, X_train, y_train, cv=10, scoring='neg_mean_squared_error').mean())
+    logger.debug("最好的参数：%.0f, 对应的最好的均方误差：%.2f",
+                 alpha_scope[results.index(max(results))],
+                 max(results))
+    plt.figure(figsize=(20, 5))
+    plt.title('Best Apha')
+    plt.plot(alpha_scope, results, c="red", label="alpha")
+    plt.legend()
+    plt.show()
 
-    # 模型评价
-    df_result = pd.DataFrame({'ts_code': df_test.ts_code,
-                              'trade_date': df_test.trade_date,
-                              'y': y_test,
-                              'y_pred': y_pred})
-
-    # IC
-    ic = df_result[['y', 'y_pred']].corr().iloc[0, 1]
-    logger.info("预测值和标签的相关性(IC): %.2f%%", ic * 100)
-
-    # Rank IC
-    df_result['y_rank'] = df_result.y.rank(ascending=False)  # 并列的默认使用排名均值
-    df_result['y_pred_rank'] = df_result.y_pred.rank(ascending=False)
-    rank_ic = df_result[['y_rank', 'y_pred_rank']].corr().iloc[0, 1]
-    logger.info("预测值和标签的排名相关性(Rank IC): %.2f%%", rank_ic * 100)
-
-    # TODO 先按照神仔的按照行业分组的分层
-    # 分层回测，每个行业内分5类，按照每行业
-    df_result['industry'] = df_test.industry
-    df_result['pct_chg'] = df_test.industry
-    df_result['pct_chg_hs300'] = df_test.industry
-    df_result['y_rank_in_industry'] = df_result.groupby('industry').y_pred.rank(ascending=False)  # 每行业内排名（按行业分组）
-    # 得到每个股票在行业内的收益率分类
-    df_result['class_label_in_industry'] = pd.qcut(df_result.y_rank_in_industry,
-                                                   q=5,
-                                                   labels=[1, 2, 3, 4, 5],
-                                                   duplicates='drop')
-    print(df_result)
-    print(df_result[df_result['industry'] == '电器连锁'])
-    print(df_result[df_result['industry'] == '商品城'])
-    print(df_result[df_result['industry'] == '橡胶'])
-    print(df_result[df_result['industry'] == '摩托车'])
-    print(df_result[df_result['industry'] == '电气设备'])
-    print("-" * 80)
-    print(df_result.groupby('class_label_in_industry').mean())
+    # 用grid search找最好的alpha：[200,205,...,500]
+    # grid search的参数是alpha，岭回归就这样一个参数，用于约束参数的平方和
+    # grid search的入参包括alpha的范围，K-Fold的折数(cv)，还有岭回归评价的函数(负均方误差)
+    grid_search = GridSearchCV(Ridge(),
+                               {'alpha': alpha_scope},
+                               cv=5,  # 5折(KFold值)
+                               scoring='neg_mean_squared_error')
+    grid_search.fit(X_train, y_train)
+    # model = grid_search.estimator.fit(X_train, y_train)
+    logger.debug("GridSarch最好的成绩:%.5f", grid_search.best_score_)
+    # 得到的结果是495，确实和上面人肉跑是一样的结果
+    logger.debug("GridSarch最好的参数:%.5f", grid_search.best_estimator_.alpha)
 
 
-# python -m mlstock.ml.main
+# python -m mlstock.ml.train
 if __name__ == '__main__':
     utils.init_logger(simple=True)
     start_date = "20180101"

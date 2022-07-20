@@ -1,7 +1,8 @@
 from mlstock.factors.factor import Factor
 import numpy as np
 import pandas as pd
-PERIOD = 20
+
+PERIOD = 12
 
 
 class PSY(Factor):
@@ -11,9 +12,6 @@ class PSY(Factor):
     PSY大小反映市场是倾向于买方、还是卖方。
     """
 
-    def __init__(self):
-        self.datasource = datasource_factory.create(CONF['datasource'])
-
     # 英文名
     def name(self):
         return "PSY"
@@ -22,11 +20,11 @@ class PSY(Factor):
     def cname(self):
         return "PSY"
 
-    def calculate(self, stock_codes, start_date, end_date):
-        pass
+    def calculate(self, df):
+        return self.psy(df.close, period=PERIOD)
 
     # psy 20日
-    def psy(x, period=20):
+    def psy(x, period=PERIOD):
         difference = x[1:].values - x[:-1].values
         difference_dir = np.where(difference > 0, 1, 0)
         p = np.zeros((len(x),))
