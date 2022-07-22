@@ -32,6 +32,12 @@ class Factor(ABC):
         raise ImportError()
 
     def _extract_fields(self, df: DataFrame):
+        """
+        - 把ts_code,ann_date,和其他需要的字段，剥离出来
+        - 把ann_date，改名成trade_date
+        - 把其他的需要的字段的名字改成一个full_name，缩写看不懂
+        """
+
         if "ann_date" in df.columns:
             df.rename({"ann_date", "trade_date"})
         df = df[['ts_code', 'ann_date'] + self.tushare_name]

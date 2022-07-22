@@ -53,7 +53,7 @@ def main(start_date, end_date, num):
         df_factors.append(factor.calculate(df_stocks))
         factor_names.append(factor.name)
 
-    utils.fill
+
 
     # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
     df_hs300 = datasource.index_weekly("000300.SH", start_date, end_date)
