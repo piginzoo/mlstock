@@ -6,7 +6,7 @@ from mlstock.utils import utils
 logger = logging.getLogger(__name__)
 
 
-class TTMProcessorMixin:
+class TTMMixin:
     """
     处理TTM：以当天为基准，向前滚动12个月的数据，
     用于处理类ROE_TTM数据，当然不限于ROE，只要是同样逻辑的都支持。
@@ -67,16 +67,16 @@ class TTMProcessorMixin:
     季报由上市公司在会计年度前三个月、九个月结束后的三十日内编制完成，即第一季报在四月份，第三季报在十月份
     """
 
-    def ttm(self, df, finance_column_names):
+    def ttm(self, df, finance_column_names, publish_date_column_name='ann_date', finance_date_column_name='end_date'):
         """
         :param df: 包含了 ts_code, ann_date，<各种需要TTM处理的财务指标列> 的 dataframe
         :return: 财务指标列被替换成了TTM值
         """
         # 删除重复值
         row_num = len(df)
-        df = df[~df[['ts_code', 'ann_date']].duplicated(keep='last')]
-        if len(df)<row_num:
-            logger.warning("删除重复行数：%d",row_num - len(df))
+        df = df[~df[['ts_code', publish_date_column_name]].duplicated(keep='last')]
+        if len(df) < row_num:
+            logger.warning("删除重复行数：%d", row_num - len(df))
             row_num = len(df)
 
         # 剔除Nan
@@ -86,11 +86,13 @@ class TTMProcessorMixin:
                 logger.warning("删除包含NAN的行数：%d", row_num - len(df))
 
         # 对时间，升序排列
-        df.sort_values('ann_date', inplace=True)
+        df.sort_values(publish_date_column_name, inplace=True)
 
-        return df.groupby('ts_code').apply(self.handle_one_stock_ttm, finance_column_names=finance_column_names)
+        return df.groupby('ts_code').apply(self.handle_one_stock_ttm,
+                                           finance_column_names=finance_column_names,
+                                           finance_date_column_name=finance_date_column_name)
 
-    def handle_one_stock_ttm(self, df, finance_column_names):
+    def handle_one_stock_ttm(self, df, finance_column_names,finance_date_column_name):
         """
         这个处理和致敬大神的不一样，它是假设所有的财报都有，这样错位一下(shift)就可以算出ttm了，
         举个例子：
@@ -111,18 +113,18 @@ class TTMProcessorMixin:
         :return: 列被提换成了TTM数据
         """
 
-        def handle_one_period_ttm(row, finance_column_names):
+        def handle_one_period_ttm(row, finance_column_names,finance_date_column_name):
 
             # print("row:",row[finance_column_names].tolist())
 
             # 从这只股票的财务数据(df)得到这一行对应的年报的报告期结束日
-            end_date = row['end_date']
+            end_date = row[finance_date_column_name]
             last_year_same_date = utils.last_year(end_date)  # 去年的同期日
             last_year_end_date = utils.last_year(end_date[:4] + "1231")  # 去年的最后一天
 
             # 从这只股票的财务数据中，按日期检索出去年年末，和，去年同期的财务指标数据
-            df_last_year_same_date = df[df['end_date'] == last_year_same_date]
-            df_last_year_end_date = df[df['end_date'] == last_year_end_date]
+            df_last_year_same_date = df[df[finance_date_column_name] == last_year_same_date]
+            df_last_year_end_date = df[df[finance_date_column_name] == last_year_end_date]
 
             # 如果去年年末，和，去年同期的财务指标数据都存在，就直接计算
             if len(df_last_year_same_date) == 1 and len(df_last_year_end_date) == 1:
@@ -149,7 +151,10 @@ class TTMProcessorMixin:
 
         # print("=" * 120)
         # print(df)
-        return df.apply(handle_one_period_ttm, axis=1, finance_column_names=finance_column_names)
+        return df.apply(handle_one_period_ttm,
+                        axis=1,
+                        finance_column_names=finance_column_names,
+                        finance_date_column_name=finance_date_column_name)
         # print(df2)
 
     def __calculate_ttm_by_same_year_peirod(self, row, end_date):
@@ -190,5 +195,5 @@ if __name__ == '__main__':
 
     df = pd.concat(df_list)
     logger.info("原始数据：\n%r", df)
-    df = TTMProcessorMixin().ttm(df, col_names)
-    logger.info("计算完毕的TTM数据：\n%r",df)
+    df = TTMMixin().ttm(df, col_names)
+    logger.info("计算完毕的TTM数据：\n%r", df)

@@ -37,10 +37,9 @@ class Factor(ABC):
         - 把ann_date，改名成trade_date
         - 把其他的需要的字段的名字改成一个full_name，缩写看不懂
         """
-
-        if "ann_date" in df.columns:
-            df.rename({"ann_date", "trade_date"})
+        # 只提取ts_code,ann_date和需要的业务字段
         df = df[['ts_code', 'ann_date'] + self.tushare_name]
+        # 把tushare中的业务字段名改成full_name，便于理解
         df = self._rename(self.tushare_name, df, self.name)
         return df
 
