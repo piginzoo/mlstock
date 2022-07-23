@@ -22,6 +22,7 @@ class FillMixin:
         """
         # 按照公布日期倒序排（日期从新到旧）
         df_finance.sort_values('ann_date', ascending=False)
+        # 只用股票的ts_code和trad_code，两列，去取得对应的财务指标
         return df_stocks.groupby(by=['ts_code', 'trade_date']).apply(self.handle_one_stock,
                                                                      df_finance,
                                                                      finance_column_names)

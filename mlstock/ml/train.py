@@ -26,13 +26,6 @@ logger = logging.getLogger(__name__)
 FACTORS = [MACD, KDJ, BalanceSheet]
 
 
-class StocksInfo:
-    def __init__(self, stocks, start_date, end_date):
-        self.stocks = stocks
-        self.start_date = start_date
-        self.end_date = end_date
-
-
 def main(start_date, end_date, num):
     start_time = time.time()
     datasource = DataSource()
@@ -52,8 +45,6 @@ def main(start_date, end_date, num):
         factor = factor_class(datasource, stocks_info)
         df_factors.append(factor.calculate(df_stocks))
         factor_names.append(factor.name)
-
-
 
     # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
     df_hs300 = datasource.index_weekly("000300.SH", start_date, end_date)

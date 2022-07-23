@@ -80,7 +80,7 @@ class TTMMixin:
             row_num = len(df)
 
         # 剔除Nan
-        df.dropna(inplace=True)
+        # df.dropna(inplace=True)
         if len(df) < row_num:
             if len(df) < row_num:
                 logger.warning("删除包含NAN的行数：%d", row_num - len(df))
@@ -115,8 +115,6 @@ class TTMMixin:
 
         def handle_one_period_ttm(row, finance_column_names,finance_date_column_name):
 
-            # print("row:",row[finance_column_names].tolist())
-
             # 从这只股票的财务数据(df)得到这一行对应的年报的报告期结束日
             end_date = row[finance_date_column_name]
             last_year_same_date = utils.last_year(end_date)  # 去年的同期日
@@ -139,11 +137,13 @@ class TTMMixin:
                 # logger.debug('当期[%s]_TTM:%r',end_date,ttm_values.tolist())
             # 否则，就用当期的近似计算
             else:
-                # logger.debug("无法获得去年同期%s[%d条]或者去年年末%s[%d条]信息",
-                #              last_year_same_date,
-                #              len(df_last_year_same_date),
-                #              last_year_end_date,
-                #              len(df_last_year_end_date))
+                logger.debug("无法获得[%s]去年同期%s[%d条]或者去年年末%s[%d条]信息",
+                             row['ts_code'],
+                             last_year_same_date,
+                             len(df_last_year_same_date),
+                             last_year_end_date,
+                             len(df_last_year_end_date))
+                logger.debug("使用[%s]当期[%s]的数据近似模拟",row['ts_code'],end_date)
                 ttm_values = self.__calculate_ttm_by_same_year_peirod(row[finance_column_names], end_date)
             # 重新替换掉旧的非TTM数据
             row[finance_column_names] = ttm_values
@@ -166,7 +166,7 @@ class TTMMixin:
         }
         periods = PERIOD_DEF.get(end_date[-4:], None)
         if periods is None:
-            logger.warning("无法根据财务日期[%s]得到财务的季度间隔数", end_date)
+            logger.warning("无法根据[%s]财务日期[%s]得到财务的季度间隔数", row['ts_code'],end_date)
             return np.nan
         return row * periods
 
@@ -178,7 +178,8 @@ if __name__ == '__main__':
     start_date = '20150703'
     end_date = '20190826'
     stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
-    col_names = ['basic_eps', 'diluted_eps']
+    from mlstock.factors.income import Income
+    col_names = Income(None,None).tushare_name
 
     import tushare as ts
     import pandas as pd
@@ -189,8 +190,7 @@ if __name__ == '__main__':
     for ts_code in stocks:
         df = pro.income(ts_code=ts_code,
                         start_date=start_date,
-                        end_date=end_date,
-                        fields='ts_code,ann_date,f_ann_date,end_date,report_type,comp_type,basic_eps,diluted_eps')
+                        end_date=end_date)
         df_list.append(df)
 
     df = pd.concat(df_list)
