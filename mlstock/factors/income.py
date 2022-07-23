@@ -1,5 +1,5 @@
 from mlstock.data.stock_info import StocksInfo
-from mlstock.factors.factor import Factor
+from mlstock.factors.factor import Factor, FinanceFactor
 
 from mlstock.factors.mixin.fill_mixin import FillMixin
 from mlstock.factors.mixin.ttm_mixin import TTMMixin
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 PERIOD = 12
 
 
-class Income(Factor, FillMixin, TTMMixin):
+class Income(FinanceFactor, FillMixin, TTMMixin):
     """
     利润表
     """
@@ -66,22 +66,22 @@ class Income(Factor, FillMixin, TTMMixin):
         start_date_last_year = utils.last_year(self.stocks_info.start_date)
 
         # 加载收入表数据
-        df_balancesheet = self.datasource.income(self.stocks_info.stocks,
+        df_income = self.datasource.income(self.stocks_info.stocks,
                                                  start_date_last_year,
                                                  self.stocks_info.end_date)
         # 把财务字段改成全名（tushare中的缩写很讨厌）
-        df_balancesheet = self._rename_finance_column_names(df_balancesheet)
+        df_income = self._rename_finance_column_names(df_income)
 
         # 做财务数据的TTM处理
-        df_balancesheet = self.ttm(df_balancesheet, self.name)
+        df_income = self.ttm(df_income, self.name)
 
         # 按照股票的周频日期，来生成对应的指标（填充周频对应的财务指标）
-        df_balancesheet = self.fill(df_stocks, df_balancesheet, self.name)
+        df_income = self.fill(df_stocks, df_income, self.name)
 
         # 只保留股票、日期和需要的特征列
-        df_balancesheet = self._extract_fields(df_balancesheet)
+        df_income = self._extract_fields(df_income)
 
-        return df_balancesheet
+        return df_income
 
 
 # python -m mlstock.factors.income

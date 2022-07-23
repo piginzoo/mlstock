@@ -1,8 +1,6 @@
-import backtrader as bt
 import talib
-from backtrader import Indicator
 
-from mlstock.factors.factor import Factor
+from mlstock.factors.factor import CommonFactor
 
 fastk_period = 9
 slowk_period = 3
@@ -11,7 +9,7 @@ slowd_period = 3
 slowd_matype = 0
 
 
-class KDJ(Factor):
+class KDJ(CommonFactor):
     # 英文名
     @property
     def name(self):

@@ -26,7 +26,7 @@ def filter_BJ_Startup_B(df_stocks):
 
 def filter_stocks(least_year=STOCK_IPO_YEARS):
     """
-    用于全市场过滤股票，默认的标准是：至少上市3年的，流动市值在100亿以内的。
+    用于全市场过滤股票，默认的标准是：至少上市1年的
     从stock_basic + daily_basic，合并，原因是daily_basic有市值信息
     max_circ_mv: 最大流动市值，单位是亿
     """
@@ -44,7 +44,7 @@ def filter_stocks(least_year=STOCK_IPO_YEARS):
 
     df_stocks = filter_BJ_Startup_B(df_stocks)
 
-    return df_stocks
+    return df_stocks['ts_code'].tolist()
 
 
 def filter_ST(df_stocks):

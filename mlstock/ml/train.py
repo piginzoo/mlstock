@@ -9,9 +9,12 @@ from sklearn.model_selection import train_test_split, cross_val_score, GridSearc
 
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
+from mlstock.data.stock_info import StocksInfo
 from mlstock.factors.KDJ import KDJ
 from mlstock.factors.MACD import MACD
 from mlstock.factors.balance_sheet import BalanceSheet
+from mlstock.factors.cashflow import CashFlow
+from mlstock.factors.income import Income
 from mlstock.utils import utils
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -23,27 +26,29 @@ from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
-FACTORS = [MACD, KDJ, BalanceSheet]
+FACTORS = [MACD, KDJ, BalanceSheet, Income, CashFlow]
 
 
 def main(start_date, end_date, num):
     start_time = time.time()
     datasource = DataSource()
+
+    # 过滤非主板、非中小板股票、且上市在1年以上的非ST股票
     stocks = data_filter.filter_stocks()
     stocks = stocks[:num]
-
     stocks_info = StocksInfo(stocks, start_date, end_date)
 
-    df_stocks_data = data_loader.weekly(datasource, stocks.ts_code, start_date, end_date)
-    df_stocks = stocks.merge(df_stocks_data, on=['ts_code'], how="left")
+    # 加载周频数据
+    df_stocks = data_loader.weekly(datasource, stocks, start_date, end_date)
     logger.debug("加载[%d]只股票 %s~%s 的数据 %d 行，耗时%.0f秒", len(df_stocks), start_date, end_date, len(df_stocks),
                  time.time() - start_time)
 
-    df_factors = []
     factor_names = []
+    # 获取每一个因子（特征），并且，并入到股票数据中
     for factor_class in FACTORS:
         factor = factor_class(datasource, stocks_info)
-        df_factors.append(factor.calculate(df_stocks))
+        df_factor = factor.calculate(df_stocks)
+        df_stocks = factor.merge(df_stocks, df_factor)
         factor_names.append(factor.name)
 
     # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
@@ -73,12 +78,6 @@ def main(start_date, end_date, num):
     - 则将序列𝐷𝑖中所有大于𝐷𝑀 + 5𝐷𝑀1的数重设为𝐷𝑀 + 5𝐷𝑀1
     - 将序列𝐷𝑖中所有小于𝐷𝑀 − 5𝐷𝑀1的数重设为𝐷𝑀 − 5𝐷𝑀1
     """
-    # 保留feature
-    feature_names = ['MACD', 'KDJ']
-    df_features = df_train[feature_names]
-    # 每列都求中位数，和中位数之差的绝对值的中位数
-    df_median = df_features.median()
-    df_scope = df_features.apply(lambda x: x - df_median[x.name]).abs().median()
 
     def scaller(x):
         _max = df_median[x.name] + 5 * df_scope[x.name]
@@ -87,20 +86,25 @@ def main(start_date, end_date, num):
         x = x.apply(lambda v: _max if v > _max else v)
         return x
 
+    # 保留feature
+    df_features = df_train[factor_names]
+    # 每列都求中位数，和中位数之差的绝对值的中位数
+    df_median = df_features.median()
+    df_scope = df_features.apply(lambda x: x - df_median[x.name]).abs().median()
     df_features = df_features.apply(scaller)
-    df_train[feature_names] = df_features
+    df_train[factor_names] = df_features
 
     # 标准化
     scaler = StandardScaler()
-    scaler.fit(df_train[feature_names])
-    df_train[feature_names] = scaler.transform(df_train[feature_names])
+    scaler.fit(df_train[factor_names])
+    df_train[factor_names] = scaler.transform(df_train[factor_names])
 
     # 去除所有的NAN数据
-    df_train.dropna(subset=feature_names + ['target'], inplace=True)
-    logger.debug("NA统计：train data：%r", df_train[feature_names].isna().sum())
+    df_train.dropna(subset=factor_names + ['target'], inplace=True)
+    logger.debug("NA统计：train data：%r", df_train[factor_names].isna().sum())
 
     # 准备训练用数据，需要numpy类型
-    X_train = df_train[feature_names].values
+    X_train = df_train[factor_names].values
     y_train = df_train.target
 
     # 划分训练集和测试集，测试集占总数据的15%，随机种子为10

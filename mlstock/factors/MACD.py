@@ -1,6 +1,6 @@
 import talib as ta
 
-from .factor import Factor
+from .factor import CommonFactor
 
 # macd 30日
 # dea 10日
@@ -10,7 +10,7 @@ slowperiod = 30
 signalperiod = 9
 
 
-class MACD(Factor):
+class MACD(CommonFactor):
 
     # 英文名
     @property
@@ -23,7 +23,7 @@ class MACD(Factor):
         return "MACD"
 
     def calculate(self, df):
-        return self.__macd(df.close)
+        return df.groupby('ts_code').close.apply(self.__macd)
 
     def __macd(self, x):
         macd, dea, dif = ta.MACD(x,
@@ -31,3 +31,4 @@ class MACD(Factor):
                                  slowperiod=slowperiod,
                                  signalperiod=signalperiod)
         return macd
+

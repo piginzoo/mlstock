@@ -50,3 +50,20 @@ class Factor(ABC):
     def _rename(self, df: DataFrame, _from: list, _to: list):
         name_pair = dict(zip(_from, _to))
         return df.rename(columns=name_pair)
+
+
+class CommonFactor(Factor):
+
+    def merge(self, df_stocks, df_factor):
+        df_stocks[self.name] = df_factor
+        return df_stocks
+
+
+class FinanceFactor(Factor):
+
+    def merge(self, df_stocks, df_factor):
+        # rename财务数据的公布日期ann_date=>trade_date
+        df_factor.rename({'ann_date': 'trade_date'})
+        # 做数据合并
+        df_stocks = df_stocks.merge(df_factor, on=['ts_code', 'trade_date'], how='left')
+        return df_stocks

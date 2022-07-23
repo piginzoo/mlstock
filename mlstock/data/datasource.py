@@ -130,6 +130,24 @@ class DataSource:
             self.db_engine)
         return df
 
+    # 获得资产负债表
+    def balance_sheet(self, stock_code, start_date, end_date):
+        stock_codes = db_utils.list_to_sql_format(stock_code)
+        df = pd.read_sql(
+            f'select * from balancesheet \
+                where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
+            self.db_engine)
+        return df
+
+    # 获得现金流量表
+    def cashflow(self, stock_code, start_date, end_date):
+        stock_codes = db_utils.list_to_sql_format(stock_code)
+        df = pd.read_sql(
+            f'select * from cashflow \
+                where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
+            self.db_engine)
+        return df
+
     def trade_cal(self, start_date, end_date, exchange='SSE'):
         df = pd.read_sql(
             f'select * from trade_cal where exchange="{exchange}" and cal_date>="{start_date}" and cal_date<="{end_date}" and is_open=1',
