@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def filter_BJ_Startup_B(df_stocks):
     df = df_stocks[(df_stocks.market == "主板") | (df_stocks.market == "中小板")]
-    logger.debug("从[%d]只过滤掉非主板、非中小板股票后，剩余[%d]只股票", len(df_stocks), len(df))
+    logger.info("从[%d]只过滤掉非主板、非中小板股票后，剩余[%d]只股票", len(df_stocks), len(df))
     return df
 
 
@@ -31,27 +31,27 @@ def filter_stocks(least_year=STOCK_IPO_YEARS):
     max_circ_mv: 最大流动市值，单位是亿
     """
     datasource = DataSource()
-    df_stocks = datasource.stock_basic()
+    df_stock_basic = datasource.stock_basic()
 
-    total_amount = len(df_stocks)
-    logger.debug("加载[%d]只股票的基础信息(basic)", total_amount)
+    total_amount = len(df_stock_basic)
+    logger.info("加载[%d]只股票的基础信息(basic)", total_amount)
 
-    df_stocks = filter_unlist(df_stocks, total_amount)
+    df_stock_basic = filter_unlist(df_stock_basic, total_amount)
 
-    df_stocks = filter_by_years(df_stocks, end_date=utils.today(), least_year=least_year)
+    df_stock_basic = filter_by_years(df_stock_basic, end_date=utils.today(), least_year=least_year)
 
-    df_stocks = filter_ST(df_stocks)
+    df_stock_basic = filter_ST(df_stock_basic)
 
-    df_stocks = filter_BJ_Startup_B(df_stocks)
+    df_stock_basic = filter_BJ_Startup_B(df_stock_basic)
 
-    return df_stocks['ts_code'].tolist()
+    return df_stock_basic
 
 
 def filter_ST(df_stocks):
     # 剔除ST股票
     total_amount = len(df_stocks)
     df_stocks = df_stocks[~df_stocks['name'].str.contains("ST")]
-    logger.debug("过滤掉ST的[%d]只股票后，剩余[%d]只股票", total_amount - len(df_stocks), len(df_stocks))
+    logger.info("过滤掉ST的[%d]只股票后，剩余[%d]只股票", total_amount - len(df_stocks), len(df_stocks))
     return df_stocks
 
 
@@ -59,15 +59,15 @@ def filter_by_years(df_stocks, end_date, least_year):
     df_stocks['list_date'] = pd.to_datetime(df_stocks['list_date'], format='%Y%m%d')
     df_stocks['period'] = utils.str2date(end_date) - df_stocks['list_date']
     df_stocks_more_years = df_stocks[df_stocks['period'] > pd.Timedelta(days=365 * least_year)]
-    logger.debug("过滤掉上市不到[%d]年[%d]只的股票，剩余[%d]只股票", least_year, len(df_stocks) - len(df_stocks_more_years),
+    logger.info("过滤掉上市不到[%d]年[%d]只的股票，剩余[%d]只股票", least_year, len(df_stocks) - len(df_stocks_more_years),
                  len(df_stocks_more_years))
     return df_stocks_more_years
 
 
 def filter_unlist(df_stocks, total_amount):
-    print(df_stocks)
+    # print(df_stocks)
     df_stocks = df_stocks[df_stocks['list_status'] == 'L']
-    logger.debug("过滤掉[%d]只不在市股票，剩余[%d]只股票", total_amount - len(df_stocks), len(df_stocks))
+    logger.info("过滤掉[%d]只不在市股票，剩余[%d]只股票", total_amount - len(df_stocks), len(df_stocks))
     return df_stocks
 
 

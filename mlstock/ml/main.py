@@ -8,8 +8,8 @@ from sklearn.model_selection import train_test_split, cross_val_score
 
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
-from mlstock.factors.KDJ import KDJ
-from mlstock.factors.MACD import MACD
+from mlstock.factors.kdj import KDJ
+from mlstock.factors.macd import MACD
 from mlstock.utils import utils
 from sklearn.preprocessing import StandardScaler
 

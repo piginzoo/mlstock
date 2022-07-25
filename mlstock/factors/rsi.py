@@ -1,11 +1,11 @@
 import talib
 
-from mlstock.factors.factor import Factor
+from mlstock.factors.factor import CommonFactor
 
 PERIOD = 20
 
 
-class RSI(Factor):
+class RSI(CommonFactor):
     """
     相对强弱指标RSI是用以计测市场供需关系和买卖力道的方法及指标。
     计算公式：

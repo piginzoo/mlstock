@@ -2,10 +2,14 @@ from mlstock.utils import utils
 
 import logging
 
+from mlstock.utils.utils import logging_time
+
 logger = logging.getLogger(__name__)
 
 
 class FillMixin:
+
+    @logging_time
     def fill(self, df_stocks, df_finance, finance_column_names):
         """
         将离散的单个的财务TTM信息，反向填充到周频的交易数据里去，
@@ -22,11 +26,13 @@ class FillMixin:
         """
         # 按照公布日期倒序排（日期从新到旧）
         df_finance.sort_values('ann_date', ascending=False)
+
         # 只用股票的ts_code和trad_code，两列，去取得对应的财务指标
         return df_stocks.groupby(by=['ts_code', 'trade_date']).apply(self.handle_one_stock,
                                                                      df_finance,
                                                                      finance_column_names)
 
+    # @logging_time
     def handle_one_stock(self, df_stock, df_finance, finance_column_names):
         """
         处理一只股票得财务数据填充
@@ -56,7 +62,7 @@ class FillMixin:
         # 按照日子挨个查找，找到离我最旧最近的公布日，返回其公布日对应的财务数据
         for _, row in df_finance.iterrows():
             if trade_date >= row['ann_date']:
-                logger.debug("找到股票[%s]的周频日期[%s]的财务日为[%s]的填充数据", ts_code, trade_date, row['ann_date'])
+                # logger.debug("找到股票[%s]的周频日期[%s]的财务日为[%s]的填充数据", ts_code, trade_date, row['ann_date'])
                 return row[finance_column_names]
         return None
 

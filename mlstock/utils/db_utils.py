@@ -2,6 +2,7 @@ import logging
 import time
 
 import sqlalchemy
+from pandas import Series
 from sqlalchemy import create_engine
 
 from mlstock.utils.utils import CONF
@@ -9,6 +10,7 @@ from mlstock.utils.utils import CONF
 logger = logging.getLogger(__name__)
 
 EALIEST_DATE = '20080101'  # 最早的数据日期
+
 
 def connect_db():
     """
@@ -52,8 +54,11 @@ def list_to_sql_format(_list):
     把list转成sql中in要求的格式
     ['a','b','c'] => " 'a','b','c' "
     """
-    print(_list)
-    if type(_list) != list: _list = [_list]
+    if type(_list) == Series:
+        _list = list(_list)
+    elif type(_list) != list:
+        _list = [_list]
+
     data = ["\'" + one + "\'" for one in _list]
     return ','.join(data)
 

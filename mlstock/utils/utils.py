@@ -203,6 +203,11 @@ def now():
     return datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d%H%M%S")
 
 
+def time_elapse(start_time, title=''):
+    logger.info("%s共耗时(H:M:S): %s ", title, str(datetime.timedelta(seconds=time.time() - start_time)))
+    return time.time()
+
+
 def nowtime():
     now = datetime.datetime.now()
     return datetime.datetime.strftime(now, "%H:%M:%S")
@@ -322,7 +327,7 @@ class MyPlot(Plot_OldSync):
         plt.savefig("debug/backtrader回测.jpg")
 
 
-def init_logger(file=False, simple=False):
+def init_logger(file=False, simple=False, log_level=logging.DEBUG):
     print("开始初始化日志：file=%r, simple=%r" % (file, simple))
 
     logging.getLogger("requests").setLevel(logging.WARNING)
@@ -342,7 +347,7 @@ def init_logger(file=False, simple=False):
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d P%(process)d: %(message)s')
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(level=logging.DEBUG)
+    root_logger.setLevel(level=log_level)
 
     def is_any_handler(handlers, cls):
         for t in handlers:
@@ -365,7 +370,7 @@ def init_logger(file=False, simple=False):
 
     handlers = root_logger.handlers
     for handler in handlers:
-        handler.setLevel(level=logging.DEBUG)
+        handler.setLevel(level=log_level)
         handler.setFormatter(formatter)
 
 
@@ -403,3 +408,17 @@ def http_json_post(url, dict_msg):
     data = response.json()
     logger.info('接口返回Json报文:%r', data)
     return data
+
+
+def logging_time(func):
+    """
+    一个包装器，用于记录函数耗时
+    """
+
+    def wrapper_it(*args, **kw):
+        start_time = time.time()
+        result = func(*args, **kw)
+        logger.debug("函数 [%s] 耗时: %.2f 秒", func.__name__, time.time() - start_time)
+        return result
+
+    return wrapper_it

@@ -55,33 +55,9 @@ class Income(FinanceFactor, FillMixin, TTMMixin):
                 '利润总额',
                 '净利润（含少数股东损益）']
 
-    def calculate(self, df_stocks):
-        """
-        之所有要传入df_stocks，是因为要用他的日期，对每个日期进行TTM填充
-        :param df_stocks: 股票周频数据
-        :return:
-        """
-
-        # 由于财务数据，需要TTM，所以要溯源到1年前，所以要多加载前一年的数据
-        start_date_last_year = utils.last_year(self.stocks_info.start_date)
-
-        # 加载收入表数据
-        df_income = self.datasource.income(self.stocks_info.stocks,
-                                                 start_date_last_year,
-                                                 self.stocks_info.end_date)
-        # 把财务字段改成全名（tushare中的缩写很讨厌）
-        df_income = self._rename_finance_column_names(df_income)
-
-        # 做财务数据的TTM处理
-        df_income = self.ttm(df_income, self.name)
-
-        # 按照股票的周频日期，来生成对应的指标（填充周频对应的财务指标）
-        df_income = self.fill(df_stocks, df_income, self.name)
-
-        # 只保留股票、日期和需要的特征列
-        df_income = self._extract_fields(df_income)
-
-        return df_income
+    @property
+    def data_loader_func(self):
+        return self.datasource.income
 
 
 # python -m mlstock.factors.income

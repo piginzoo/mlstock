@@ -2,6 +2,7 @@ import logging
 import numpy as np
 
 from mlstock.utils import utils
+from mlstock.utils.utils import logging_time
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +68,14 @@ class TTMMixin:
     季报由上市公司在会计年度前三个月、九个月结束后的三十日内编制完成，即第一季报在四月份，第三季报在十月份
     """
 
+    @logging_time
     def ttm(self, df, finance_column_names, publish_date_column_name='ann_date', finance_date_column_name='end_date'):
         """
         :param df: 包含了 ts_code, ann_date，<各种需要TTM处理的财务指标列> 的 dataframe
         :return: 财务指标列被替换成了TTM值
         """
+        # df.fillna(np.NAN,inplace=True)
+
         # 删除重复值
         row_num = len(df)
         df = df[~df[['ts_code', publish_date_column_name]].duplicated(keep='last')]
@@ -138,12 +142,12 @@ class TTMMixin:
             # 否则，就用当期的近似计算
             else:
                 logger.debug("无法获得[%s]去年同期%s[%d条]或者去年年末%s[%d条]信息",
-                             row['ts_code'],
+                             row.name,
                              last_year_same_date,
                              len(df_last_year_same_date),
                              last_year_end_date,
                              len(df_last_year_end_date))
-                logger.debug("使用[%s]当期[%s]的数据近似模拟",row['ts_code'],end_date)
+                logger.debug("使用[%s]当期[%s]的数据近似模拟",row.name,end_date)
                 ttm_values = self.__calculate_ttm_by_same_year_peirod(row[finance_column_names], end_date)
             # 重新替换掉旧的非TTM数据
             row[finance_column_names] = ttm_values

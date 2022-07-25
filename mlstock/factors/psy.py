@@ -1,11 +1,12 @@
-from mlstock.factors.factor import Factor
 import numpy as np
 import pandas as pd
+
+from mlstock.factors.factor import CommonFactor
 
 PERIOD = 12
 
 
-class PSY(Factor):
+class PSY(CommonFactor):
     """
     PSY: 心理线指标、大众指标，研究投资者心理波动的情绪指标。
     PSY = N天内上涨天数 / N * 100，N一般取12，最大不超高24，周线最长不超过26

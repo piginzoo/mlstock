@@ -1,51 +1,41 @@
 import logging
 
-import numpy as np
-
-from mfm_learner.datasource import datasource_utils
-from mfm_learner.example.factors.factor import Factor
-from mfm_learner.utils import utils
+from mlstock.factors.factor import CommonFactor
+import pandas as pd
 
 logger = logging.getLogger(__name__)
-
 
 """
 波动率因子：
 https://zhuanlan.zhihu.com/p/30158144
 波动率因子有很多，我这里的是std，标准差，
-而算标准差，又要设置时间窗口，这里设定了10，20，60，即半个月、1个月、3个月
+而算标准差，又要设置时间窗口
 """
 
 mapping = [
-    {'name': 'std_10d', 'cname': '10日波动率', 'days': 10},
-    {'name': 'std_1m', 'cname': '1月波动率', 'days': 20},
-    {'name': 'std_3m', 'cname': '3月波动率', 'days': 60},
-    {'name': 'std_6m', 'cname': '6月波动率', 'days': 120}
+    {'name': 'std_1', 'cname': '1周波动率', 'period': 1},
+    {'name': 'std_3', 'cname': '3周波动率', 'period': 3},
+    {'name': 'std_6', 'cname': '6周波动率', 'period': 6},
+    {'name': 'std_12', 'cname': '12周波动率', 'period': 12}
 ]
 
 
-class StdFactor(Factor):
+class Std(CommonFactor):
 
-    def __init__(self):
-        super().__init__()
-
+    @property
     def name(self):
         return [m['name'] for m in mapping]
 
+    @property
     def cname(self):
         return [m['cname'] for m in mapping]
 
-    def calculate(self, stock_codes, start_date, end_date, df_daily=None):
+    def calculate(self, df_stock):
         """
         计算波动率，波动率，就是往前回溯period个周期
         """
         results = []
         for m in mapping:
-            start_days_go = utils.last_day(start_date, num=m['days'])
-            df_daily = datasource_utils.load_daily_data(self.datasource, stock_codes, start_days_go, end_date)
-            df_daily = datasource_utils.reset_index(df_daily)  # 设置日期+code为索引
-            df_pct_chg = df_daily['pct_chg']
-            df_std = df_pct_chg.rolling(window=m['days']).std()
-            df_std.dropna(inplace=True)
+            df_std = df_stock.pct_chg.rolling(window=m['period']).std()
             results.append(df_std)
-        return results
+        return pd.concat(results, axis=1)  # 按照列拼接（axis=1）
