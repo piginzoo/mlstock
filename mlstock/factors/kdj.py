@@ -20,11 +20,12 @@ class KDJ(CommonFactor):
     def cname(self):
         return "KDJ"
 
-    def calculate(self, df):
+    def calculate(self, stock_data):
+        df_weekly = stock_data.df_weekly
         K, D = talib.STOCH(
-            df.high,
-            df.low,
-            df.close,
+            df_weekly.high,
+            df_weekly.low,
+            df_weekly.close,
             fastk_period=fastk_period,
             slowk_period=slowk_period,
             slowk_matype=slowk_matype,

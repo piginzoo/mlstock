@@ -22,8 +22,9 @@ class MACD(CommonFactor):
     def cname(self):
         return "MACD"
 
-    def calculate(self, df):
-        return df.groupby('ts_code').close.apply(self.__macd)
+    def calculate(self, stock_data):
+        df_weekly = stock_data.df_weekly
+        return df_weekly.groupby('ts_code').close.apply(self.__macd)
 
     def __macd(self, x):
         macd, dea, dif = ta.MACD(x,

@@ -29,7 +29,7 @@ class Factor(ABC):
         return "未定义"
 
     @abstractmethod
-    def calculate(self, df: DataFrame):
+    def calculate(self, stock_data):
         raise ImportError()
 
     def _rename_finance_column_names(self, df: DataFrame):
@@ -81,10 +81,11 @@ class FinanceFactor(Factor):
     def data_loader_func(self):
         raise NotImplementedError()
 
-    def calculate(self, df_stocks):
+    def calculate(self, stock_data):
+        df_weekly = stock_data.df_weekly
         """
         之所有要传入df_stocks，是因为要用他的日期，对每个日期进行TTM填充
-        :param df_stocks: 股票周频数据
+        :param df_weekly: 股票周频数据
         :return:
         """
         # 由于财务数据，需要TTM，所以要溯源到1年前，所以要多加载前一年的数据
@@ -105,7 +106,7 @@ class FinanceFactor(Factor):
         df_finance = self.ttm(df_finance, self.name)
 
         # 按照股票的周频日期，来生成对应的指标（填充周频对应的财务指标）
-        df_finance = self.fill(df_stocks, df_finance, self.name)
+        df_finance = self.fill(df_weekly, df_finance, self.name)
 
         # 只保留股票、日期和需要的特征列
         df_finance = self._extract_fields(df_finance)

@@ -30,12 +30,13 @@ class Std(CommonFactor):
     def cname(self):
         return [m['cname'] for m in mapping]
 
-    def calculate(self, df_stock):
+    def calculate(self, stock_data):
+        df_weekly = stock_data.df_weekly
         """
         计算波动率，波动率，就是往前回溯period个周期
         """
         results = []
         for m in mapping:
-            df_std = df_stock.pct_chg.rolling(window=m['period']).std()
+            df_std = df_weekly.pct_chg.rolling(window=m['period']).std()
             results.append(df_std)
         return pd.concat(results, axis=1)  # 按照列拼接（axis=1）

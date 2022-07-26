@@ -21,8 +21,9 @@ class PSY(CommonFactor):
     def cname(self):
         return "PSY"
 
-    def calculate(self, df):
-        return self.psy(df.close, period=PERIOD)
+    def calculate(self, stock_data):
+        df_weekly = stock_data.df_weekly
+        return self.psy(df_weekly.close, period=PERIOD)
 
     # psy 20日
     def psy(x, period=PERIOD):

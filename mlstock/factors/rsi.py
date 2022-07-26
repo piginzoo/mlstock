@@ -24,8 +24,9 @@ class RSI(CommonFactor):
     def cname(self):
         return "RSI"
 
-    def calculate(self, df):
-        return self.rsi(df, period=PERIOD)
+    def calculate(self, stock_data):
+        df_weekly = stock_data.df_weekly
+        return self.rsi(df_weekly, period=PERIOD)
 
     # psy 20日
     def rsi(x, period=PERIOD):

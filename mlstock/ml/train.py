@@ -20,6 +20,7 @@ from mlstock.factors.balance_sheet import BalanceSheet
 from mlstock.factors.cashflow import CashFlow
 from mlstock.factors.income import Income
 from mlstock.factors.std import Std
+from mlstock.factors.returns import Return
 from mlstock.utils import utils
 from mlstock.utils.utils import time_elapse
 
@@ -28,7 +29,7 @@ from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
-FACTORS = [Std, MACD, KDJ, PSY, RSI, BalanceSheet, Income, CashFlow]
+FACTORS = [Return, Std, MACD, KDJ, PSY, RSI, BalanceSheet, Income, CashFlow]
 
 
 def main(start_date, end_date, num):
@@ -40,32 +41,44 @@ def main(start_date, end_date, num):
     df_stock_basic = df_stock_basic.iloc[:num]
     stocks_info = StocksInfo(df_stock_basic.ts_code, start_date, end_date)
 
+    # 临时保存一下，用于本地下载数据提供列表（调试用）
+    df_stock_basic.ts_code.to_csv("data/stocks.txt",index=False)
+
     # 加载周频数据
-    df_stocks = data_loader.weekly(datasource, df_stock_basic.ts_code, start_date, end_date)
+    df_weekly = data_loader.weekly(datasource, df_stock_basic.ts_code, start_date, end_date)
     logger.info("加载[%d]只股票 %s~%s 的周频数据 %d 行，耗时%.0f秒",
-                len(df_stocks),
+                len(df_weekly),
                 start_date,
                 end_date,
-                len(df_stocks),
+                len(df_weekly),
                 time.time() - start_time)
 
-    # 把基础信息merge到数据中
+    # 加日周频数据，虽然我们算的周频，但是有些地方需要日频数据
+    df_daily = data_loader.daily(datasource, df_stock_basic.ts_code, start_date, end_date)
+    logger.info("加载[%d]只股票 %s~%s 的日频数据 %d 行，耗时%.0f秒",
+                len(df_daily),
+                start_date,
+                end_date,
+                len(df_daily),
+                time.time() - start_time)
 
-    df_stocks = df_stocks.merge(df_stock_basic, on='ts_code', how='left')
+
+    # 把基础信息merge到周频数据中
+    df_weekly = df_weekly.merge(df_stock_basic, on='ts_code', how='left')
 
     # 某只股票上市12周内的数据扔掉，不需要
-    old_length = len(df_stocks)
-    a = pd.to_datetime(df_stocks.trade_date, format='%Y%m%d')
-    b = pd.to_datetime(df_stocks.list_date, format='%Y%m%d')
-    df_stocks = df_stocks[a - b > pd.Timedelta(12, unit='w')]
-    logger.info("剔除掉上市12周内的数据：%d=>%d", old_length, len(df_stocks))
+    old_length = len(df_weekly)
+    a = pd.to_datetime(df_weekly.trade_date, format='%Y%m%d')
+    b = pd.to_datetime(df_weekly.list_date, format='%Y%m%d')
+    df_weekly = df_weekly[a - b > pd.Timedelta(12, unit='w')]
+    logger.info("剔除掉上市12周内的数据：%d=>%d", old_length, len(df_weekly))
 
     factor_names = []
     # 获取每一个因子（特征），并且，并入到股票数据中
     for factor_class in FACTORS:
         factor = factor_class(datasource, stocks_info)
-        df_factor = factor.calculate(df_stocks)
-        df_stocks = factor.merge(df_stocks, df_factor)
+        df_factor = factor.calculate(df_weekly,df_daily)
+        df_weekly = factor.merge(df_weekly, df_factor)
         factor_names += factor.name if type(factor.name) == list else [factor.name]
         logger.info("获取因子[%r] %d 行数据", factor.name, len(df_factor))
 
@@ -74,12 +87,12 @@ def main(start_date, end_date, num):
     df_hs300 = df_hs300[['trade_date', 'pct_chg']]
     df_hs300 = df_hs300.rename(columns={'pct_chg': 'pct_chg_hs300'})
     logger.info("下载沪深300 %s~%s 数据 %d 条", start_date, end_date, len(df_hs300))
-    df_stocks = df_stocks.merge(df_hs300, on=['trade_date'], how='left')
-    logger.info("合并沪深300 %d=>%d", len(df_stocks), len(df_stocks))
+    df_weekly = df_weekly.merge(df_hs300, on=['trade_date'], how='left')
+    logger.info("合并沪深300 %d=>%d", len(df_weekly), len(df_weekly))
     # 计算出和基准（沪深300）的超额收益率，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
-    df_stocks['rm_rf'] = df_stocks.pct_chg - df_stocks.pct_chg_hs300
+    df_weekly['rm_rf'] = df_weekly.pct_chg - df_weekly.pct_chg_hs300
     # target即预测目标，是下一期的超额收益
-    df_stocks['target'] = df_stocks.groupby('ts_code').rm_rf.shift(-1)
+    df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1)
 
     """
     每一列，都去极值（TODO：是不是按照各股自己的值来做是不是更好？现在是所有的股票）
@@ -99,31 +112,31 @@ def main(start_date, end_date, num):
         return x
 
     # 保留feature
-    df_features = df_stocks[factor_names]
+    df_features = df_weekly[factor_names]
     # 每列都求中位数，和中位数之差的绝对值的中位数
     df_median = df_features.median()
     df_scope = df_features.apply(lambda x: x - df_median[x.name]).abs().median()
     df_features = df_features.apply(scaller)
-    df_stocks[factor_names] = df_features
+    df_weekly[factor_names] = df_features
 
     # 标准化
     scaler = StandardScaler()
-    scaler.fit(df_stocks[factor_names])
-    df_stocks[factor_names] = scaler.transform(df_stocks[factor_names])
+    scaler.fit(df_weekly[factor_names])
+    df_weekly[factor_names] = scaler.transform(df_weekly[factor_names])
 
     # 去除所有的NAN数据
-    df_stocks.dropna(subset=factor_names + ['target'], inplace=True)
-    logger.info("NA统计：train 数据的特征中：%r", df_stocks[factor_names].isna().sum())
+    df_weekly.dropna(subset=factor_names + ['target'], inplace=True)
+    logger.info("NA统计：train 数据的特征中：%r", df_weekly[factor_names].isna().sum())
 
-    df_data = df_stocks[['ts_code', 'trade_date'] + factor_names + ['target']]
+    df_data = df_weekly[['ts_code', 'trade_date'] + factor_names + ['target']]
     csv_file_name = "data/{}_{}_{}.csv".format(start_date, end_date, utils.now())
     df_data.to_csv(csv_file_name, index=False)
     logger.info("保存 %d 行（训练和测试）数据到文件：%s", len(df_data), csv_file_name)
-    start_time = time_elapse(start_time,"加载数据和清洗特征")
+    start_time = time_elapse(start_time, "加载数据和清洗特征")
 
     # 准备训练用数据，需要numpy类型
-    X_train = df_stocks[factor_names].values
-    y_train = df_stocks.target
+    X_train = df_weekly[factor_names].values
+    y_train = df_weekly.target
 
     # 划分训练集和测试集，测试集占总数据的15%，随机种子为10
     X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.15, random_state=10)
@@ -171,5 +184,5 @@ if __name__ == '__main__':
     utils.init_logger(file=False, log_level=logging.INFO)
     start_date = "20180101"
     end_date = "20220101"
-    num = 20
+    num = 100
     main(start_date, end_date, num)

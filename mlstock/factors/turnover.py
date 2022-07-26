@@ -25,16 +25,23 @@ import logging
 
 import numpy as np
 
-from mfm_learner.datasource import datasource_utils
-from mfm_learner.example.factors.factor import Factor
+from mlstock.factors.factor import CommonFactor
 
 logger = logging.getLogger(__name__)
 
 
-class TurnOverFactor(Factor):
+class Turnover(CommonFactor):
+    """
 
-    def __init__(self):
-        super().__init__()
+    华泰金工原始：`动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`
+    我们这里就是N周，
+
+    daily_basic是每日的数据，我们目前是每周的数据，
+    神仔的做法是：
+        df['wgt_return_1m'] = df['close'] * df['pct_chg']
+        df = df.groupby(idx_f).wgt_return_1m.agg('mean')
+    """
+
 
     def name(self):
         return ['turnover_1m',
@@ -51,8 +58,11 @@ class TurnOverFactor(Factor):
                 'turnover_bias_std_3m',
                 'turnover_bias_std_6m']
 
-    def calculate(self, stock_codes, start_date, end_date):
-        df_daily_basic = self.datasource.daily_basic(stock_codes, start_date, end_date)
+    def calculate(self, df_weekly, df_daily):
+        # 获得daily_basic
+        df_daily_basic = self.datasource.daily_basic(self.stocks_info.stocks,
+                                                     self.stocks_info.start_date,
+                                                     self.stocks_info.end_date)
 
         """
         # https://tushare.pro/document/2?doc_id=32
@@ -60,7 +70,6 @@ class TurnOverFactor(Factor):
         0     600230.SH   20180726           4.5734  1.115326e+06
         1     600237.SH   20180726           1.7703  2.336490e+05
         """
-        print(df_daily_basic)
         df_daily_basic = df_daily_basic[['datetime', 'code', 'turnover_rate_f', 'circ_mv']]
         df_daily_basic.columns = ['datetime', 'code', 'turnover_rate', 'circ_mv']
 
