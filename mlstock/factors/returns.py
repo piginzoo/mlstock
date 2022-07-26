@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from mlstock.factors.factor import CommonFactor
+from mlstock.factors.factor import SimpleFactor
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 N = [1, 3, 6, 12]
 
 
-class Return(CommonFactor):
+class Return(SimpleFactor):
 
     @property
     def name(self):
@@ -36,6 +36,7 @@ class Return(CommonFactor):
         """
         results = []
         for period in N:
-            df_return = df_weekly.pct_chg.apply(lambda x: self._calculte_return_N(x, period))
+            df_return = df_weekly.groupby('ts_code').pct_chg.apply(lambda x: self._calculte_return_N(x, period))
             results.append(df_return)
-        return pd.concat(results, axis=1)  # 按照列拼接（axis=1）
+        df = pd.concat(results, axis=1)  # 按照列拼接（axis=1）
+        return df

@@ -1,6 +1,6 @@
 import logging
 
-from mlstock.factors.factor import CommonFactor
+from mlstock.factors.factor import SimpleFactor
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -13,14 +13,14 @@ https://zhuanlan.zhihu.com/p/30158144
 """
 
 mapping = [
-    {'name': 'std_1', 'cname': '1周波动率', 'period': 1},
-    {'name': 'std_3', 'cname': '3周波动率', 'period': 3},
-    {'name': 'std_6', 'cname': '6周波动率', 'period': 6},
-    {'name': 'std_12', 'cname': '12周波动率', 'period': 12}
+    {'name': 'std_1w', 'cname': '1周波动率', 'period': 1},
+    {'name': 'std_3w', 'cname': '3周波动率', 'period': 3},
+    {'name': 'std_6w', 'cname': '6周波动率', 'period': 6},
+    {'name': 'std_12w', 'cname': '12周波动率', 'period': 12}
 ]
 
 
-class Std(CommonFactor):
+class Std(SimpleFactor):
 
     @property
     def name(self):
@@ -39,4 +39,5 @@ class Std(CommonFactor):
         for m in mapping:
             df_std = df_weekly.pct_chg.rolling(window=m['period']).std()
             results.append(df_std)
-        return pd.concat(results, axis=1)  # 按照列拼接（axis=1）
+        df = pd.concat(results, axis=1)  # 按照列拼接（axis=1）
+        return df

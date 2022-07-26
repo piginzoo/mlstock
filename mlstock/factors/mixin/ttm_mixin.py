@@ -68,7 +68,7 @@ class TTMMixin:
     季报由上市公司在会计年度前三个月、九个月结束后的三十日内编制完成，即第一季报在四月份，第三季报在十月份
     """
 
-    @logging_time
+    @logging_time("TTM计算")
     def ttm(self, df, finance_column_names, publish_date_column_name='ann_date', finance_date_column_name='end_date'):
         """
         :param df: 包含了 ts_code, ann_date，<各种需要TTM处理的财务指标列> 的 dataframe
@@ -87,7 +87,7 @@ class TTMMixin:
         # df.dropna(inplace=True)
         if len(df) < row_num:
             if len(df) < row_num:
-                logger.warning("删除包含NAN的行数：%d", row_num - len(df))
+                logger.warning("删除包含NAN的行数：%d 行", row_num - len(df))
 
         # 对时间，升序排列
         df.sort_values(publish_date_column_name, inplace=True)

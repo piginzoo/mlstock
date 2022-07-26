@@ -1,6 +1,6 @@
 import talib
-
-from mlstock.factors.factor import CommonFactor
+import pandas as pd
+from mlstock.factors.factor import SimpleFactor
 
 fastk_period = 9
 slowk_period = 3
@@ -9,7 +9,7 @@ slowd_period = 3
 slowd_matype = 0
 
 
-class KDJ(CommonFactor):
+class KDJ(SimpleFactor):
     # 英文名
     @property
     def name(self):
@@ -33,5 +33,5 @@ class KDJ(CommonFactor):
             slowd_matype=slowd_matype)
 
         # 求出J值，J = (3*K)-(2*D)
-        J = list(map(lambda x, y: 3 * x - 2 * y, K, D))
+        J = pd.Series(list(map(lambda x, y: 3 * x - 2 * y, K, D)))
         return J

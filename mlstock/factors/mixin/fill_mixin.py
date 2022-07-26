@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class FillMixin:
 
-    @logging_time
+    @logging_time("间隔填充")
     def fill(self, df_stocks, df_finance, finance_column_names):
         """
         将离散的单个的财务TTM信息，反向填充到周频的交易数据里去，

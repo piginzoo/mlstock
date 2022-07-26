@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from mlstock.factors.factor import CommonFactor
+from mlstock.factors.factor import SimpleFactor
 
 PERIOD = 12
 
 
-class PSY(CommonFactor):
+class PSY(SimpleFactor):
     """
     PSY: 心理线指标、大众指标，研究投资者心理波动的情绪指标。
     PSY = N天内上涨天数 / N * 100，N一般取12，最大不超高24，周线最长不超过26
@@ -14,10 +14,12 @@ class PSY(CommonFactor):
     """
 
     # 英文名
+    @property
     def name(self):
         return "PSY"
 
     # 中文名
+    @property
     def cname(self):
         return "PSY"
 
@@ -26,7 +28,7 @@ class PSY(CommonFactor):
         return self.psy(df_weekly.close, period=PERIOD)
 
     # psy 20日
-    def psy(x, period=PERIOD):
+    def psy(self, x, period):
         difference = x[1:].values - x[:-1].values
         difference_dir = np.where(difference > 0, 1, 0)
         p = np.zeros((len(x),))

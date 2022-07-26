@@ -1,6 +1,6 @@
 import talib as ta
 
-from .factor import CommonFactor
+from .factor import SimpleFactor
 
 # macd 30日
 # dea 10日
@@ -10,7 +10,7 @@ slowperiod = 30
 signalperiod = 9
 
 
-class MACD(CommonFactor):
+class MACD(SimpleFactor):
 
     # 英文名
     @property

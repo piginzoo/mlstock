@@ -1,16 +1,13 @@
 import logging
 
-import numpy as np
-
-from mlstock.factors.factor import CommonFactor
-from mlstock.factors.turnover import Turnover
+from mlstock.factors.factor import ComplexMergeFactor
 
 logger = logging.getLogger(__name__)
 
 N = [1, 3, 6, 12]
 
 
-class TurnoverReturn(Turnover):
+class TurnoverReturn(ComplexMergeFactor):
     """
 
     华泰金工原始：`动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`
@@ -27,7 +24,7 @@ class TurnoverReturn(Turnover):
 
     @property
     def name(self):
-        return [f'turnover_return_{i}' for i in N]
+        return [f'turnover_return_{i}w' for i in N]
 
     @property
     def cname(self):
@@ -51,7 +48,7 @@ class TurnoverReturn(Turnover):
 
         for i in N:
             # x5，按照每周交易日5天计算的
-            df[f'turnover_return_{i}'] = df.groupby('ts_code').wgt_return_1m.rolling(N * 5).mean().values
+            df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
 
         return df[['trade_date', 'ts_code'] + self.name]
 

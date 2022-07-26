@@ -25,12 +25,12 @@ import logging
 
 import numpy as np
 
-from mlstock.factors.factor import CommonFactor
+from mlstock.factors.factor import SimpleFactor
 
 logger = logging.getLogger(__name__)
 
 
-class Turnover(CommonFactor):
+class Turnover(SimpleFactor):
     """
 
     华泰金工原始：`动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`

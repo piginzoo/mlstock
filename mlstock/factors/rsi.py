@@ -1,11 +1,11 @@
 import talib
 
-from mlstock.factors.factor import CommonFactor
+from mlstock.factors.factor import SimpleFactor
 
 PERIOD = 20
 
 
-class RSI(CommonFactor):
+class RSI(SimpleFactor):
     """
     相对强弱指标RSI是用以计测市场供需关系和买卖力道的方法及指标。
     计算公式：
@@ -17,17 +17,19 @@ class RSI(CommonFactor):
     """
 
     # 英文名
+    @property
     def name(self):
         return "RSI"
 
     # 中文名
+    @property
     def cname(self):
         return "RSI"
 
     def calculate(self, stock_data):
         df_weekly = stock_data.df_weekly
-        return self.rsi(df_weekly, period=PERIOD)
+        return self.rsi(df_weekly.close, period=PERIOD)
 
     # psy 20日
-    def rsi(x, period=PERIOD):
+    def rsi(self, x, period=PERIOD):
         return talib.RSI(x, timeperiod=period)

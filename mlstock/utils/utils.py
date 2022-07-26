@@ -202,9 +202,16 @@ def today():
 def now():
     return datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d%H%M%S")
 
+def strf_delta(tdelta, fmt):
+    d = {"days": tdelta.days}
+    d["hours"], rem = divmod(tdelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    return fmt.format(**d)
 
 def time_elapse(start_time, title=''):
-    logger.info("%s共耗时(H:M:S): %s ", title, str(datetime.timedelta(seconds=time.time() - start_time)))
+    logger.info("%s耗时: %s ", title,
+                strf_delta(datetime.timedelta(seconds=time.time() - start_time),
+                           "{days}天{hours}小时{minutes}分{seconds}秒"))
     return time.time()
 
 
@@ -410,15 +417,18 @@ def http_json_post(url, dict_msg):
     return data
 
 
-def logging_time(func):
+def logging_time(title=''):
     """
     一个包装器，用于记录函数耗时
     """
 
-    def wrapper_it(*args, **kw):
-        start_time = time.time()
-        result = func(*args, **kw)
-        logger.debug("函数 [%s] 耗时: %.2f 秒", func.__name__, time.time() - start_time)
-        return result
+    def decorate(func):
+        def wrapper_it(*args, **kw):
+            start_time = time.time()
+            result = func(*args, **kw)
+            time_elapse(start_time,title)
+            return result
 
-    return wrapper_it
+        return wrapper_it
+
+    return decorate

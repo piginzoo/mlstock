@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 
+import pandas as pd
 from pandas import DataFrame
 
 from mlstock.data.stock_info import StocksInfo
@@ -32,6 +33,10 @@ class Factor(ABC):
     def calculate(self, stock_data):
         raise ImportError()
 
+    @abstractmethod
+    def merge(self, df_stocks, df_factor):
+        raise ImportError()
+
     def _rename_finance_column_names(self, df: DataFrame):
         """
         - 把ann_date，改名成trade_date
@@ -53,14 +58,31 @@ class Factor(ABC):
         return df.rename(columns=name_pair)
 
 
-class CommonFactor(Factor):
+class SimpleFactor(Factor):
 
     def merge(self, df_stocks, df_factor):
-        df_stocks[self.name] = df_factor
-        return df_stocks
+        """
+        这个merge只是简单的把列合到一起，这里假设，df_factor包含了同df_stocks同样行数的数据，
+        且，包含的列都是纯粹的特征列（不包含ts_code,trade_date等附加列）
+        :param df_stocks:
+        :param df_factor:
+        :return:
+        """
+        assert len(df_factor) == len(df_factor)
+        # index不一样没法对着行做列赋值，尽管行数一样，所以先都重置int的索引
+        df_stocks = df_stocks.reset_index(drop=True)
+        df_factor = df_factor.reset_index(drop=True)
+
+        if type(df_factor)==pd.Series:
+            df_factor.name = self.name
+        if type(df_factor)==pd.DataFrame:
+            df_factor.columns = self.name
+
+        return pd.concat([df_stocks, df_factor], axis=1)
 
 
-class FinanceFactor(Factor):
+class ComplexMergeFactor(Factor):
+    """合并数据和因子靠的是ts_code和trade_date做left join"""
 
     def merge(self, df_stocks, df_factor):
         # rename财务数据的公布日期ann_date=>trade_date
@@ -68,6 +90,9 @@ class FinanceFactor(Factor):
         # 做数据合并
         df_stocks = df_stocks.merge(df_factor, on=['ts_code', 'trade_date'], how='left')
         return df_stocks
+
+
+class FinanceFactor(ComplexMergeFactor):
 
     def _numberic(self, df_finance):
         """
