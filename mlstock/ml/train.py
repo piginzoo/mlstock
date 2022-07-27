@@ -102,7 +102,6 @@ def main(start_date, end_date, num):
         return x
 
     # 保留feature
-    import pdb;pdb.set_trace()
     df_features = df_weekly[factor_names]
     # 每列都求中位数，和中位数之差的绝对值的中位数
     df_median = df_features.median()
@@ -114,10 +113,14 @@ def main(start_date, end_date, num):
     scaler = StandardScaler()
     scaler.fit(df_weekly[factor_names])
     df_weekly[factor_names] = scaler.transform(df_weekly[factor_names])
+    logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行",len(factor_names),len(df_weekly))
 
     # 去除所有的NAN数据
+    logger.info("NA统计：数据特征中的NAN数：\n%r", df_weekly[factor_names].isna().sum())
+    df_weekly = filter_invalid_data(df_weekly,factor_names)
+    exit()
     df_weekly.dropna(subset=factor_names + ['target'], inplace=True)
-    logger.info("NA统计：train 数据的特征中：%r", df_weekly[factor_names].isna().sum())
+    logger.info("去除NAN后，数据剩余行数：%d 行",len(df_weekly))
 
     df_data = df_weekly[['ts_code', 'trade_date'] + factor_names + ['target']]
     csv_file_name = "data/{}_{}_{}.csv".format(start_date, end_date, utils.now())
@@ -126,6 +129,7 @@ def main(start_date, end_date, num):
     start_time = time_elapse(start_time, "加载数据和清洗特征")
 
     # 准备训练用数据，需要numpy类型
+    assert len(df_weekly)>0
     X_train = df_weekly[factor_names].values
     y_train = df_weekly.target
 
@@ -168,6 +172,17 @@ def main(start_date, end_date, num):
     logger.info("GridSarch最好的成绩:%.5f", grid_search.best_score_)
     # 得到的结果是495，确实和上面人肉跑是一样的结果
     logger.info("GridSarch最好的参数:%.5f", grid_search.best_estimator_.alpha)
+
+def filter_invalid_data(df,factor_names):
+    for factor_name in factor_names:
+        original_size = len(df)
+        # 去掉那些这个特征全是nan的股票
+        valid_ts_codes = df.groupby('ts_code')[factor_name].count()[lambda x: x > 0].index
+        df = df[df['ts_code'].isin(valid_ts_codes)]
+        if len(df)!=original_size:
+            logger.info("去除特征[%s]全部为Nan的股票数据后，行数变化：%d => %d",
+                    factor_name,original_size,len(df))
+    return df
 
 
 # python -m mlstock.ml.train

@@ -12,7 +12,7 @@ class TurnoverReturn(ComplexMergeFactor):
 
     华泰金工原始：`动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`
     我们这里就是N周，
-    注意，这里是"每日"，所以我们需要加载每日，
+    注意，这里是"每日"，所以我们需要加载每日，<--------- 每日
 
     daily_basic是每日的数据，我们目前是每周的数据，
     神仔的做法是：
@@ -50,6 +50,7 @@ class TurnoverReturn(ComplexMergeFactor):
             # x5，按照每周交易日5天计算的
             df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
 
+        # 返回ts_code和trade_date是为了和周频数据做join
         return df[['trade_date', 'ts_code'] + self.name]
 
     """

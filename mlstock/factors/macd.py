@@ -8,7 +8,11 @@ from .factor import SimpleFactor
 fastperiod = 10
 slowperiod = 30
 signalperiod = 9
-
+"""
+fastperiod: 12
+slowperiod: 26
+signalperiod: 9
+"""
 
 class MACD(SimpleFactor):
 
