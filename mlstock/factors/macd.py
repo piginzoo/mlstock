@@ -2,19 +2,15 @@ import talib as ta
 
 from .factor import SimpleFactor
 
-# macd 30日
-# dea 10日
-# dif
-fastperiod = 10
-slowperiod = 30
+fastperiod = 12
+slowperiod = 26
 signalperiod = 9
-"""
-fastperiod: 12
-slowperiod: 26
-signalperiod: 9
-"""
 
 class MACD(SimpleFactor):
+    """
+    1、线1：先得到一个DIF ： EMA12 - EMA26
+    2、线2：在得到一个DEA：DIF的9日加权移动平均
+    """
 
     # 英文名
     @property

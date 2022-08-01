@@ -3,8 +3,9 @@ import time
 
 import pandas as pd
 
-
+from mlstock import const
 from mlstock.data.stock_data import StockData
+from mlstock.utils import utils
 from mlstock.utils.utils import logging_time
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,10 @@ logger = logging.getLogger(__name__)
 @logging_time('加载日频、周频、基础数据')
 def load(datasource, stock_codes, start_date, end_date):
     start_time = time.time()
+
+    # 多加载之前的数据，这样做是为了尽量不让技术指标，如MACD之类的出现NAN
+    start_date = utils.last_week(start_date, const.RESERVED_PERIODS)
+
     # 加载周频数据
     df_weekly = __load(stock_codes, start_date, end_date, func=datasource.weekly)
     logger.info("加载[%d]只股票 %s~%s 的周频数据 %d 行，耗时%.0f秒",

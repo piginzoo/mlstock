@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split, cross_val_score, GridSearc
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
 from mlstock.data.stock_info import StocksInfo
+from mlstock.factors.daily_indicator import DailyIndicator
 from mlstock.factors.kdj import KDJ
 from mlstock.factors.macd import MACD
 from mlstock.factors.psy import PSY
@@ -30,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
-FACTORS = [Return, TurnoverReturn, Std, MACD, KDJ, PSY, RSI, BalanceSheet, Income, CashFlow]
+FACTORS = [Return, TurnoverReturn, Std, MACD, KDJ, PSY, RSI, BalanceSheet, Income, CashFlow, DailyIndicator]
 
 
 def main(start_date, end_date, num):
@@ -68,6 +69,11 @@ def main(start_date, end_date, num):
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
 
     logger.info("因子获取完成，合计%d个因子%r，%d 行数据", len(factor_names), factor_names, len(df_weekly))
+
+    # 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
+    original_length = len(df_weekly)
+    df_weekly = df_weekly[df_weekly.trade_date >= start_date]
+    logger.debug("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_weekly))
 
     # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
     df_hs300 = datasource.index_weekly("000300.SH", start_date, end_date)
@@ -113,14 +119,14 @@ def main(start_date, end_date, num):
     scaler = StandardScaler()
     scaler.fit(df_weekly[factor_names])
     df_weekly[factor_names] = scaler.transform(df_weekly[factor_names])
-    logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行",len(factor_names),len(df_weekly))
+    logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行", len(factor_names), len(df_weekly))
 
     # 去除所有的NAN数据
     logger.info("NA统计：数据特征中的NAN数：\n%r", df_weekly[factor_names].isna().sum())
-    df_weekly = filter_invalid_data(df_weekly,factor_names)
-    exit()
+    df_weekly = filter_invalid_data(df_weekly, factor_names)
+
     df_weekly.dropna(subset=factor_names + ['target'], inplace=True)
-    logger.info("去除NAN后，数据剩余行数：%d 行",len(df_weekly))
+    logger.info("去除NAN后，数据剩余行数：%d 行", len(df_weekly))
 
     df_data = df_weekly[['ts_code', 'trade_date'] + factor_names + ['target']]
     csv_file_name = "data/{}_{}_{}.csv".format(start_date, end_date, utils.now())
@@ -129,7 +135,7 @@ def main(start_date, end_date, num):
     start_time = time_elapse(start_time, "加载数据和清洗特征")
 
     # 准备训练用数据，需要numpy类型
-    assert len(df_weekly)>0
+    assert len(df_weekly) > 0
     X_train = df_weekly[factor_names].values
     y_train = df_weekly.target
 
@@ -173,15 +179,16 @@ def main(start_date, end_date, num):
     # 得到的结果是495，确实和上面人肉跑是一样的结果
     logger.info("GridSarch最好的参数:%.5f", grid_search.best_estimator_.alpha)
 
-def filter_invalid_data(df,factor_names):
+
+def filter_invalid_data(df, factor_names):
     for factor_name in factor_names:
         original_size = len(df)
         # 去掉那些这个特征全是nan的股票
         valid_ts_codes = df.groupby('ts_code')[factor_name].count()[lambda x: x > 0].index
         df = df[df['ts_code'].isin(valid_ts_codes)]
-        if len(df)!=original_size:
+        if len(df) != original_size:
             logger.info("去除特征[%s]全部为Nan的股票数据后，行数变化：%d => %d",
-                    factor_name,original_size,len(df))
+                        factor_name, original_size, len(df))
     return df
 
 
