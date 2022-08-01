@@ -41,6 +41,16 @@ class Income(FinanceFactor, FillMixin, TTMMixin):
                 'non_oper_exp',
                 'total_profit',
                 'n_income']
+    """
+    tushare , is ttm, tushare title, huatai 
+    net_after_nr_lp_correct ttm  扣除非经常性损益后的净利润（更正前） | 估值/EPcut/扣除非经常性损益后净利润（TTM）/总市值
+    
+    """
+
+    def calculate(self, stock_data):
+        pass
+
+
 
     # 中文名
     @property
