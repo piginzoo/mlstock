@@ -44,13 +44,23 @@ def load(datasource, stock_codes, start_date, end_date):
                 len(stock_codes),
                 start_date,
                 end_date,
-                len(df_daily),
+                len(df_daily_basic),
+                time.time() - start_time)
+
+    start_time = time.time()
+    # 加上证指数的周频数据
+    df_index_weekly = __load(['000001.SH'], start_date, end_date, func=datasource.index_weekly)
+    logger.info("加载上证指数 %s~%s 的周频数据 %d 行，耗时%.0f秒",
+                start_date,
+                end_date,
+                len(df_index_weekly),
                 time.time() - start_time)
 
     stock_data = StockData()
     stock_data.df_daily = df_daily
     stock_data.df_weekly = df_weekly
     stock_data.df_daily_basic = df_daily_basic
+    stock_data.df_index_weekly = df_index_weekly
     return stock_data
 
 

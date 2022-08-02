@@ -14,7 +14,7 @@ from backtrader.plot import Plot_OldSync
 from backtrader_plotting.schemes import Tradimo
 from dateutil.relativedelta import relativedelta
 from pandas import Series
-
+import statsmodels.api as sm
 from mlstock import const
 
 logger = logging.getLogger(__name__)
@@ -202,11 +202,13 @@ def today():
 def now():
     return datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d%H%M%S")
 
+
 def strf_delta(tdelta, fmt):
     d = {"days": tdelta.days}
     d["hours"], rem = divmod(tdelta.seconds, 3600)
     d["minutes"], d["seconds"] = divmod(rem, 60)
     return fmt.format(**d)
+
 
 def time_elapse(start_time, title=''):
     logger.info("%s耗时: %s ", title,
@@ -426,9 +428,25 @@ def logging_time(title=''):
         def wrapper_it(*args, **kw):
             start_time = time.time()
             result = func(*args, **kw)
-            time_elapse(start_time,title)
+            time_elapse(start_time, title)
             return result
 
         return wrapper_it
 
     return decorate
+
+
+def OLS(X, y):
+    """
+    做线性回归，返回 β0（截距）、β0（系数）和残差
+    参考：https://blog.csdn.net/chongminglun/article/details/104242342
+    :param X: shape(N,M)，M位X的维度，一般M=1
+    :param y: shape(N)
+    :return:
+    """
+    # 增加一个截距项
+    X = sm.add_constant(X)
+    # 定义模型
+    model = sm.OLS(y, X)  # 定义x，y
+    results = model.fit()
+    return results.params, results.resid
