@@ -120,17 +120,21 @@ class IVFF(SimpleFactor):
 if __name__ == '__main__':
     utils.init_logger(file=False)
 
-    start_date = '20150703'
+    start_date = '20170703'
     end_date = '20190826'
     stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
+    from mlstock.data import data_filter
+    df_stock_basic = data_filter.filter_stocks()
+    df_stock_basic = df_stock_basic.iloc[:100]
 
-    from mlstock.data import data_loader
+
+    from mlstock.data import data_loader, data_filter
     from mlstock.data.datasource import DataSource
     from mlstock.data.stock_info import StocksInfo
 
     datasource = DataSource()
-    stocks_info = StocksInfo(stocks, start_date, end_date)
-    df_stocks = data_loader.load(datasource, stocks, start_date, end_date)
+    stocks_info = StocksInfo(df_stock_basic.ts_code, start_date, end_date)
+    df_stocks = data_loader.load(datasource, df_stock_basic.ts_code, start_date, end_date)
 
     factor_alpha_beta = IVFF(datasource, stocks_info)
     df = factor_alpha_beta.calculate(df_stocks)

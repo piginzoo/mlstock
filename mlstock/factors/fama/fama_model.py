@@ -60,21 +60,27 @@ def calculate_smb_hml(df):
     # 以SL为例子：Small+Low
     #    小市值+低账面市值比，的一组，比如100只股票，把他们的当期收益"**按照市值加权**"后，汇总到一起
     #    每期，得到的SL是一个数，
-    # 除100是因为pct_chg是按照百分比计算的，比如pct_chg=3.5，即3.5%，即0.035
     # 组内按市值赋权平均收益率 = sum(个股收益率 * 个股市值/组内总市值)
     """
-    R_SL = ((df_SL['pct_chg'] / 100) * (df_SL['circ_mv'] / df_SL['circ_mv'].sum())).sum()  # 这种写法和下面的5种结果一样
-    R_SM = (df_SM['pct_chg'] * df_SM['circ_mv'] / 100).sum() / df_SM['circ_mv'].sum()  # 我只是测试一下是否一致，
-    R_SH = (df_SH['pct_chg'] * df_SH['circ_mv'] / 100).sum() / df_SH['circ_mv'].sum()  # 大约在千分之几，也对，我做的是每日的收益率
-    R_BL = (df_BL['pct_chg'] * df_BL['circ_mv'] / 100).sum() / df_BL['circ_mv'].sum()
-    R_BM = (df_BM['pct_chg'] * df_BM['circ_mv'] / 100).sum() / df_BM['circ_mv'].sum()
-    R_BH = (df_BH['pct_chg'] * df_BH['circ_mv'] / 100).sum() / df_BH['circ_mv'].sum()
+    R_SL = ((df_SL['pct_chg']) * (df_SL['circ_mv'] / df_SL['circ_mv'].sum())).sum()  # 这种写法和下面的5种结果一样
+    R_SM = (df_SM['pct_chg'] * df_SM['circ_mv']).sum() / df_SM['circ_mv'].sum()  # 我只是测试一下是否一致，
+    R_SH = (df_SH['pct_chg'] * df_SH['circ_mv']).sum() / df_SH['circ_mv'].sum()  # 大约在千分之几，也对，我做的是每日的收益率
+    R_BL = (df_BL['pct_chg'] * df_BL['circ_mv']).sum() / df_BL['circ_mv'].sum()
+    R_BM = (df_BM['pct_chg'] * df_BM['circ_mv']).sum() / df_BM['circ_mv'].sum()
+    R_BH = (df_BH['pct_chg'] * df_BH['circ_mv']).sum() / df_BH['circ_mv'].sum()
 
     # 计算SMB, HML并返回
     # 这个没啥好说的，即使按照Fama造的公式，得到了smb，smb是啥？是当期的一个数
     smb = (R_SL + R_SM + R_SH - R_BL - R_BM - R_BH) / 3
     hml = (R_SH + R_BH - R_SL - R_BL) / 2
-    return smb, hml  # R_SL, R_SM, R_SH, R_BL, R_BM, R_BH
+
+    # 返回Series，是为了groupby.apply()可以返回多列，用数组不可以（如下）
+    # R_SL , R_SM , R_SH , R_BL , R_BM , R_BH
+    import numpy as np
+    if np.isnan(smb):
+        import pdb;pdb.set_trace()
+    return pd.Series({'SMB': smb, 'HML': hml})
+    # return smb, hml  # R_SL, R_SM, R_SH, R_BL, R_BM, R_BH
 
 
 def calculate_factors(df_stocks, df_market, df_basic):
@@ -90,15 +96,19 @@ def calculate_factors(df_stocks, df_market, df_basic):
     logger.debug("FF3计算：%d个股票", len(df_stocks))
 
     # 获取该日期所有股票的基本面指标，里面有市值信息
-    df_stocks = df_stocks.merge(df_basic['ts_code', 'trade_date', 'circ_mv', 'pb'],  # circ_mv:市值，pb：账面市值比
+    df_stocks = df_stocks.merge(df_basic[['ts_code', 'trade_date', 'circ_mv', 'pb']],  # circ_mv:市值，pb：账面市值比
                                 on=['ts_code', 'trade_date'], how='left')
 
     df_market = df_market[['ts_code', 'trade_date', 'pct_chg']]
-    df_market = df_market.rename(columns={'pct_chg', 'R_M'})
-    df_stocks = df_stocks.merge(df_market['ts_code', 'trade_date', 'pct_chg'],
+    df_market = df_market.rename(columns={'pct_chg':'R_M'})
+    df_stocks = df_stocks.merge(df_market[['ts_code', 'trade_date', 'R_M']],
                                 on=['ts_code', 'trade_date'], how='left')
 
-    df_stocks[['SMB', 'HML']] = df_stocks.groupby(['ts_code', 'trade_date']).apply(calculate_smb_hml).reset_index()
+    import pdb;pdb.set_trace()
+    df = df_stocks.groupby('trade_date').apply(calculate_smb_hml)
+
+
+    df_stocks[['SMB', 'HML']]
 
     return df_stocks[['ts_code', 'trade_date', 'R_M', 'SMB', 'HML','pct_chg']]
 
