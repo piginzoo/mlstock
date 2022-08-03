@@ -27,8 +27,8 @@ def load(datasource, stock_codes, start_date, end_date):
                 len(df_weekly),
                 time.time() - start_time)
 
-    start_time = time.time()
     # 加日周频数据，虽然我们算的周频，但是有些地方需要日频数据
+    start_time = time.time()
     df_daily = __load(stock_codes, start_date, end_date, func=datasource.daily)
     logger.info("加载[%d]只股票 %s~%s 的日频数据 %d 行，耗时%.0f秒",
                 len(stock_codes),
@@ -37,8 +37,8 @@ def load(datasource, stock_codes, start_date, end_date):
                 len(df_daily),
                 time.time() - start_time)
 
-    start_time = time.time()
     # 加日周频数据，虽然我们算的周频，但是有些地方需要日频数据
+    start_time = time.time()
     df_daily_basic = __load(stock_codes, start_date, end_date, func=datasource.daily_basic)
     logger.info("加载[%d]只股票 %s~%s 的日频基础(basic)数据 %d 行，耗时%.0f秒",
                 len(stock_codes),
@@ -47,8 +47,17 @@ def load(datasource, stock_codes, start_date, end_date):
                 len(df_daily_basic),
                 time.time() - start_time)
 
+    # 加上证指数的日频数据
     start_time = time.time()
+    df_index_daily = __load(['000001.SH'], start_date, end_date, func=datasource.index_daily)
+    logger.info("加载上证指数 %s~%s 的日频数据 %d 行，耗时%.0f秒",
+                start_date,
+                end_date,
+                len(df_index_daily),
+                time.time() - start_time)
+
     # 加上证指数的周频数据
+    start_time = time.time()
     df_index_weekly = __load(['000001.SH'], start_date, end_date, func=datasource.index_weekly)
     logger.info("加载上证指数 %s~%s 的周频数据 %d 行，耗时%.0f秒",
                 start_date,
@@ -61,6 +70,8 @@ def load(datasource, stock_codes, start_date, end_date):
     stock_data.df_weekly = df_weekly
     stock_data.df_daily_basic = df_daily_basic
     stock_data.df_index_weekly = df_index_weekly
+    stock_data.df_index_daily = df_index_daily
+
     return stock_data
 
 

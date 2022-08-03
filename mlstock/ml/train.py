@@ -1,7 +1,5 @@
 import logging
 import time
-import warnings
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,26 +10,14 @@ from sklearn.model_selection import train_test_split, cross_val_score, GridSearc
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
 from mlstock.data.stock_info import StocksInfo
-from mlstock.factors.daily_indicator import DailyIndicator
-from mlstock.factors.kdj import KDJ
-from mlstock.factors.macd import MACD
-from mlstock.factors.psy import PSY
-from mlstock.factors.rsi import RSI
-from mlstock.factors.balance_sheet import BalanceSheet
-from mlstock.factors.cashflow import CashFlow
-from mlstock.factors.income import Income
-from mlstock.factors.std import Std
-from mlstock.factors.returns import Return
-from mlstock.factors.turnover_return import TurnoverReturn
+from mlstock.ml.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.utils import time_elapse
 
-warnings.filterwarnings("ignore")
+
 from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
-
-FACTORS = [Return, TurnoverReturn, Std, MACD, KDJ, PSY, RSI, BalanceSheet, Income, CashFlow, DailyIndicator]
 
 
 def main(start_date, end_date, num):

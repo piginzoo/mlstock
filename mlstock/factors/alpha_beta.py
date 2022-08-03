@@ -24,12 +24,12 @@ R_it - r_f = alpha_it + beta_it * (R_mt - r_f) + e_it
 实现的时候，用了2个apply，每周五，都向前回溯60周，然后用这60周的数据回归alpha和beta
 
 """
-from mlstock.factors.factor import SimpleFactor
+from mlstock.factors.factor import SimpleFactor, ComplexMergeFactor
 from mlstock.utils import utils
 import numpy as np
 
 
-class AlphaBeta(SimpleFactor):
+class AlphaBeta(ComplexMergeFactor):
     # 英文名
     @property
     def name(self):

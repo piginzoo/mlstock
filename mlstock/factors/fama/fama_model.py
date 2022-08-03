@@ -74,11 +74,13 @@ def calculate_smb_hml(df):
     smb = (R_SL + R_SM + R_SH - R_BL - R_BM - R_BH) / 3
     hml = (R_SH + R_BH - R_SL - R_BL) / 2
 
-    # 返回Series，是为了groupby.apply()可以返回多列，用数组不可以（如下）
+    # 调试用
     # R_SL , R_SM , R_SH , R_BL , R_BM , R_BH
-    import numpy as np
-    if np.isnan(smb):
-        import pdb;pdb.set_trace()
+    # import numpy as np
+    # if np.isnan(smb):
+    #     import pdb;pdb.set_trace()
+
+    # 返回Series，是为了groupby.apply()可以返回多列，用数组不可以（如下）
     return pd.Series({'SMB': smb, 'HML': hml})
     # return smb, hml  # R_SL, R_SM, R_SH, R_BL, R_BM, R_BH
 
@@ -93,24 +95,31 @@ def calculate_factors(df_stocks, df_market, df_basic):
     """
 
     # 获得股票池
-    logger.debug("FF3计算：%d个股票", len(df_stocks))
+    logger.debug("FF3计算：%d行 股票数据", len(df_stocks))
 
     # 获取该日期所有股票的基本面指标，里面有市值信息
     df_stocks = df_stocks.merge(df_basic[['ts_code', 'trade_date', 'circ_mv', 'pb']],  # circ_mv:市值，pb：账面市值比
                                 on=['ts_code', 'trade_date'], how='left')
 
-    df_market = df_market[['ts_code', 'trade_date', 'pct_chg']]
-    df_market = df_market.rename(columns={'pct_chg':'R_M'})
-    df_stocks = df_stocks.merge(df_market[['ts_code', 'trade_date', 'R_M']],
-                                on=['ts_code', 'trade_date'], how='left')
+    """
+    发现一个问题，就是有的股票周数据确实，比如周一有，周二停牌了，一直到下周、下下周，
+    那么这个股票的在当期的数据就会缺失（目前我们用周五的数据作为本周的周频日），所以上述的股票就确实周频数据了，
+    """
+    df_smb_hml = df_stocks.groupby('trade_date').apply(calculate_smb_hml)
+    df_smb_hml = df_smb_hml.reset_index()
 
-    import pdb;pdb.set_trace()
-    df = df_stocks.groupby('trade_date').apply(calculate_smb_hml)
+    # 把市场因子（上证指数）加入进去
+    df_market = df_market[['trade_date', 'pct_chg']]
+    df_market = df_market.rename(columns={'pct_chg': 'R_M'})
+    df_market_smb_hml = df_smb_hml.merge(df_market, on=['trade_date'], how='left')
 
+    # 发现一个问题，有的股票某周只有非周五的某天有数据（停牌啥的了），导致那周的数据，无法和别人对齐，
+    # 就会出现很多单独的某天的截面数据，比如某个日子是周一，就只会它这一只，人家都是周五嘛，周频数据，
+    # 这种情况下，就会导致计算出来的smb、hml出现nan，所以，需要把他们drop掉
+    # drop掉之后，恰好是和每个周频的日子的数量对等的
+    df_market_smb_hml.dropna(inplace=True)
 
-    df_stocks[['SMB', 'HML']]
-
-    return df_stocks[['ts_code', 'trade_date', 'R_M', 'SMB', 'HML','pct_chg']]
+    return df_market_smb_hml
 
 
 # python -m fama.factor
