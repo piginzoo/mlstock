@@ -11,6 +11,7 @@ class TTMMixin:
     """
     处理TTM：以当天为基准，向前滚动12个月的数据，
     用于处理类ROE_TTM数据，当然不限于ROE，只要是同样逻辑的都支持。
+    支持多列同时处理。
 
     @:param finance_date  - 真正的财报定义的日期，如3.30、6.30、9.30、12.31
 
@@ -72,6 +73,9 @@ class TTMMixin:
     def ttm(self, df, finance_column_names, publish_date_column_name='ann_date', finance_date_column_name='end_date'):
         """
         :param df: 包含了 ts_code, ann_date，<各种需要TTM处理的财务指标列> 的 dataframe
+        :param finance_column_names: 需要TTM处理的财务列名
+        :param publish_date_column_name: 财报发布的真实日期的列名（一般比发布的财报日期要晚）
+        :param finance_date_column_name: 财报代表的日期的列名，一般是（0331、0630、0930、1231）
         :return: 财务指标列被替换成了TTM值
         """
         # df.fillna(np.NAN,inplace=True)
@@ -141,8 +145,8 @@ class TTMMixin:
                 # logger.debug('当期[%s]_TTM:%r',end_date,ttm_values.tolist())
             # 否则，就用当期的近似计算
             else:
-                logger.debug("无法获得[%s]去年同期%s[%d条]或者去年年末%s[%d条]信息",
-                             row.name,
+                logger.debug("无法获得股票[%s]去年同期%s[%d条]或者去年年末%s[%d条]信息",
+                             row.ts_code,
                              last_year_same_date,
                              len(df_last_year_same_date),
                              last_year_end_date,

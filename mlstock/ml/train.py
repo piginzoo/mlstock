@@ -56,10 +56,13 @@ def main(start_date, end_date, num):
 
     logger.info("因子获取完成，合计%d个因子%r，%d 行数据", len(factor_names), factor_names, len(df_weekly))
 
+    logger.debug("数据列统计:\n%r", df_finance_indicator.groupby('ts_code').count())
+    logger.debug("NA列统计:\n%r", df_finance_indicator.groupby('ts_code').apply(lambda df: df.isna().sum()))
+
     # 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
     original_length = len(df_weekly)
     df_weekly = df_weekly[df_weekly.trade_date >= start_date]
-    logger.debug("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_weekly))
+    logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_weekly))
 
     # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
     df_hs300 = datasource.index_weekly("000300.SH", start_date, end_date)
