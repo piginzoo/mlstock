@@ -56,8 +56,7 @@ def main(start_date, end_date, num):
 
     logger.info("因子获取完成，合计%d个因子%r，%d 行数据", len(factor_names), factor_names, len(df_weekly))
 
-    logger.debug("数据列统计:\n%r", df_finance_indicator.groupby('ts_code').count())
-    logger.debug("NA列统计:\n%r", df_finance_indicator.groupby('ts_code').apply(lambda df: df.isna().sum()))
+    import pdb;pdb.set_trace()
 
     # 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
     original_length = len(df_weekly)
@@ -74,8 +73,8 @@ def main(start_date, end_date, num):
     logger.info("合并沪深300 %d=>%d", len(df_weekly), len(df_weekly))
 
     # 计算出和基准（沪深300）的超额收益率，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
-
     df_weekly['rm_rf'] = df_weekly.pct_chg - df_weekly.pct_chg_hs300
+
     # target即预测目标，是下一期的超额收益
     df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1)
 

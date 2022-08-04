@@ -9,8 +9,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-PERIOD = 12
-
 
 class FinanceIndicator(FinanceFactor, FillMixin, TTMMixin):
     """

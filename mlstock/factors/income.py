@@ -9,8 +9,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-PERIOD = 12
-
 
 class Income(FinanceFactor, FillMixin, TTMMixin):
     """
@@ -45,4 +43,4 @@ if __name__ == '__main__':
     end_date = '20190826'
     stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
 
-    Income.test(stocks,start_date,end_date)
+    Income.test(stocks, start_date, end_date)
