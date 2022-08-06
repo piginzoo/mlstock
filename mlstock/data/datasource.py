@@ -103,7 +103,6 @@ class DataSource:
             self.db_engine)
         return df
 
-
     # 返回指数包含的股票
     def index_weight(self, index_code, start_date, end_date):
         df = pd.read_sql(
@@ -160,6 +159,14 @@ class DataSource:
 
         stock_codes = db_utils.list_to_sql_format(ts_code)
         df = pd.read_sql(f'select * from stock_basic where ts_code in ({stock_codes})', self.db_engine)
+        return df
+
+    def stock_holder_number(self, ts_code=None):
+        if ts_code is None or ts_code == "":
+            return pd.read_sql(f'select * from stk_holdernumber', self.db_engine)
+
+        stock_codes = db_utils.list_to_sql_format(ts_code)
+        df = pd.read_sql(f'select * from stk_holdernumber where ts_code in ({stock_codes})', self.db_engine)
         return df
 
     def index_classify(self, level='', src='SW2014'):
