@@ -151,13 +151,14 @@ class FinanceFactor(ComplexMergeFactor):
         :param df_weekly: 股票周频数据
         :return:
         """
+
         # 由于财务数据，需要TTM，所以要溯源到1年前，所以要多加载前一年的数据
         start_date_last_year = utils.last_year(self.stocks_info.start_date)
 
         # 加载财务数据（通过self.data_loader_func）
-        df_finance = self.data_loader_func(self.stocks_info.stocks,
-                                           start_date_last_year,
-                                           self.stocks_info.end_date)
+        df_finance = self.data_loader_func(self.stocks_info.stocks, start_date_last_year, self.stocks_info.end_date)
+
+        assert len(df_finance)>0
 
         # 把财务字段类型改成float，之前种种原因导致列是text类型的
         df_finance = self._numberic(df_finance)
@@ -177,7 +178,7 @@ class FinanceFactor(ComplexMergeFactor):
         return df_finance
 
     @classmethod
-    def test(cls,stocks,start_date,end_date):
+    def test(cls, stocks, start_date, end_date):
         """这个方法纯粹是为了测试"""
         from mlstock.data import data_loader
         from mlstock.data.datasource import DataSource
@@ -190,6 +191,6 @@ class FinanceFactor(ComplexMergeFactor):
         logger.debug("财务指标因子：\n%r", df_finance_indicator)
         logger.debug("-" * 80)
         df_finance_indicator = finance_indicator_cls._rename_to_cnames(df_finance_indicator)
-        logger.debug("数据列统计:\n%r",df_finance_indicator.groupby('ts_code').count())
+        logger.debug("数据列统计:\n%r", df_finance_indicator.groupby('ts_code').count())
         logger.debug("-" * 80)
-        logger.debug("NA列统计:\n%r",df_finance_indicator.groupby('ts_code').apply(lambda df: df.isna().sum()))
+        logger.debug("NA列统计:\n%r", df_finance_indicator.groupby('ts_code').apply(lambda df: df.isna().sum()))

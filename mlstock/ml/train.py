@@ -55,8 +55,9 @@ def main(start_date, end_date, num):
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
 
     logger.info("因子获取完成，合计%d个因子%r，%d 行数据", len(factor_names), factor_names, len(df_weekly))
-
-    import pdb;pdb.set_trace()
+    df_features = df_weekly[factor_names]
+    df_nan_stat = df_features.count() / df_features.shape[0]
+    df_nan_stat[df_nan_stat<0.9]
 
     # 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
     original_length = len(df_weekly)
@@ -109,9 +110,14 @@ def main(start_date, end_date, num):
     df_weekly[factor_names] = scaler.transform(df_weekly[factor_names])
     logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行", len(factor_names), len(df_weekly))
 
+
+
+
     # 去除所有的NAN数据
     logger.info("NA统计：数据特征中的NAN数：\n%r", df_weekly[factor_names].isna().sum())
     df_weekly = filter_invalid_data(df_weekly, factor_names)
+
+
 
     df_weekly.dropna(subset=factor_names + ['target'], inplace=True)
     logger.info("去除NAN后，数据剩余行数：%d 行", len(df_weekly))
@@ -121,6 +127,8 @@ def main(start_date, end_date, num):
     df_data.to_csv(csv_file_name, index=False)
     logger.info("保存 %d 行（训练和测试）数据到文件：%s", len(df_data), csv_file_name)
     start_time = time_elapse(start_time, "加载数据和清洗特征")
+
+
 
     # 准备训练用数据，需要numpy类型
     assert len(df_weekly) > 0

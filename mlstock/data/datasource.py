@@ -115,8 +115,7 @@ class DataSource:
     def fina_indicator(self, stock_code, start_date, end_date):
         stock_codes = db_utils.list_to_sql_format(stock_code)
         df = pd.read_sql(
-            f'select * from fina_indicator \
-                where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
+            f'select * from fina_indicator where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
             self.db_engine)
         return df
 
@@ -124,8 +123,7 @@ class DataSource:
     def income(self, stock_code, start_date, end_date):
         stock_codes = db_utils.list_to_sql_format(stock_code)
         df = pd.read_sql(
-            f'select * from income \
-                where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
+            f'select * from income where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
             self.db_engine)
         return df
 
