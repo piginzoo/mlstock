@@ -58,6 +58,8 @@ def load(start_date, end_date, num):
 
     df_weekly = load_index(df_weekly, datasource)
 
+    save_csv("raw",df_weekly)
+
     return df_weekly, factor_names
 
 
@@ -86,7 +88,7 @@ def load_index(df_weekly, datasource):
     return df_weekly
 
 
-def _scaller(x):
+def _scaller(x, df_median, df_scope):
     _max = df_median[x.name] + 5 * df_scope[x.name]
     _min = df_median[x.name] - 5 * df_scope[x.name]
     x = x.apply(lambda v: _min if v < _min else v)
@@ -97,7 +99,7 @@ def _scaller(x):
 def process(df_features, factor_names, start_date):
     """
 
-    :param df_weekly:
+    :param df_features:
     :param factor_names:
     :param start_date: 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
     :return:
@@ -137,11 +139,6 @@ def process(df_features, factor_names, start_date):
                 origin_data_size - len(df_features),
                 (origin_data_size - len(df_features)) * 100 / origin_data_size)
 
-    # 因子中缺失值>10%和20%的因子
-    df_features = df_weekly[factor_names]
-    df_nan_stat = (df_features.shape[0] - df_features.count()) / df_features.shape[0]
-    logger.info("以下特征NAN数量超过10%、20%：\n%r\n%r", df_nan_stat[df_nan_stat > 0.1], df_nan_stat[df_nan_stat > 0.2])
-
     """
     去除极值+标准化
     
@@ -154,22 +151,23 @@ def process(df_features, factor_names, start_date):
     - 将序列𝐷𝑖中所有小于𝐷𝑀 − 5𝐷𝑀1的数重设为𝐷𝑀 − 5𝐷𝑀1
     """
     # 每列都求中位数，和中位数之差的绝对值的中位数
-    df_median = df_features.median()
-    df_scope = df_features.apply(lambda x: x - df_median[x.name]).abs().median()
-    df_features = df_features.apply(_scaller)
-    df_weekly[factor_names] = df_features
+    df_features_only = df_features[factor_names]
+    df_median = df_features_only.median()
+    df_scope = df_features_only.apply(lambda x: x - df_median[x.name]).abs().median()
+    df_features_only = df_features_only.apply(_scaller, df_median, df_scope)
+
     # 标准化
     scaler = StandardScaler()
-    scaler.fit(df_weekly[factor_names])
-    df_weekly[factor_names] = scaler.transform(df_weekly[factor_names])
-    logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行", len(factor_names), len(df_weekly))
+    scaler.fit(df_features_only)
+    df_features[factor_names] = scaler.transform(df_features_only)
+    logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行", len(factor_names), len(df_features))
 
     # 去除所有的NAN数据
-    logger.info("NA统计：数据特征中的NAN数：\n%r", df_weekly[factor_names].isna().sum())
-    df_weekly = filter_invalid_data(df_weekly, factor_names)
+    logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum())
+    df_features = filter_invalid_data(df_features, factor_names)
 
-    df_weekly.dropna(subset=factor_names + ['target'], inplace=True)
-    logger.info("去除NAN后，数据剩余行数：%d 行", len(df_weekly))
+    df_features.dropna(subset=factor_names + ['target'], inplace=True)
+    logger.info("去除NAN后，数据剩余行数：%d 行", len(df_features))
 
     """
     去重
@@ -178,14 +176,17 @@ def process(df_features, factor_names, start_date):
     df_features = df_features[~df_features['ts_code', 'trade_date'].duplicated()].reset_index(drop=True)
     logger.info("去除重复行(ts_code+trade_date)后，数据 %d => %d 行", original_length, len(df_features))
 
-    df_data = df_weekly[['ts_code', 'trade_date'] + factor_names + ['target']]
-    csv_file_name = "data/{}_{}_{}.csv".format(start_date, end_date, utils.now())
-    df_data.to_csv(csv_file_name, index=False)
-    logger.info("保存 %d 行（训练和测试）数据到文件：%s", len(df_data), csv_file_name)
+    save_csv("features", df_features)
 
     logger.info("特征处理之后的数据情况：\n%r", df_features.describe())
 
-    return df_weekly, factor_names
+    return df_features
+
+
+def save_csv(name, df):
+    csv_file_name = "data/{}_{}_{}_{}.csv".format(name, start_date, end_date, utils.now())
+    df.to_csv(csv_file_name, index=False)
+    logger.info("保存 %d 行数据到文件：%s", len(df), csv_file_name)
 
 
 def main(start_date, end_date, num):
@@ -258,6 +259,6 @@ def filter_invalid_data(df, factor_names):
 if __name__ == '__main__':
     utils.init_logger(file=False, log_level=logging.INFO)
     start_date = "20180101"
-    end_date = "20220101"
-    num = 20
+    end_date = "20200101"
+    num = 10
     main(start_date, end_date, num)

@@ -23,7 +23,8 @@ class StakeHolder(ComplexMergeFactor, FillMixin):
                                                               self.stocks_info.start_date,
                                                               self.stocks_info.end_date)
         df = self.fill(df_weekly, df_stake_holder, 'holder_num')
-        return df[['ts_code', 'trade_date', 'holder_num']]
+        df = df.rename(columns={'holder_num': self.name})
+        return df[['ts_code', 'trade_date', self.name]]
 
 
 # python -m mlstock.factors.stake_holder
@@ -42,4 +43,5 @@ if __name__ == '__main__':
 
     df_stocks = data_loader.load(datasource, stocks, start_date, end_date)
 
-    StakeHolder(datasource, stocks_info).calculate(df_stocks)
+    df = StakeHolder(datasource, stocks_info).calculate(df_stocks)
+    print(df)
