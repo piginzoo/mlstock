@@ -9,6 +9,7 @@ from mlstock.factors.rsi import RSI
 from mlstock.factors.balance_sheet import BalanceSheet
 from mlstock.factors.cashflow import CashFlow
 from mlstock.factors.income import Income
+from mlstock.factors.stake_holder import StakeHolder
 from mlstock.factors.std import Std
 from mlstock.factors.returns import Return
 from mlstock.factors.turnover_return import TurnoverReturn
@@ -29,5 +30,6 @@ FACTORS = [Return,
            FinanceIndicator,
            DailyIndicator,
            FF3ResidualStd,
-           AlphaBeta]
+           AlphaBeta,
+           StakeHolder]
 

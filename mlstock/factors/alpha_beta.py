@@ -56,7 +56,7 @@ class AlphaBeta(ComplexMergeFactor):
     def _handle_60_weeks_OLS(self, date, df_stock_weekly):
         # 取得当周的日期（周最后一天）
         date = date['trade_date']
-        df_recent_60 = df_stock_weekly[df_stock_weekly['trade_date'] <= date][:60]
+        df_recent_60 = df_stock_weekly[df_stock_weekly['trade_date'] <= date][-60:]
         # 太少的回归不出来
         if len(df_recent_60) < 2: return np.nan, np.nan
 
@@ -67,6 +67,11 @@ class AlphaBeta(ComplexMergeFactor):
         params, _ = utils.OLS(X, y)
 
         alpha, beta = params[0], params[1]
+
+        # if np.isnan(alpha):
+        #     import pdb;pdb.set_trace()
+        #     print(date,df_stock_weekly[df_stock_weekly['trade_date'] == date],y)
+        #     print("-"*40)
         return alpha, beta
 
     def calculate(self, stock_data):
@@ -74,7 +79,11 @@ class AlphaBeta(ComplexMergeFactor):
         df_index_weekly = stock_data.df_index_weekly
         df_index_weekly = df_index_weekly.rename(columns={'pct_chg': 'pct_chg_index'})
         df_index_weekly = df_index_weekly[['trade_date', 'pct_chg_index']]
+
         df_weekly = df_weekly.merge(df_index_weekly, on=['trade_date'], how='left')
+        # 2022.8.10，bugfix，股票非周五导致weekly指数收益为NAN，导致其移动平均为NAN，导致大量数据缺失，因此需要drop掉这些异常数据
+        df_weekly.dropna(subset=['pct_chg_index'], inplace=True)
+
         # 先统一排一下序
         df_weekly = df_weekly.sort_values(['ts_code', 'trade_date'])
         df_weekly[['alpha', 'beta']] = df_weekly.groupby(['ts_code']).apply(self._handle_stock)
@@ -85,9 +94,9 @@ class AlphaBeta(ComplexMergeFactor):
 if __name__ == '__main__':
     utils.init_logger(file=False)
 
-    start_date = '20150703'
-    end_date = '20190826'
-    stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
+    start_date = "20180101"
+    end_date = "20220101"
+    stocks = ['000017.SZ']  # '600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
 
     from mlstock.data import data_loader
     from mlstock.data.datasource import DataSource
@@ -97,6 +106,8 @@ if __name__ == '__main__':
     stocks_info = StocksInfo(stocks, start_date, end_date)
     df_stocks = data_loader.load(datasource, stocks, start_date, end_date)
 
+    print(df_stocks.df_weekly.count())
     factor_alpha_beta = AlphaBeta(datasource, stocks_info)
     df = factor_alpha_beta.calculate(df_stocks)
-    print(df)
+    print(df[df['beta'].isna()])
+    print(df.count())

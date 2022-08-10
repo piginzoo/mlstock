@@ -81,7 +81,7 @@ class FF3ResidualStd(ComplexMergeFactor):
         ts_code = df_weekly_row['ts_code']
         df_stock_residual = df_residuals[df_residuals['ts_code'] == ts_code]
         # 只算这天向前period天（1、3、6、12周）之前的范围的天的标准差
-        df_stock_daily_residual_recent = df_stock_residual[df_stock_residual['trade_date'] <= trade_date][:period]
+        df_stock_daily_residual_recent = df_stock_residual[df_stock_residual['trade_date'] <= trade_date][-period:]
         return df_stock_daily_residual_recent['ff3_residual'].std()
 
     def _calculate_one_stock_ff3_residual(self, df_one_stock_daily, df_fama):

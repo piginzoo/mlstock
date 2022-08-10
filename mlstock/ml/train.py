@@ -14,13 +14,12 @@ from mlstock.ml.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.utils import time_elapse
 
-
 from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
 
-def main(start_date, end_date, num):
+def load(start_date, end_date, num):
     start_time = time.time()
     datasource = DataSource()
 
@@ -54,15 +53,21 @@ def main(start_date, end_date, num):
         factor_names += factor.name if type(factor.name) == list else [factor.name]
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
 
-    logger.info("因子获取完成，合计%d个因子%r，%d 行数据", len(factor_names), factor_names, len(df_weekly))
-    df_features = df_weekly[factor_names]
-    df_nan_stat = df_features.count() / df_features.shape[0]
-    df_nan_stat[df_nan_stat<0.9]
+    logger.info("因子加载完成，合计%d个因子%r，%d 行数据", len(factor_names), factor_names, len(df_weekly))
+    time_elapse(start_time, "因子加载")
 
-    # 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
-    original_length = len(df_weekly)
-    df_weekly = df_weekly[df_weekly.trade_date >= start_date]
-    logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_weekly))
+    df_weekly = load_index(df_weekly, datasource)
+
+    return df_weekly, factor_names
+
+
+def load_index(df_weekly, datasource):
+    """
+    加载基准的收益率
+    :param df_weekly:
+    :param datasource:
+    :return:
+    """
 
     # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
     df_hs300 = datasource.index_weekly("000300.SH", start_date, end_date)
@@ -78,8 +83,58 @@ def main(start_date, end_date, num):
 
     # target即预测目标，是下一期的超额收益
     df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1)
+    return df_weekly
+
+
+def _scaller(x):
+    _max = df_median[x.name] + 5 * df_scope[x.name]
+    _min = df_median[x.name] - 5 * df_scope[x.name]
+    x = x.apply(lambda v: _min if v < _min else v)
+    x = x.apply(lambda v: _max if v > _max else v)
+    return x
+
+
+def process(df_features, factor_names, start_date):
+    """
+
+    :param df_weekly:
+    :param factor_names:
+    :param start_date: 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
+    :return:
+    """
+    # 如果target缺失比较多，就删除掉这些股票
+
+    # 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
+    original_length = len(df_weekly)
+    df_weekly = df_weekly[df_weekly.trade_date >= start_date]
+    logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_weekly))
 
     """
+    1、去除那些因子值中超过20%缺失的股票（看所有因子中确实最大的那个，百分比超过20%，这只股票整个剔除掉）
+    """
+    # 计算每只股票的每个特征的缺失百分比
+    df_na_miss_percent_by_code = df_features.groupby(by='ts_code').apply(
+        lambda df: (df.shape[0] - df.count()) / df.shape[0])
+    # 找出最大的那个特征的缺失比，如果其>80%，就剔除这只股票
+    df_na_miss_codes = df_na_miss_percent_by_code[df_na_miss_percent_by_code.max(axis=1) > 0.8]['ts_code']
+    # 剔除问题股票
+    origin_stock_size = len(df_features.ts_code.unique())
+    origin_data_size = df_features.shape[0]
+    df_features = df_features[df_features.ts_code.apply(lambda x: x not in df_na_miss_codes)]
+    logger.info("剔除股票%d只，占比%.2f%%；剔除相关数据%d行，占比%.2f%%",
+                len(df_na_miss_codes),
+                len(df_na_miss_codes) * 100 / origin_stock_size,
+                origin_data_size - len(df_features),
+                (origin_data_size - len(df_features)) * 100 / origin_data_size)
+
+    # 因子中缺失值>10%和20%的因子
+    df_features = df_weekly[factor_names]
+    df_nan_stat = (df_features.shape[0] - df_features.count()) / df_features.shape[0]
+    logger.info("以下特征NAN数量超过10%、20%：\n%r\n%r", df_nan_stat[df_nan_stat > 0.1], df_nan_stat[df_nan_stat > 0.2])
+
+    """
+    去除极值+标准化
+    
     每一列，都去极值（TODO：是不是按照各股自己的值来做是不是更好？现在是所有的股票）
     中位数去极值:
     - 设第 T 期某因子在所有个股上的暴露度序列为𝐷𝑖
@@ -88,52 +143,51 @@ def main(start_date, end_date, num):
     - 则将序列𝐷𝑖中所有大于𝐷𝑀 + 5𝐷𝑀1的数重设为𝐷𝑀 + 5𝐷𝑀1
     - 将序列𝐷𝑖中所有小于𝐷𝑀 − 5𝐷𝑀1的数重设为𝐷𝑀 − 5𝐷𝑀1
     """
-
-    def scaller(x):
-        _max = df_median[x.name] + 5 * df_scope[x.name]
-        _min = df_median[x.name] - 5 * df_scope[x.name]
-        x = x.apply(lambda v: _min if v < _min else v)
-        x = x.apply(lambda v: _max if v > _max else v)
-        return x
-
-    # 保留feature
-    df_features = df_weekly[factor_names]
     # 每列都求中位数，和中位数之差的绝对值的中位数
     df_median = df_features.median()
     df_scope = df_features.apply(lambda x: x - df_median[x.name]).abs().median()
-    df_features = df_features.apply(scaller)
+    df_features = df_features.apply(_scaller)
     df_weekly[factor_names] = df_features
-
     # 标准化
     scaler = StandardScaler()
     scaler.fit(df_weekly[factor_names])
     df_weekly[factor_names] = scaler.transform(df_weekly[factor_names])
     logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行", len(factor_names), len(df_weekly))
 
-
-
-
     # 去除所有的NAN数据
     logger.info("NA统计：数据特征中的NAN数：\n%r", df_weekly[factor_names].isna().sum())
     df_weekly = filter_invalid_data(df_weekly, factor_names)
 
-
-
     df_weekly.dropna(subset=factor_names + ['target'], inplace=True)
     logger.info("去除NAN后，数据剩余行数：%d 行", len(df_weekly))
+
+    """
+    去重
+    """
+    original_length = len(df_features)
+    df_features = df_features[~df_features['ts_code','trade_date'].duplicated()].reset_index(drop=True)
+    logger.info("去除重复行(ts_code+trade_date)后，数据 %d => %d 行", original_length,len(df_features))
 
     df_data = df_weekly[['ts_code', 'trade_date'] + factor_names + ['target']]
     csv_file_name = "data/{}_{}_{}.csv".format(start_date, end_date, utils.now())
     df_data.to_csv(csv_file_name, index=False)
     logger.info("保存 %d 行（训练和测试）数据到文件：%s", len(df_data), csv_file_name)
-    start_time = time_elapse(start_time, "加载数据和清洗特征")
+
+    return df_weekly, factor_names
 
 
+def main(start_date, end_date, num):
+    # 加载特征、基准收益
+    df_weekly, factor_names = load(start_date, end_date, num)
+
+    # 处理特征，剔除异常等
+    df_features = df_weekly[['ts_code', 'trade_date', 'target'] + factor_names]
+    df_features = process(df_features, factor_names, start_date)
 
     # 准备训练用数据，需要numpy类型
     assert len(df_weekly) > 0
-    X_train = df_weekly[factor_names].values
-    y_train = df_weekly.target
+    X_train = df_features[factor_names].values
+    y_train = df_features.target
 
     # 划分训练集和测试集，测试集占总数据的15%，随机种子为10
     X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.15, random_state=10)
@@ -157,7 +211,7 @@ def main(start_date, end_date, num):
                 alpha_scope[results.index(max(results))],
                 max(results))
     plt.figure(figsize=(20, 5))
-    plt.title('Best Apha')
+    plt.title('Best Alpha')
     plt.plot(alpha_scope, results, c="red", label="alpha")
     plt.legend()
     plt.show()

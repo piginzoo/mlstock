@@ -92,7 +92,6 @@ class ComplexMergeFactor(Factor):
 
 
 #
-
 class FinanceFactor(ComplexMergeFactor):
     # 字段配置，是一个I（name, tushare_name, cname, category, ttm=None, normalize=False）的数组，
     # 子类需要重新定义自己的字段配置
@@ -158,7 +157,7 @@ class FinanceFactor(ComplexMergeFactor):
         # 加载财务数据（通过self.data_loader_func）
         df_finance = self.data_loader_func(self.stocks_info.stocks, start_date_last_year, self.stocks_info.end_date)
 
-        assert len(df_finance)>0
+        assert len(df_finance)>0, f"因子数据{self}行数为0"
 
         # 把财务字段类型改成float，之前种种原因导致列是text类型的
         df_finance = self._numberic(df_finance)
