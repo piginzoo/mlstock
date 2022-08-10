@@ -102,15 +102,25 @@ def process(df_features, factor_names, start_date):
     :param start_date: 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
     :return:
     """
-    # 如果target缺失比较多，就删除掉这些股票
-
-    # 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
-    original_length = len(df_weekly)
-    df_weekly = df_weekly[df_weekly.trade_date >= start_date]
-    logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_weekly))
 
     """
-    1、去除那些因子值中超过20%缺失的股票（看所有因子中确实最大的那个，百分比超过20%，这只股票整个剔除掉）
+    因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
+    """
+    original_length = len(df_features)
+    df_features = df_features[df_features.trade_date >= start_date]
+    logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_features))
+
+    logger.info("特征处理之前的数据情况：\n%r", df_features.describe())
+
+    """
+    如果target缺失比较多，就删除掉这些股票
+    """
+    original_length = len(df_features)
+    df_features = df_features[~df_features.target.isna()]
+    logger.info("过滤掉target为nan的行后：%d => %d 行", original_length, len(df_features))
+
+    """
+    去除那些因子值中超过20%缺失的股票（看所有因子中确实最大的那个，百分比超过20%，这只股票整个剔除掉）
     """
     # 计算每只股票的每个特征的缺失百分比
     df_na_miss_percent_by_code = df_features.groupby(by='ts_code').apply(
@@ -165,13 +175,15 @@ def process(df_features, factor_names, start_date):
     去重
     """
     original_length = len(df_features)
-    df_features = df_features[~df_features['ts_code','trade_date'].duplicated()].reset_index(drop=True)
-    logger.info("去除重复行(ts_code+trade_date)后，数据 %d => %d 行", original_length,len(df_features))
+    df_features = df_features[~df_features['ts_code', 'trade_date'].duplicated()].reset_index(drop=True)
+    logger.info("去除重复行(ts_code+trade_date)后，数据 %d => %d 行", original_length, len(df_features))
 
     df_data = df_weekly[['ts_code', 'trade_date'] + factor_names + ['target']]
     csv_file_name = "data/{}_{}_{}.csv".format(start_date, end_date, utils.now())
     df_data.to_csv(csv_file_name, index=False)
     logger.info("保存 %d 行（训练和测试）数据到文件：%s", len(df_data), csv_file_name)
+
+    logger.info("特征处理之后的数据情况：\n%r", df_features.describe())
 
     return df_weekly, factor_names
 
