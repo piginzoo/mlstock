@@ -145,6 +145,8 @@ class FF3ResidualStd(ComplexMergeFactor):
         # fama三因子，是 用每天的横截面'凑'出来的特征，用来后面回归单个股票的数据
         df_fama = fama_model.calculate_factors(df_stocks=df_daily, df_market=df_index_daily, df_basic=df_daily_basic)
 
+        assert len(df_fama)>0, "3因子数据行数应该大于0"
+
         """
         计算每只股票，和FF3的每天的残差
         
@@ -182,14 +184,15 @@ if __name__ == '__main__':
 
     utils.init_logger(file=False)
 
-    start_date = '20170703'
-    end_date = '20190826'
-    df_stock_basic = data_filter.filter_stocks()
-    df_stock_basic = df_stock_basic.iloc[:20]
+    start_date = "20180101"
+    end_date = "20200101"
+    stocks = ['000007.SZ','000010.SZ']
+    # df_stock_basic = data_filter.filter_stocks()
+    # df_stock_basic = df_stock_basic.iloc[:20]
 
     datasource = DataSource()
-    stocks_info = StocksInfo(df_stock_basic.ts_code, start_date, end_date)
-    df_stocks = data_loader.load(datasource, df_stock_basic.ts_code, start_date, end_date)
+    stocks_info = StocksInfo(stocks, start_date, end_date)
+    df_stocks = data_loader.load(datasource, stocks, start_date, end_date)
 
     factor_alpha_beta = FF3ResidualStd(datasource, stocks_info)
     df = factor_alpha_beta.calculate(df_stocks)

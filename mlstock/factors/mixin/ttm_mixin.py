@@ -143,7 +143,7 @@ class TTMMixin:
                 # print(df_last_year_end_date[finance_column_names].iloc[0].tolist())
                 # print(df_last_year_same_date[finance_column_names].iloc[0].tolist())
                 # logger.debug('当期[%s]_TTM:%r',end_date,ttm_values.tolist())
-            # 否则，就用当期的近似计算
+            # 否则，就用当期的近似计算(当期的按照季、半年等来近似计算）
             else:
                 logger.debug("无法获得股票[%s]去年同期%s[%d条]或者去年年末%s[%d条]信息",
                              row.ts_code,

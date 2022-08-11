@@ -49,8 +49,8 @@ if __name__ == '__main__':
 
     utils.init_logger(file=False)
 
-    start_date = '20150703'
-    end_date = '20190826'
+    start_date = "20180101"
+    end_date = "20200101"
     stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
     datasource = DataSource()
     stocks_info = StocksInfo(stocks, start_date, end_date)

@@ -53,12 +53,12 @@ def load(start_date, end_date, num):
         factor_names += factor.name if type(factor.name) == list else [factor.name]
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
 
-    logger.info("因子加载完成，合计%d个因子%r，%d 行数据", len(factor_names), factor_names, len(df_weekly))
-    time_elapse(start_time, "因子加载")
+    logger.info("因子加载完成，合计 %d 行数据，%d个因子:\n%r", len(df_weekly), len(factor_names), factor_names)
+    time_elapse(start_time, "⭐️ 全部因子加载")
 
     df_weekly = load_index(df_weekly, datasource)
 
-    save_csv("raw",df_weekly)
+    save_csv("raw", df_weekly)
 
     return df_weekly, factor_names
 
@@ -89,6 +89,32 @@ def load_index(df_weekly, datasource):
 
 
 def _scaller(x, df_median, df_scope):
+    """
+    - 则将序列𝐷𝑖中所有大于𝐷𝑀 + 5𝐷𝑀1的数重设为𝐷𝑀 + 5𝐷𝑀1
+    - 将序列𝐷𝑖中所有小于𝐷𝑀 − 5𝐷𝑀1的数重设为𝐷𝑀 − 5𝐷𝑀1
+    :param x: 就是某一列，比如beta
+        Name: beta, Length: 585, dtype: float64
+        180          NaN
+        181          NaN
+                  ...
+        1196    163121.0
+    :param df_median:
+        (Pdb) df_median
+        return_1w                 -0.002050
+        return_3w                 -0.007407
+        .....                     ......
+        alpha                     0.000161
+        beta                      0.276572
+        stake_holder              163121.000000
+        Length: 73, dtype: float64
+    :param df_scope:
+        (Pdb) df_scope
+        return_1w                 0.029447
+        .....                     ......
+        stake_holder              82657.000000
+        Length: 73, dtype: float64
+    :return:
+    """
     _max = df_median[x.name] + 5 * df_scope[x.name]
     _min = df_median[x.name] - 5 * df_scope[x.name]
     x = x.apply(lambda v: _min if v < _min else v)
@@ -112,7 +138,7 @@ def process(df_features, factor_names, start_date):
     df_features = df_features[df_features.trade_date >= start_date]
     logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_features))
 
-    logger.info("特征处理之前的数据情况：\n%r", df_features.describe())
+    logger.info("(调试)特征处理之前的数据情况：\n%r", df_features.describe())
 
     """
     如果target缺失比较多，就删除掉这些股票
@@ -127,9 +153,17 @@ def process(df_features, factor_names, start_date):
     # 计算每只股票的每个特征的缺失百分比
     df_na_miss_percent_by_code = df_features.groupby(by='ts_code').apply(
         lambda df: (df.shape[0] - df.count()) / df.shape[0])
+
     # 找出最大的那个特征的缺失比，如果其>80%，就剔除这只股票
     df_na_miss_codes = df_na_miss_percent_by_code[df_na_miss_percent_by_code.max(axis=1) > 0.8]['ts_code']
-    # 剔除问题股票
+    # 把这些行找出来，打印到日志中，方便后期调试
+    df_missed_info = df_na_miss_percent_by_code[
+        df_na_miss_percent_by_code.apply(lambda x: x.name in df_na_miss_codes, axis=1)]
+    # 0缺失的列，需要扣掉，只保留确实列打印出来调试
+    need_drop_columns = df_missed_info.sum()[df_missed_info.sum() == 0].index
+    df_missed_info = df_missed_info.drop(need_drop_columns, axis=1)
+    logger.info("(调试)以下股票的某些特征的'缺失(NA)率'，超过80%%，%d 行：\n%r", len(df_missed_info), df_missed_info)
+    # 剔除这些问题股票
     origin_stock_size = len(df_features.ts_code.unique())
     origin_data_size = df_features.shape[0]
     df_features = df_features[df_features.ts_code.apply(lambda x: x not in df_na_miss_codes)]
@@ -152,9 +186,11 @@ def process(df_features, factor_names, start_date):
     """
     # 每列都求中位数，和中位数之差的绝对值的中位数
     df_features_only = df_features[factor_names]
+    # 找到每一个特征的中位值
     df_median = df_features_only.median()
+    # 每个值，都和中位数相减后，取绝对值，然后在找到绝对值们的中位数，这个就是要限定的范围值
     df_scope = df_features_only.apply(lambda x: x - df_median[x.name]).abs().median()
-    df_features_only = df_features_only.apply(_scaller, df_median, df_scope)
+    df_features_only = df_features_only.apply(lambda x: _scaller(x, df_median, df_scope))
 
     # 标准化
     scaler = StandardScaler()
@@ -163,7 +199,7 @@ def process(df_features, factor_names, start_date):
     logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行", len(factor_names), len(df_features))
 
     # 去除所有的NAN数据
-    logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum())
+    logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
     df_features = filter_invalid_data(df_features, factor_names)
 
     df_features.dropna(subset=factor_names + ['target'], inplace=True)
@@ -173,7 +209,7 @@ def process(df_features, factor_names, start_date):
     去重
     """
     original_length = len(df_features)
-    df_features = df_features[~df_features['ts_code', 'trade_date'].duplicated()].reset_index(drop=True)
+    df_features = df_features[~df_features[['ts_code', 'trade_date']].duplicated()].reset_index(drop=True)
     logger.info("去除重复行(ts_code+trade_date)后，数据 %d => %d 行", original_length, len(df_features))
 
     save_csv("features", df_features)
@@ -257,7 +293,7 @@ def filter_invalid_data(df, factor_names):
 
 # python -m mlstock.ml.train
 if __name__ == '__main__':
-    utils.init_logger(file=False, log_level=logging.INFO)
+    utils.init_logger(file=False, log_level=logging.DEBUG)
     start_date = "20180101"
     end_date = "20200101"
     num = 10
