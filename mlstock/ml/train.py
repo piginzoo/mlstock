@@ -202,6 +202,8 @@ def process(df_features, factor_names, start_date):
     logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
     df_features = filter_invalid_data(df_features, factor_names)
 
+    import pdb;pdb.set_trace()
+
     df_features.dropna(subset=factor_names + ['target'], inplace=True)
     logger.info("去除NAN后，数据剩余行数：%d 行", len(df_features))
 
@@ -296,5 +298,5 @@ if __name__ == '__main__':
     utils.init_logger(file=False, log_level=logging.DEBUG)
     start_date = "20180101"
     end_date = "20200101"
-    num = 100
+    num = 10
     main(start_date, end_date, num)

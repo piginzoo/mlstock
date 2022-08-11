@@ -170,8 +170,9 @@ class FF3ResidualStd(ComplexMergeFactor):
             r_i = α_i + b1 * r_m_i + b2 * smb_i + b3 * hml_i + e_i 
             某一只股票的所有的日子的数据做回归，r_i,r_m_i，smb_i，hml_i 已知，回归后，得到e_i(残差)
         """
-        df_residuals = df_daily.groupby('ts_code').apply(
-            self._calculate_one_stock_ff3_residual, df_fama).reset_index()
+        # as_index=True是为了保留ts_code，但是在ubuntu服务器上不行，排查后发现是pandas==1.4.3导致，应该是个bug
+        # 解决办法是降级pandas，2022.8.11
+        df_residuals = df_daily.groupby('ts_code',as_index=True).apply(self._calculate_one_stock_ff3_residual, df_fama).reset_index()
         return df_residuals[['ts_code', 'trade_date', 'ff3_residual']]
 
 

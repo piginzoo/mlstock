@@ -24,13 +24,21 @@ class FillMixin:
         :param df_stocks: df是原始的周频数据，以周五的日期为准
         :param df_finance: 财务数据，只包含财务公告日期，要求之前已经做了ttm数据
         """
-        # 按照公布日期倒序排（日期从新到旧）
-        df_finance.sort_values('ann_date', ascending=False)
+        # 按照公布日期倒序排（日期从新到旧）,<=== '倒'序很重要，这样才好找到对应日的财务数据
+        df_finance = df_finance.sort_values('ann_date', ascending=False)
+        df = df_stocks.groupby(by=['ts_code', 'trade_date']).apply(self.handle_one_stock,
+                                                                   df_finance,
+                                                                   finance_column_names)
+        return df
 
-        # 只用股票的ts_code和trad_code，两列，去取得对应的财务指标
-        return df_stocks.groupby(by=['ts_code', 'trade_date']).apply(self.handle_one_stock,
-                                                                     df_finance,
-                                                                     finance_column_names)
+    # 这个ffill方法很酷，但是这里不适用，主要是因为我们基于df_stock的日期来作为基准，但是这个df_stock这里是df_weekly
+    # 只有周五的日期，所以，导致，无法和df_finance做join(merge)，
+    # 之前别的地方可以这样，是因为，那个用的是市场交易日，每天都有，不会落下，这样df_finance的日子总是可以join上的
+    # def fill_one_stock(self, df_one_stock, finance_column_names):
+    #     if type(finance_column_names) != list: finance_column_names = [finance_column_names]
+    #     df_one_stock = df_one_stock[['ts_code', 'trade_date'] + finance_column_names]
+    #     df_one_stock = df_one_stock.fillna(method='ffill')
+    #     return df_one_stock
 
     # @logging_time
     def handle_one_stock(self, df_stock, df_finance, finance_column_names):
@@ -60,8 +68,21 @@ class FillMixin:
         df_finance = df_finance[df_finance['ts_code'] == ts_code]
 
         # 按照日子挨个查找，找到离我最旧最近的公布日，返回其公布日对应的财务数据
+        """
+            trade_date              ann_date
+            2020.7.08               2020.7.25 
+        --->2020.7.15               2020.7.10    
+            2020.7.23   
+            2020.8.1     
+            ...
+            如同这个例子，要用2020.7.25的值去条虫2020.8.1；用2020.7.10的值，去填充7.15和7.23的
+            算法实例：当前日是2020.7.15，我去遍历ann_date（降序），发现trade_date比ann_date大，就停下来，用这天的财务数据
+            所以，要求trade_date和ann_date都要升序
+        """
+
         for _, row in df_finance.iterrows():
             if trade_date >= row['ann_date']:
+                # import pdb;pdb.set_trace()
                 # logger.debug("找到股票[%s]的周频日期[%s]的财务日为[%s]的填充数据", ts_code, trade_date, row['ann_date'])
                 return row[finance_column_names]
         return None
