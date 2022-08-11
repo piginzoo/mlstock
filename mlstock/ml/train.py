@@ -296,5 +296,5 @@ if __name__ == '__main__':
     utils.init_logger(file=False, log_level=logging.DEBUG)
     start_date = "20180101"
     end_date = "20200101"
-    num = 10
+    num = 100
     main(start_date, end_date, num)

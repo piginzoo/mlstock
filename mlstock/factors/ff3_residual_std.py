@@ -186,13 +186,13 @@ if __name__ == '__main__':
 
     start_date = "20180101"
     end_date = "20200101"
-    stocks = ['000007.SZ','000010.SZ']
-    # df_stock_basic = data_filter.filter_stocks()
-    # df_stock_basic = df_stock_basic.iloc[:20]
+    # stocks = ['000007.SZ','000010.SZ']
+    df_stock_basic = data_filter.filter_stocks()
+    df_stock_basic = df_stock_basic.iloc[:100]
 
     datasource = DataSource()
-    stocks_info = StocksInfo(stocks, start_date, end_date)
-    df_stocks = data_loader.load(datasource, stocks, start_date, end_date)
+    stocks_info = StocksInfo(df_stock_basic.ts_code, start_date, end_date)
+    df_stocks = data_loader.load(datasource, df_stock_basic.ts_code, start_date, end_date)
 
     factor_alpha_beta = FF3ResidualStd(datasource, stocks_info)
     df = factor_alpha_beta.calculate(df_stocks)
