@@ -36,10 +36,16 @@ class DailyIndicator(ComplexMergeFactor):
 
     def calculate(self, stock_data):
         df_daily_basic = stock_data.df_daily_basic
+        df_daily_basic = df_daily_basic.sort_values(['ts_code', 'trade_date'])
+        # 如果缺失，用这天之前的数据来填充（ffill)
+        # 这样做不行，ts_code和trade_date两列丢了，pandas1.3.4也不行，只好逐个fill了
+        # df_daily_basic = df_daily_basic.groupby(by=['ts_code']).fillna(method='ffill').reset_index()
+        df_daily_basic[['pe_ttm', 'ps_ttm', 'pb']] = df_daily_basic.groupby('ts_code').ffill().bfill()[['pe_ttm', 'ps_ttm', 'pb']]
         df_daily_basic[self.name[0]] = 1 / df_daily_basic['pe_ttm']  # EP = 1/PE（市盈率）
         df_daily_basic[self.name[1]] = 1 / df_daily_basic['ps_ttm']  # SP = 1/PS（市销率）
         df_daily_basic[self.name[2]] = 1 / df_daily_basic['pb']  # SP = 1/PS（市销率）
         return df_daily_basic[['ts_code', 'trade_date'] + self.name]
+
 
 # python -m mlstock.factors.daily_indicator
 if __name__ == '__main__':
@@ -51,10 +57,10 @@ if __name__ == '__main__':
 
     start_date = "20180101"
     end_date = "20200101"
-    stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
+    stocks = ['000019.SZ', '000063.SZ', '000068.SZ', '000422.SZ']
     datasource = DataSource()
     stocks_info = StocksInfo(stocks, start_date, end_date)
     stock_data = data_loader.load(datasource, stocks, start_date, end_date)
     df = DailyIndicator(datasource, stocks_info).calculate(stock_data)
     print(df)
-
+    print("NA缺失比例", df.isna().sum() / len(df))
