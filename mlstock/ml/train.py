@@ -162,7 +162,7 @@ def process(df_features, factor_names, start_date):
     # 0缺失的列，需要扣掉，只保留确实列打印出来调试
     need_drop_columns = df_missed_info.sum()[df_missed_info.sum() == 0].index
     df_missed_info = df_missed_info.drop(need_drop_columns, axis=1)
-    logger.info("(调试)以下股票的某些特征的'缺失(NA)率'，超过80%%，%d 行：\n%r", len(df_missed_info), df_missed_info)
+    logger.info("(调试)以下股票的某些特征的'缺失(NA)率'，超过80%%，%d 只(需要被删掉的股票)：\n%r", len(df_missed_info), df_missed_info)
     # 剔除这些问题股票
     origin_stock_size = len(df_features.ts_code.unique())
     origin_data_size = df_features.shape[0]
