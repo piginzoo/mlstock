@@ -29,3 +29,7 @@
 - 实现了ttm、fill处理
 - 完善了多种财务指标表的处理：cashflow，balance_sheet，income，fina_indicator，都是对应到tushare的各张财务表
 - 实现了特异性波动、beta、alpha等指标
+
+8.13
+- 实现了基于fama-french的特异性波动std
+- 实现了各种异常值处理，填充
