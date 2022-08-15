@@ -40,8 +40,7 @@ if __name__ == '__main__':
     from mlstock.data.datasource import DataSource
     from mlstock.data.stock_info import StocksInfo
     from mlstock.utils import utils
-    import pandas
-    pandas.set_option('display.max_rows', 1000000)
+    import pandas;pandas.set_option('display.max_rows', 1000000)
     utils.init_logger(file=False)
 
     start_date = "20180101"

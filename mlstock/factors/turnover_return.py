@@ -2,6 +2,7 @@ import logging
 
 from mlstock.factors.factor import ComplexMergeFactor
 
+
 logger = logging.getLogger(__name__)
 
 N = [1, 3, 6, 12]
@@ -35,8 +36,8 @@ class TurnoverReturn(ComplexMergeFactor):
         df_daily_basic = stock_data.df_daily_basic
 
         """ https://tushare.pro/document/2?doc_id=32
-        code        datetime  turnover_rate_f  circ_mv
-        600230.SH   20180726  4.5734           1.115326e+06
+        code        datetime  turnover_rate_f
+        600230.SH   20180726  4.5734         
         """
         df_daily_basic = df_daily_basic[['trade_date', 'ts_code', 'turnover_rate_f']]
         df_daily = df_daily[['trade_date', 'ts_code', 'pct_chg']]
@@ -46,9 +47,16 @@ class TurnoverReturn(ComplexMergeFactor):
         # `动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`
         df['turnover_return'] = df['turnover_rate_f'] * df['pct_chg']
 
+        import pdb;pdb.set_trace()
+        
+
         for i in N:
             # x5，按照每周交易日5天计算的
-            df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
+            # 我靠！隐藏的很深的一个bug，找各种写法会导致中间莫名其妙的出现nan，而且计算的也不对
+            # df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
+            df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().reset_index(level=0, drop=True)
+            # if len(df[f'turnover_return_{i}w'].isna())>0:
+            #     import pdb;pdb.set_trace()
 
         # 返回ts_code和trade_date是为了和周频数据做join
         return df[['trade_date', 'ts_code'] + self.name]
@@ -70,3 +78,30 @@ class TurnoverReturn(ComplexMergeFactor):
     - turnover_std_Nm：个股最近N个月的日换手率的标准差，表现了个股N个月内流动性水平的波动幅度。N=1,3,6
     - turnover_bias_std_Nm：个股最近N个月的日换手率的标准差除以个股两年内日换手率的标准差再减去1，代表了个股N个月内流动性的波动幅度的乖离率。N=1,3,6
     """
+# python -m mlstock.factors.turnover_return
+if __name__ == '__main__':
+    from mlstock.data import data_loader
+    from mlstock.data.datasource import DataSource
+    from mlstock.data.stock_info import StocksInfo
+    from mlstock.utils import utils
+    import pandas
+    pandas.set_option('display.max_rows', 1000000)
+    utils.init_logger(file=False)
+
+    start_date = "20180101"
+    end_date = "20200101"
+    stocks = ['000401.SZ']
+    datasource = DataSource()
+    stocks_info = StocksInfo(stocks, start_date, end_date)
+    stock_data = data_loader.load(datasource, stocks, start_date, end_date)
+    # 把基础信息merge到周频数据中
+    df_stock_basic = datasource.stock_basic(stocks)
+    df_weekly = stock_data.df_weekly.merge(df_stock_basic, on='ts_code', how='left')
+
+    tr = TurnoverReturn(datasource, stocks_info)
+    df_factors = tr.calculate(stock_data)
+    df = tr.merge(df_weekly,df_factors)
+    df = df[df.trade_date>start_date]
+    print(df)
+    print("NA缺失比例", df.isna().sum() / len(df))
+    print(df[(df.ts_code=='000401.SZ')&(df.trade_date=='20180629')])

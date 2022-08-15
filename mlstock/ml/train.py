@@ -26,13 +26,15 @@ def load(start_date, end_date, num):
     # 过滤非主板、非中小板股票、且上市在1年以上的非ST股票
     df_stock_basic = data_filter.filter_stocks()
     df_stock_basic = df_stock_basic.iloc[:num]
-    stocks_info = StocksInfo(df_stock_basic.ts_code, start_date, end_date)
+    ts_codes = df_stock_basic.ts_code
+    # ts_codes = ['000401.SZ']
+    stocks_info = StocksInfo(ts_codes, start_date, end_date)
 
     # 临时保存一下，用于本地下载数据提供列表（调试用）
-    df_stock_basic.ts_code.to_csv("data/stocks.txt", index=False)
+    # df_stock_basic.ts_code.to_csv("data/stocks.txt", index=False)
 
     # 加载周频数据
-    stock_data = data_loader.load(datasource, df_stock_basic.ts_code, start_date, end_date)
+    stock_data = data_loader.load(datasource, ts_codes, start_date, end_date)
 
     # 把基础信息merge到周频数据中
     df_weekly = stock_data.df_weekly.merge(df_stock_basic, on='ts_code', how='left')
@@ -49,6 +51,7 @@ def load(start_date, end_date, num):
     for factor_class in FACTORS:
         factor = factor_class(datasource, stocks_info)
         df_factor = factor.calculate(stock_data)
+        print(df_factor[(df_factor.ts_code == '000401.SZ') & (df_factor.trade_date == '20180629')])
         df_weekly = factor.merge(df_weekly, df_factor)
         factor_names += factor.name if type(factor.name) == list else [factor.name]
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
@@ -139,6 +142,7 @@ def process(df_features, factor_names, start_date):
     logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_features))
 
     logger.info("(调试)特征处理之前的数据情况：\n%r", df_features.describe())
+    logger.info("(调试)特征处理之前NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
 
     """
     如果target缺失比较多，就删除掉这些股票
@@ -201,8 +205,6 @@ def process(df_features, factor_names, start_date):
     # 去除所有的NAN数据
     logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
     df_features = filter_invalid_data(df_features, factor_names)
-
-    import pdb;pdb.set_trace()
 
     df_features.dropna(subset=factor_names + ['target'], inplace=True)
     logger.info("去除NAN后，数据剩余行数：%d 行", len(df_features))

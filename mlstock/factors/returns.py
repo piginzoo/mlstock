@@ -40,3 +40,24 @@ class Return(SimpleFactor):
             results.append(df_return)
         df = pd.concat(results, axis=1)  # 按照列拼接（axis=1）
         return df
+
+# python -m mlstock.factors.returns
+if __name__ == '__main__':
+    from mlstock.data import data_loader
+    from mlstock.data.datasource import DataSource
+    from mlstock.data.stock_info import StocksInfo
+    from mlstock.utils import utils
+    import pandas
+    pandas.set_option('display.max_rows', 1000000)
+    utils.init_logger(file=False)
+
+    start_date = "20180101"
+    end_date = "20200101"
+    stocks = ['000401.SZ']
+    datasource = DataSource()
+    stocks_info = StocksInfo(stocks, start_date, end_date)
+    stock_data = data_loader.load(datasource, stocks, start_date, end_date)
+    df = Return(datasource, stocks_info).calculate(stock_data)
+    # df = df[df.trade_date>start_date]
+    print(df)
+    print("NA缺失比例", df.isna().sum() / len(df))
