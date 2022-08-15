@@ -295,7 +295,14 @@ def filter_invalid_data(df, factor_names):
 
 # python -m mlstock.ml.train
 if __name__ == '__main__':
-    utils.init_logger(file=False, log_level=logging.DEBUG)
+    utils.init_logger(log_level=logging.DEBUG)
+
+    # 生产
+    # start_date = "20080101"
+    # end_date = "20220801"
+    # num = 5000
+
+    # 测试
     start_date = "20180101"
     end_date = "20200101"
     num = 100
