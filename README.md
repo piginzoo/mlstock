@@ -33,3 +33,11 @@
 8.13
 - 实现了基于fama-french的特异性波动std
 - 实现了各种异常值处理，填充
+
+# 数据处理的trick
+
+对于数据，有必要记录一下一些特殊的处理细节
+- 先按照daily_basic中的'total_mv','pe_ttm', 'ps_ttm', 'pb'缺失值超过80%，去筛掉了一些股票
+- 然后对剩余的股票的daily_basic的上述字段，按照日期向后进行na的填充
+- 对财务相关（income,balance_sheet,cashflow,finance_indicator）的数据，都统一除以了实质total_mv，归一化他们
+- 

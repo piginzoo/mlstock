@@ -20,7 +20,7 @@ class FinanceIndicator(FinanceFactor, FillMixin, TTMMixin):
         # ('invturn_days', '存货周转天数')
         # ('arturn_days', '应收账款周转天数')
         # ('inv_turn', '存货周转率')
-        I('account_receivable_turnover', 'ar_turn', '应收账款周转率', '营运能力', ttm=True, normalize=True),
+        I('account_receivable_turnover', 'ar_turn', '应收账款周转率', '营运能力', ttm=True),
         I('current_assets_turnover', 'ca_turn', '流动资产周转率', '营运能力'),
         I('fixed_assets_turnover', 'fa_turn', '固定资产周转率', '营运能力'),
         I('total_assets_turnover', 'assets_turn', '总资产周转率', '营运能力'),
@@ -47,15 +47,14 @@ class FinanceIndicator(FinanceFactor, FillMixin, TTMMixin):
         # I('net_profit_yoy', 'q_profit_yoy', '净利润同比增长率', '发展能力'),  # 华泰金工：净利润（最新财报，YTD）同比增长率
         I('operate_cashflow_yoy', 'ocf_yoy', '经营活动产生的现金流量净额同比增长率', '发展能力'),  # 华泰金工：经营性现金流（最新财报，YTD）同比增长率
         # 财务质量
-        I('net_profit_deduct_non_recurring_profit_loss', 'profit_dedt', '扣除非经常性损益后的净利润（扣非净利润）', '财务质量', ttm=True,
-          normalize=True),
+        I('net_profit_deduct_non_recurring_profit_loss', 'profit_dedt', '扣除非经常性损益后的净利润（扣非净利润）', '财务质量', ttm=True),
         # 华泰金工要求的是"扣除非经常性损益后净利润（TTM）/总市值"
-        I('operate_cashflow_per_share', 'ocfps', '每股经营活动产生的现金流量净额', '财务质量', ttm=True, normalize=True),
+        I('operate_cashflow_per_share', 'ocfps', '每股经营活动产生的现金流量净额', '财务质量', ttm=True),
         # 华泰金工要求的是泰金工上的是"经营性现金流（TTM）/总市值"，用这个代替
-        I('ROE_TTM', 'roe', '净资产收益率', '财务质量', ttm=True, normalize=True),  # ROE（最新财报，TTM）
+        I('ROE_TTM', 'roe', '净资产收益率', '财务质量', ttm=True),  # ROE（最新财报，TTM）
         # I('','ROA_yoy', 这个tushare上没有
-        I('ROA_TTM', 'roa', '总资产报酬率', '财务质量', ttm=True, normalize=True),  # ROA（最新财报，TTM）
-        I('ROE_YOY', 'roe_yoy', '净资产收益率(摊薄)同比增长率', '财务质量', normalize=True),  # 华泰金工：ROE（最新财报，YTD）同比增长率
+        I('ROA_TTM', 'roa', '总资产报酬率', '财务质量', ttm=True),  # ROA（最新财报，TTM）
+        I('ROE_YOY', 'roe_yoy', '净资产收益率(摊薄)同比增长率', '财务质量'),  # 华泰金工：ROE（最新财报，YTD）同比增长率
     ]
 
     # 营运能力

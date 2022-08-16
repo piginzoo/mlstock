@@ -157,7 +157,7 @@ class FinanceFactor(ComplexMergeFactor):
         # 加载财务数据（通过self.data_loader_func）
         df_finance = self.data_loader_func(self.stocks_info.stocks, start_date_last_year, self.stocks_info.end_date)
 
-        assert len(df_finance)>0, f"因子数据{self}行数为0"
+        assert len(df_finance) > 0, f"因子数据{self}行数为0"
 
         # 把财务字段类型改成float，之前种种原因导致tushare下载下来的数据的列是text类型的，这纯粹是个patch
         df_finance = self._numberic(df_finance)
@@ -171,16 +171,24 @@ class FinanceFactor(ComplexMergeFactor):
         # 按照股票的周频日期，来生成对应的指标（填充周频对应的财务指标）
         df_finance = self.fill(df_weekly, df_finance, self.name)
 
+        # 财务数据都除以总市值，进行归一化
+        df_finance = self.normalize_by_market_value(df_finance, stock_data.df_daily_basic)
+
         # 只保留股票、日期和需要的特征列
         df_finance = self._extract_fields(df_finance)
 
         return df_finance
 
-    def normalize_by_market_value(self,df_finance):
+    def normalize_by_market_value(self, df_finance, df_daily_basic):
         """
         直白点，就是都除以市值，让大家标准都统一化
         :return:
         """
+        # df_daily_basic都fill提前过了，所以不用担心有na值
+        df_finance = df_finance.merge(df_daily_basic[['ts_code', 'trade_date', 'total_mv']],
+                                      on=['ts_code', 'trade_date'], how='left')
+        df_finance[self.name] = df_finance[self.name].apply(lambda x: x / df_finance['total_mv'])
+        return df_finance
 
     @classmethod
     def test(cls, stocks, start_date, end_date):

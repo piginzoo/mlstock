@@ -100,7 +100,7 @@ class TTMMixin:
                                            finance_column_names=finance_column_names,
                                            finance_date_column_name=finance_date_column_name)
 
-    def handle_one_stock_ttm(self, df, finance_column_names,finance_date_column_name):
+    def handle_one_stock_ttm(self, df, finance_column_names, finance_date_column_name):
         """
         这个处理和致敬大神的不一样，它是假设所有的财报都有，这样错位一下(shift)就可以算出ttm了，
         举个例子：
@@ -121,7 +121,7 @@ class TTMMixin:
         :return: 列被提换成了TTM数据
         """
 
-        def handle_one_period_ttm(row, finance_column_names,finance_date_column_name):
+        def handle_one_period_ttm(row, finance_column_names, finance_date_column_name):
 
             # 从这只股票的财务数据(df)得到这一行对应的年报的报告期结束日
             end_date = row[finance_date_column_name]
@@ -145,13 +145,14 @@ class TTMMixin:
                 # logger.debug('当期[%s]_TTM:%r',end_date,ttm_values.tolist())
             # 否则，就用当期的近似计算(当期的按照季、半年等来近似计算）
             else:
-                logger.debug("无法获得股票[%s]去年同期%s[%d条]或者去年年末%s[%d条]信息",
+                logger.debug("'无法获得股票[%s]去年同期%s[%d条]或者去年年末%s[%d条]信息,使用[%s]当期[%s]的数据近似模拟",
                              row.ts_code,
                              last_year_same_date,
                              len(df_last_year_same_date),
                              last_year_end_date,
-                             len(df_last_year_end_date))
-                logger.debug("使用[%s]当期[%s]的数据近似模拟",row.name,end_date)
+                             len(df_last_year_end_date),
+                             row.name,
+                             end_date)
                 ttm_values = self.__calculate_ttm_by_same_year_peirod(row[finance_column_names], end_date)
             # 重新替换掉旧的非TTM数据
             row[finance_column_names] = ttm_values
@@ -174,7 +175,7 @@ class TTMMixin:
         }
         periods = PERIOD_DEF.get(end_date[-4:], None)
         if periods is None:
-            logger.warning("无法根据[%s]财务日期[%s]得到财务的季度间隔数", row['ts_code'],end_date)
+            logger.warning("无法根据[%s]财务日期[%s]得到财务的季度间隔数", row['ts_code'], end_date)
             return np.nan
         return row * periods
 
@@ -187,7 +188,8 @@ if __name__ == '__main__':
     end_date = '20190826'
     stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
     from mlstock.factors.income import Income
-    col_names = Income(None,None).tushare_name
+
+    col_names = Income(None, None).tushare_name
 
     import tushare as ts
     import pandas as pd
