@@ -42,21 +42,30 @@ class TurnoverReturn(ComplexMergeFactor):
         df_daily_basic = df_daily_basic[['trade_date', 'ts_code', 'turnover_rate_f']]
         df_daily = df_daily[['trade_date', 'ts_code', 'pct_chg']]
 
+        """
+        2022.8.16 一个低级但是查了半天才找到的bug，
+        数据不做下面的排序，默认是按照trade_date+ts_code的顺序排序的，
+        会导致下面的赋值出现问题：
+            df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
+        改为
+            df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().reset_index(level=0, drop=True)
+        就没有问题，原因是后者是一个Series，有索引，可以和原有的序列对上，
+        而前者只是一个numpy array，与之前的  trade_date+ts_code 的顺序对齐的话，当然乱掉了
+        所以，只要这里做了排序，用numpy array还是Series，都无所谓嘞
+        这个bug查了我1天，唉，低级错误害死人 
+        """
         df = df_daily.merge(df_daily_basic, on=['ts_code', 'trade_date'])
 
         # `动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`
         df['turnover_return'] = df['turnover_rate_f'] * df['pct_chg']
 
-        import pdb;pdb.set_trace()
-        
+        df = df.sort_values(['ts_code', 'trade_date'])
 
         for i in N:
             # x5，按照每周交易日5天计算的
-            # 我靠！隐藏的很深的一个bug，找各种写法会导致中间莫名其妙的出现nan，而且计算的也不对
+            # 我靠！隐藏的很深的一个bug，找各种写法会导致中间莫名其妙的出现nan，而且计算的也不对，改为后者就ok了
             # df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
             df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().reset_index(level=0, drop=True)
-            # if len(df[f'turnover_return_{i}w'].isna())>0:
-            #     import pdb;pdb.set_trace()
 
         # 返回ts_code和trade_date是为了和周频数据做join
         return df[['trade_date', 'ts_code'] + self.name]

@@ -51,7 +51,6 @@ def load(start_date, end_date, num):
     for factor_class in FACTORS:
         factor = factor_class(datasource, stocks_info)
         df_factor = factor.calculate(stock_data)
-        print(df_factor[(df_factor.ts_code == '000401.SZ') & (df_factor.trade_date == '20180629')])
         df_weekly = factor.merge(df_weekly, df_factor)
         factor_names += factor.name if type(factor.name) == list else [factor.name]
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
