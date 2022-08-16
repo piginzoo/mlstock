@@ -40,6 +40,11 @@ def load(datasource, stock_codes, start_date, end_date):
     # 加日周频数据，虽然我们算的周频，但是有些地方需要日频数据
     start_time = time.time()
     df_daily_basic = __load(stock_codes, start_date, end_date, func=datasource.daily_basic)
+    # 对可能用到的字段，预先进行缺失填充
+    import pdb;pdb.set_trace()
+    df_daily_basic[['total_mv', 'pe_ttm', 'ps_ttm', 'pb']] = \
+        df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv', 'pe_ttm', 'ps_ttm', 'pb']]
+
     logger.info("加载[%d]只股票 %s~%s 的日频基础(basic)数据 %d 行，耗时%.0f秒",
                 len(stock_codes),
                 start_date,

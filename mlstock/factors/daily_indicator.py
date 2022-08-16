@@ -38,10 +38,13 @@ class DailyIndicator(ComplexMergeFactor):
     def calculate(self, stock_data):
         df_daily_basic = stock_data.df_daily_basic
         df_daily_basic = df_daily_basic.sort_values(['ts_code', 'trade_date'])
+
+        # 2022.8.16，这事直接搬到最开始的数据load里面去做了，很多地方都需要这个basic数据
         # 如果缺失，用这天之前的数据来填充（ffill)
         # 这样做不行，ts_code和trade_date两列丢了，pandas1.3.4也不行，只好逐个fill了
         # df_daily_basic = df_daily_basic.groupby(by=['ts_code']).fillna(method='ffill').reset_index()
-        df_daily_basic[['total_mv','pe_ttm', 'ps_ttm', 'pb']] = df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv','pe_ttm', 'ps_ttm', 'pb']]
+        # df_daily_basic[['total_mv','pe_ttm', 'ps_ttm', 'pb']] = df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv','pe_ttm', 'ps_ttm', 'pb']]
+
         df_daily_basic[self.name[0]] = df_daily_basic.total_mv.apply(np.log)
         df_daily_basic[self.name[1]] = 1 / df_daily_basic['pe_ttm']  # EP = 1/PE（市盈率）
         df_daily_basic[self.name[2]] = 1 / df_daily_basic['ps_ttm']  # SP = 1/PS（市销率）

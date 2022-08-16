@@ -159,7 +159,7 @@ class FinanceFactor(ComplexMergeFactor):
 
         assert len(df_finance)>0, f"因子数据{self}行数为0"
 
-        # 把财务字段类型改成float，之前种种原因导致列是text类型的
+        # 把财务字段类型改成float，之前种种原因导致tushare下载下来的数据的列是text类型的，这纯粹是个patch
         df_finance = self._numberic(df_finance)
 
         # 把财务字段改成全名（tushare中的缩写很讨厌）
@@ -175,6 +175,12 @@ class FinanceFactor(ComplexMergeFactor):
         df_finance = self._extract_fields(df_finance)
 
         return df_finance
+
+    def normalize_by_market_value(self,df_finance):
+        """
+        直白点，就是都除以市值，让大家标准都统一化
+        :return:
+        """
 
     @classmethod
     def test(cls, stocks, start_date, end_date):
