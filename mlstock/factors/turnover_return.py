@@ -41,6 +41,10 @@ class TurnoverReturn(ComplexMergeFactor):
         """
         df_daily_basic = df_daily_basic[['trade_date', 'ts_code', 'turnover_rate_f']]
         df_daily = df_daily[['trade_date', 'ts_code', 'pct_chg']]
+        df = df_daily.merge(df_daily_basic, on=['ts_code', 'trade_date'])
+
+        # `动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`
+        df['turnover_return'] = df['turnover_rate_f'] * df['pct_chg']
 
         """
         2022.8.16 一个低级但是查了半天才找到的bug，
@@ -54,11 +58,6 @@ class TurnoverReturn(ComplexMergeFactor):
         所以，只要这里做了排序，用numpy array还是Series，都无所谓嘞
         这个bug查了我1天，唉，低级错误害死人 
         """
-        df = df_daily.merge(df_daily_basic, on=['ts_code', 'trade_date'])
-
-        # `动量反转 wgt_return_Nm:个股最近N个月内用每日换手率乘以每日收益率求算术平均值，N=1，3，6，12`
-        df['turnover_return'] = df['turnover_rate_f'] * df['pct_chg']
-
         df = df.sort_values(['ts_code', 'trade_date'])
 
         for i in N:
