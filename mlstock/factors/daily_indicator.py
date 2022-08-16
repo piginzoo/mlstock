@@ -4,6 +4,7 @@
 import logging
 from mlstock.factors.factor import ComplexMergeFactor
 from mlstock.utils import utils
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,12 @@ class DailyIndicator(ComplexMergeFactor):
     # 英文名
     @property
     def name(self):
-        return ["EP", "SP", "BP"]
+        return ["total_market_value_log","EP", "SP", "BP"]
 
     # 中文名
     @property
     def cname(self):
-        return ["净收益(TTM)/总市值", "营业收入（TTM）/总市值", "净资产/总市值"]
+        return ["总市值对数值","净收益(TTM)/总市值", "营业收入（TTM）/总市值", "净资产/总市值"]
 
     def calculate(self, stock_data):
         df_daily_basic = stock_data.df_daily_basic
@@ -40,10 +41,11 @@ class DailyIndicator(ComplexMergeFactor):
         # 如果缺失，用这天之前的数据来填充（ffill)
         # 这样做不行，ts_code和trade_date两列丢了，pandas1.3.4也不行，只好逐个fill了
         # df_daily_basic = df_daily_basic.groupby(by=['ts_code']).fillna(method='ffill').reset_index()
-        df_daily_basic[['pe_ttm', 'ps_ttm', 'pb']] = df_daily_basic.groupby('ts_code').ffill().bfill()[['pe_ttm', 'ps_ttm', 'pb']]
-        df_daily_basic[self.name[0]] = 1 / df_daily_basic['pe_ttm']  # EP = 1/PE（市盈率）
-        df_daily_basic[self.name[1]] = 1 / df_daily_basic['ps_ttm']  # SP = 1/PS（市销率）
-        df_daily_basic[self.name[2]] = 1 / df_daily_basic['pb']  # SP = 1/PS（市销率）
+        df_daily_basic[['total_mv','pe_ttm', 'ps_ttm', 'pb']] = df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv','pe_ttm', 'ps_ttm', 'pb']]
+        df_daily_basic[self.name[0]] = df_daily_basic.total_mv.apply(np.log)
+        df_daily_basic[self.name[1]] = 1 / df_daily_basic['pe_ttm']  # EP = 1/PE（市盈率）
+        df_daily_basic[self.name[2]] = 1 / df_daily_basic['ps_ttm']  # SP = 1/PS（市销率）
+        df_daily_basic[self.name[3]] = 1 / df_daily_basic['pb']  # SP = 1/PS（市销率）
         return df_daily_basic[['ts_code', 'trade_date'] + self.name]
 
 

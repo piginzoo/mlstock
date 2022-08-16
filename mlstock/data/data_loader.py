@@ -66,12 +66,14 @@ def load(datasource, stock_codes, start_date, end_date):
                 time.time() - start_time)
 
     stock_data = StockData()
-    # 按时间排序，默认是ascending=True, 升序，从旧到新，2008->2022，然后赋值到stock_data
-    stock_data.df_daily = df_daily.sort_values('trade_date')
-    stock_data.df_weekly = df_weekly.sort_values('trade_date')
-    stock_data.df_daily_basic = df_daily_basic.sort_values('trade_date')
-    stock_data.df_index_weekly = df_index_weekly.sort_values('trade_date')
-    stock_data.df_index_daily = df_index_daily.sort_values('trade_date')
+    # 按照ts_code + trade_date，排序
+    # 排序默认是ascending=True, 升序，从旧到新，比如日期是2008->2022，
+    # 然后赋值到stock_data
+    stock_data.df_daily = df_daily.sort_values(['ts_code','trade_date'])
+    stock_data.df_weekly = df_weekly.sort_values(['ts_code','trade_date'])
+    stock_data.df_daily_basic = df_daily_basic.sort_values(['ts_code','trade_date'])
+    stock_data.df_index_weekly = df_index_weekly.sort_values(['ts_code','trade_date'])
+    stock_data.df_index_daily = df_index_daily.sort_values(['ts_code','trade_date'])
 
     return stock_data
 
