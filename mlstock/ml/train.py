@@ -175,6 +175,7 @@ def process(df_features, factor_names, start_date, end_date):
     origin_data_size = df_features.shape[0]
     df_features = df_features[df_features.ts_code.apply(lambda x: x not in df_na_miss_codes)]
     logger.info("从%d只股票中剔除了%d只，占比%.1f%%；剔除相关数据%d=>%d行，剔除占比%.2f%%",
+                origin_stock_size,
                 len(df_na_miss_codes),
                 len(df_na_miss_codes) * 100 / origin_stock_size,
                 origin_data_size,
@@ -183,7 +184,6 @@ def process(df_features, factor_names, start_date, end_date):
 
     """
     去除极值+标准化
-    
     每一列，都去极值（TODO：是不是按照各股自己的值来做是不是更好？现在是所有的股票）
     中位数去极值:
     - 设第 T 期某因子在所有个股上的暴露度序列为𝐷𝑖
