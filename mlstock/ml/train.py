@@ -321,7 +321,7 @@ if __name__ == '__main__':
 
     if args.debug:
         print("【调试模式】")
-        utils.init_logger(file=False, log_level=logging.DEBUG)
+        utils.init_logger(file=True, log_level=logging.DEBUG)
     else:
         utils.init_logger(file=True, log_level=logging.INFO)
 
