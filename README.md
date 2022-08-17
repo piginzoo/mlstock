@@ -40,4 +40,4 @@
 - 先按照daily_basic中的'total_mv','pe_ttm', 'ps_ttm', 'pb'缺失值超过80%，去筛掉了一些股票
 - 然后对剩余的股票的daily_basic的上述字段，按照日期向后进行na的填充
 - 对财务相关（income,balance_sheet,cashflow,finance_indicator）的数据，都统一除以了实质total_mv，归一化他们
-- 
+- 和神仔比，我没做行业中性化、PCA，难道是不难，就是不想做了，一个是还要花时间，另外，记得在某集看到，神仔好像后来嫌慢也没做，等有时间我再考虑这事吧

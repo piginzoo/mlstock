@@ -27,7 +27,9 @@ R_it - r_f = alpha_it + beta_it * (R_mt - r_f) + e_it
 from mlstock.factors.factor import SimpleFactor, ComplexMergeFactor
 from mlstock.utils import utils
 import numpy as np
+import logging
 
+logger = logging.getLogger(__name__)
 
 class AlphaBeta(ComplexMergeFactor):
     # 英文名
@@ -40,9 +42,10 @@ class AlphaBeta(ComplexMergeFactor):
     def cname(self):
         return ["alpha", "beta"]
 
-    def _handle_stock(self, df_stock_weekly):
+    def _handle_one_stock(self, df_stock_weekly):
         """
-        处理一只股票，用60周的滑动窗口的概念，来不断地算每天，向前60天的数据回归出来的α和β（CAPM的概念）
+        处理"一只"股票，
+        用60周的滑动窗口的概念，来不断地算每天，向前60天的数据回归出来的α和β（CAPM的概念）
         参考： https://www.jianshu.com/p/1eaf89990ce7
         apply返回多列的时候，只能通过axis=1 + result_type="expand"，来处理，
         且，必须是整行apply，不能单列apply（df_stock_weekly.trade_date.apply(...)，这种axis=1就报错！）
@@ -54,6 +57,13 @@ class AlphaBeta(ComplexMergeFactor):
                                      result_type="expand")
 
     def _handle_60_weeks_OLS(self, date, df_stock_weekly):
+        """
+        用一只股票的60周收益，和，上证的60周收益，做回归，得到alpha、beta
+        :param date:
+        :param df_stock_weekly:
+        :return:
+        """
+
         # 取得当周的日期（周最后一天）
         date = date['trade_date']
         df_recent_60 = df_stock_weekly[df_stock_weekly['trade_date'] <= date][-60:]
@@ -64,6 +74,7 @@ class AlphaBeta(ComplexMergeFactor):
         y = df_recent_60['pct_chg_index'].values
 
         # 用这60周的60个数据，做线性回归，X是个股的收益，y是指数收益，求出截距和系数，即alpha和beta
+        assert len(X)>0, f"回归alpha/beta的数据太少，应该60个，现在{len(X)}"
         params, _ = utils.OLS(X, y)
 
         alpha, beta = params[0], params[1]
@@ -82,11 +93,15 @@ class AlphaBeta(ComplexMergeFactor):
 
         df_weekly = df_weekly.merge(df_index_weekly, on=['trade_date'], how='left')
         # 2022.8.10，bugfix，股票非周五导致weekly指数收益为NAN，导致其移动平均为NAN，导致大量数据缺失，因此需要drop掉这些异常数据
-        df_weekly.dropna(subset=['pct_chg_index'], inplace=True)
+        original_length = len(df_weekly)
+        df_weekly.dropna(subset=['pct_chg','pct_chg_index'], inplace=True)
+        logger.debug("计算alpha/beta时剔除'pct_chg','pct_chg_index'中nan后，数据 %d=>%d 行",
+                     original_length,len(df_weekly))
 
         # 先统一排一下序
         df_weekly = df_weekly.sort_values(['ts_code', 'trade_date'])
-        df_weekly[['alpha', 'beta']] = df_weekly.groupby(['ts_code']).apply(self._handle_stock)
+
+        df_weekly[['alpha', 'beta']] = df_weekly.groupby(['ts_code']).apply(self._handle_one_stock)
         return df_weekly[['ts_code', 'trade_date', 'alpha', 'beta']]
 
 

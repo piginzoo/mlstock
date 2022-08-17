@@ -30,15 +30,17 @@ def calculate_columns_missed_by_stock(df,columns):
 
 @logging_time('加载日频、周频、基础数据')
 def load(datasource, stock_codes, start_date, end_date):
-    start_time = time.time()
 
     # 多加载之前的数据，这样做是为了尽量不让技术指标，如MACD之类的出现NAN
+    original_start_date = start_date
     start_date = utils.last_week(start_date, const.RESERVED_PERIODS)
+    logger.debug("开始加载 %s ~ %s 的股票数据（从真正开始日期%s预加载%d周）",
+                 start_date, end_date,original_start_date,const.RESERVED_PERIODS)
 
     # 加日周频数据，虽然我们算的周频，但是有些地方需要日频数据
     start_time = time.time()
     df_daily_basic = __load(stock_codes, start_date, end_date, func=datasource.daily_basic)
-    # 对可能用到的字段，预先进行缺失填充
+    # 把daily_basic中关键字段缺少比较多（>80%）的股票剔除掉
     df_stock_nan_stat = calculate_columns_missed_by_stock(df_daily_basic,['ts_code','trade_date','total_mv','pe_ttm', 'ps_ttm', 'pb'])
     nan_too_many_stocks = df_stock_nan_stat[df_stock_nan_stat > 0.8].index
     if len(nan_too_many_stocks)>0:
@@ -47,7 +49,7 @@ def load(datasource, stock_codes, start_date, end_date):
         logger.warning("由于daily_basic中的'total_mv','pe_ttm', 'ps_ttm', 'pb'缺失值超过80%%，导致%d只股票被剔除：%r",
                        len(nan_too_many_stocks.tolist()),
                        nan_too_many_stocks.tolist())
-    # 把na信息都fill上
+    # 把daily_basic的nan信息都fill上
     df_daily_basic = df_daily_basic.sort_values(['ts_code', 'trade_date'])
     df_daily_basic[['total_mv','pe_ttm', 'ps_ttm', 'pb']] = \
         df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv','pe_ttm', 'ps_ttm', 'pb']]

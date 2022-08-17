@@ -4,6 +4,7 @@ import logging
 import os
 import time
 import warnings
+import numpy as np
 
 import chinese_calendar
 import matplotlib.pyplot as plt
@@ -444,9 +445,30 @@ def OLS(X, y):
     :param y: shape(N)
     :return:
     """
+    assert not np.isnan(X).any(), f'X序列包含nan:{X}'
+    assert not np.isnan(y).any(), f'y序列包含nan:{y}'
+
     # 增加一个截距项
     X = sm.add_constant(X)
     # 定义模型
     model = sm.OLS(y, X)  # 定义x，y
     results = model.fit()
     return results.params, results.resid
+
+# python -m mlstock.utils.utils
+if __name__ == '__main__':
+
+    import traceback
+
+    X = np.array([1,2,3,4,5,6])
+    y = np.array([0.1,2.1,4.5,0.3,2.4,5.0])
+    print(OLS(X,y))
+
+    X = np.array([1,2,3,4,5,6])
+    y = np.array([0.1,2.1,np.nan,0.3,2.4,5.0])
+    print(OLS(X,y))
+
+    X = np.array([1,2,np.nan,3,4,5])
+    y = np.array([0.1,2.1,4.5,0.3,2.4,5.0])
+    print(OLS(X,y))
+

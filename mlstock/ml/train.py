@@ -1,11 +1,14 @@
+import argparse
 import logging
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn import linear_model
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.preprocessing import StandardScaler
 
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
@@ -13,8 +16,6 @@ from mlstock.data.stock_info import StocksInfo
 from mlstock.ml.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.utils import time_elapse
-
-from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
@@ -58,14 +59,14 @@ def load(start_date, end_date, num):
     logger.info("因子加载完成，合计 %d 行数据，%d个因子:\n%r", len(df_weekly), len(factor_names), factor_names)
     time_elapse(start_time, "⭐️ 全部因子加载")
 
-    df_weekly = load_index(df_weekly, datasource)
+    df_weekly = load_index(df_weekly, start_date, end_date, datasource)
 
-    save_csv("raw", df_weekly)
+    save_csv("raw", df_weekly, start_date, end_date)
 
     return df_weekly, factor_names
 
 
-def load_index(df_weekly, datasource):
+def load_index(df_weekly, start_date, end_date, datasource):
     """
     加载基准的收益率
     :param df_weekly:
@@ -124,7 +125,7 @@ def _scaller(x, df_median, df_scope):
     return x
 
 
-def process(df_features, factor_names, start_date):
+def process(df_features, factor_names, start_date, end_date):
     """
 
     :param df_features:
@@ -148,7 +149,10 @@ def process(df_features, factor_names, start_date):
     """
     original_length = len(df_features)
     df_features = df_features[~df_features.target.isna()]
-    logger.info("过滤掉target为nan的行后：%d => %d 行", original_length, len(df_features))
+    logger.info("过滤掉target为nan的行后：%d => %d 行，剔除占比%.1f%%",
+                original_length,
+                len(df_features),
+                (original_length - len(df_features)) * 100 / original_length)
 
     """
     去除那些因子值中超过20%缺失的股票（看所有因子中确实最大的那个，百分比超过20%，这只股票整个剔除掉）
@@ -170,10 +174,11 @@ def process(df_features, factor_names, start_date):
     origin_stock_size = len(df_features.ts_code.unique())
     origin_data_size = df_features.shape[0]
     df_features = df_features[df_features.ts_code.apply(lambda x: x not in df_na_miss_codes)]
-    logger.info("剔除股票%d只，占比%.2f%%；剔除相关数据%d行，占比%.2f%%",
+    logger.info("从%d只股票中剔除了%d只，占比%.1f%%；剔除相关数据%d=>%d行，剔除占比%.2f%%",
                 len(df_na_miss_codes),
                 len(df_na_miss_codes) * 100 / origin_stock_size,
-                origin_data_size - len(df_features),
+                origin_data_size,
+                len(df_features),
                 (origin_data_size - len(df_features)) * 100 / origin_data_size)
 
     """
@@ -195,7 +200,8 @@ def process(df_features, factor_names, start_date):
     df_scope = df_features_only.apply(lambda x: x - df_median[x.name]).abs().median()
     df_features_only = df_features_only.apply(lambda x: _scaller(x, df_median, df_scope))
 
-    # 标准化
+    # 标准化：
+    # 将中性化处理后的因子暴露度序列减去其现在的均值、除以其标准差，得到一个新的近似服从N(0,1)分布的序列。
     scaler = StandardScaler()
     scaler.fit(df_features_only)
     df_features[factor_names] = scaler.transform(df_features_only)
@@ -205,24 +211,31 @@ def process(df_features, factor_names, start_date):
     logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
     df_features = filter_invalid_data(df_features, factor_names)
 
+    original_length = len(df_features)
     df_features.dropna(subset=factor_names + ['target'], inplace=True)
-    logger.info("去除NAN后，数据剩余行数：%d 行", len(df_features))
+    logger.info("去除NAN后，数据剩余行数：%d=>%d 行，剔除了%.1f%%",
+                original_length,
+                len(df_features),
+                (original_length - len(df_features)) * 100 / original_length)
 
     """
     去重
     """
     original_length = len(df_features)
     df_features = df_features[~df_features[['ts_code', 'trade_date']].duplicated()].reset_index(drop=True)
-    logger.info("去除重复行(ts_code+trade_date)后，数据 %d => %d 行", original_length, len(df_features))
+    logger.info("去除重复行(ts_code+trade_date)后，数据 %d => %d 行，剔除了%.1f%%",
+                original_length,
+                len(df_features),
+                (original_length - len(df_features)) * 100 / original_length)
 
-    save_csv("features", df_features)
+    save_csv("features", df_features, start_date, end_date)
 
     logger.info("特征处理之后的数据情况：\n%r", df_features.describe())
 
     return df_features
 
 
-def save_csv(name, df):
+def save_csv(name, df, start_date, end_date):
     csv_file_name = "data/{}_{}_{}_{}.csv".format(name, start_date, end_date, utils.now())
     df.to_csv(csv_file_name, index=False)
     logger.info("保存 %d 行数据到文件：%s", len(df), csv_file_name)
@@ -234,7 +247,7 @@ def main(start_date, end_date, num):
 
     # 处理特征，剔除异常等
     df_features = df_weekly[['ts_code', 'trade_date', 'target'] + factor_names]
-    df_features = process(df_features, factor_names, start_date)
+    df_features = process(df_features, factor_names, start_date, end_date)
 
     # 准备训练用数据，需要numpy类型
     assert len(df_weekly) > 0
@@ -294,17 +307,22 @@ def filter_invalid_data(df, factor_names):
     return df
 
 
-# python -m mlstock.ml.train
+"""
+python -m mlstock.ml.train
+python -m mlstock.ml.train -n 10 -d
+"""
 if __name__ == '__main__':
-    utils.init_logger(log_level=logging.DEBUG)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--start_date', type=str, default="20090101", help="开始日期")
+    parser.add_argument('-e', '--end_date', type=str, default="20220801", help="结束日期")
+    parser.add_argument('-n', '--num', type=int, default=100000, help="股票数量，调试用")
+    parser.add_argument('-d', '--debug', action='store_true', default=False, help="是否调试")
+    args = parser.parse_args()
 
-    # 生产
-    # start_date = "20080101"
-    # end_date = "20220801"
-    # num = 5000
+    if args.debug:
+        print("【调试模式】")
+        utils.init_logger(file=False, log_level=logging.DEBUG)
+    else:
+        utils.init_logger(file=True, log_level=logging.INFO)
 
-    # 测试
-    start_date = "20180101"
-    end_date = "20200101"
-    num = 100
-    main(start_date, end_date, num)
+    main(args.start_date, args.end_date, args.num)
