@@ -11,7 +11,7 @@ from mlstock.utils.utils import logging_time
 logger = logging.getLogger(__name__)
 
 
-def calculate_columns_missed_by_stock(df,columns):
+def calculate_columns_missed_by_stock(df, columns):
     """
     按照股票代码，来算他的所有的特征中，NA的占比
     返回的是一个包含了index为ts_code的NA占比值：
@@ -30,20 +30,21 @@ def calculate_columns_missed_by_stock(df,columns):
 
 @logging_time('加载日频、周频、基础数据')
 def load(datasource, stock_codes, start_date, end_date):
-
     # 多加载之前的数据，这样做是为了尽量不让技术指标，如MACD之类的出现NAN
     original_start_date = start_date
     start_date = utils.last_week(start_date, const.RESERVED_PERIODS)
     logger.debug("开始加载 %s ~ %s 的股票数据（从真正开始日期%s预加载%d周）",
-                 start_date, end_date,original_start_date,const.RESERVED_PERIODS)
+                 start_date, end_date, original_start_date, const.RESERVED_PERIODS)
 
     # 加日周频数据，虽然我们算的周频，但是有些地方需要日频数据
     start_time = time.time()
     df_daily_basic = __load(stock_codes, start_date, end_date, func=datasource.daily_basic)
     # 把daily_basic中关键字段缺少比较多（>80%）的股票剔除掉
-    df_stock_nan_stat = calculate_columns_missed_by_stock(df_daily_basic,['ts_code','trade_date','total_mv','pe_ttm', 'ps_ttm', 'pb'])
+    df_stock_nan_stat = calculate_columns_missed_by_stock(df_daily_basic,
+                                                          ['ts_code', 'trade_date', 'total_mv', 'pe_ttm', 'ps_ttm',
+                                                           'pb'])
     nan_too_many_stocks = df_stock_nan_stat[df_stock_nan_stat > 0.8].index
-    if len(nan_too_many_stocks)>0:
+    if len(nan_too_many_stocks) > 0:
         stock_codes = stock_codes[~stock_codes.isin(nan_too_many_stocks.tolist())]
         df_daily_basic = df_daily_basic[~df_daily_basic.isin(nan_too_many_stocks.tolist())]
         logger.warning("由于daily_basic中的'total_mv','pe_ttm', 'ps_ttm', 'pb'缺失值超过80%%，导致%d只股票被剔除：%r",
@@ -51,8 +52,8 @@ def load(datasource, stock_codes, start_date, end_date):
                        nan_too_many_stocks.tolist())
     # 把daily_basic的nan信息都fill上
     df_daily_basic = df_daily_basic.sort_values(['ts_code', 'trade_date'])
-    df_daily_basic[['total_mv','pe_ttm', 'ps_ttm', 'pb']] = \
-        df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv','pe_ttm', 'ps_ttm', 'pb']]
+    df_daily_basic[['total_mv', 'pe_ttm', 'ps_ttm', 'pb']] = \
+        df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv', 'pe_ttm', 'ps_ttm', 'pb']]
 
     logger.info("加载[%d]只股票 %s~%s 的日频基础(basic)数据 %d 行，耗时%.0f秒",
                 len(stock_codes),
@@ -98,15 +99,19 @@ def load(datasource, stock_codes, start_date, end_date):
                 len(df_index_weekly),
                 time.time() - start_time)
 
+    # 加上交易日历数据
+    df_calendar = datasource.trade_cal(start_date, end_date)
+
     stock_data = StockData()
     # 按照ts_code + trade_date，排序
     # 排序默认是ascending=True, 升序，从旧到新，比如日期是2008->2022，
     # 然后赋值到stock_data
     stock_data.df_daily = df_daily.sort_values(['ts_code', 'trade_date'])
     stock_data.df_weekly = df_weekly.sort_values(['ts_code', 'trade_date'])
-    stock_data.df_daily_basic = df_daily_basic # 之前sort过了
+    stock_data.df_daily_basic = df_daily_basic  # 之前sort过了
     stock_data.df_index_weekly = df_index_weekly.sort_values(['ts_code', 'trade_date'])
     stock_data.df_index_daily = df_index_daily.sort_values(['ts_code', 'trade_date'])
+    stock_data.df_calendar = df_calendar
 
     return stock_data
 

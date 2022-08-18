@@ -1,2 +1,2 @@
 echo "训练..."
-python -m mlstock.ml.train
+nohup python -m mlstock.ml.train -d  >/dev/null 2>&1 &

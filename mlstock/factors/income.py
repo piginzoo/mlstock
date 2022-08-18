@@ -39,8 +39,8 @@ class Income(FinanceFactor, FillMixin, TTMMixin):
 if __name__ == '__main__':
     utils.init_logger(file=False)
 
-    start_date = '20150703'
-    end_date = '20190826'
+    start_date = '20080101'
+    end_date = '20220826'
     stocks = ['600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
     stocks = ['000996.SZ', '002008.SZ', '002014.SZ', '002026.SZ', '002033.SZ',
      '002038.SZ', '002057.SZ', '600728.SH', '000682.SZ', '000697.SZ',
