@@ -1,11 +1,11 @@
 # coding: utf-8
 
 import logging
+import time
 
-import pandas as pd
 import statsmodels.formula.api as sm
 
-from mlstock.factors.factor import SimpleFactor, ComplexMergeFactor
+from mlstock.factors.factor import ComplexMergeFactor
 from mlstock.factors.fama import fama_model
 from mlstock.utils import utils
 
@@ -68,21 +68,21 @@ class FF3ResidualStd(ComplexMergeFactor):
     def cname(self):
         return [f'{i}周特异波动率' for i in N]
 
-    def _handle_one_stock_residual_std(self, df_weekly_row, df_residuals, period):
-        """
-        按照weekly的日期，逐个周五，算它向前N（1、3、6、12周）范围内的日交易收益率的标准差
-        :param weekly_row: 对应的周的那一行，是为了取得周的最后一天日期
-        :param df_stock_daily: 每日交易数据，原因实际落脚点是每日
-        :param period: （1、3、6、12周）
-        :return:返回这一周，（1、3、6、12周）范围内的，收益波动率的标准差
-        """
-        # 取得当周的日期（周最后一天）
-        trade_date = df_weekly_row['trade_date']
-        ts_code = df_weekly_row['ts_code']
-        df_stock_residual = df_residuals[df_residuals['ts_code'] == ts_code]
-        # 只算这天向前period天（1、3、6、12周）之前的范围的天的标准差
-        df_stock_daily_residual_recent = df_stock_residual[df_stock_residual['trade_date'] <= trade_date][-period:]
-        return df_stock_daily_residual_recent['ff3_residual'].std()
+    # def _handle_one_stock_residual_std(self, df_weekly_row, df_residuals, period):
+    #     """
+    #     按照weekly的日期，逐个周五，算它向前N（1、3、6、12周）范围内的日交易收益率的标准差
+    #     :param weekly_row: 对应的周的那一行，是为了取得周的最后一天日期
+    #     :param df_stock_daily: 每日交易数据，原因实际落脚点是每日
+    #     :param period: （1、3、6、12周）
+    #     :return:返回这一周，（1、3、6、12周）范围内的，收益波动率的标准差
+    #     """
+    #     # 取得当周的日期（周最后一天）
+    #     trade_date = df_weekly_row['trade_date']
+    #     ts_code = df_weekly_row['ts_code']
+    #     df_stock_residual = df_residuals[df_residuals['ts_code'] == ts_code]
+    #     # 只算这天向前period天（1、3、6、12周）之前的范围的天的标准差
+    #     df_stock_daily_residual_recent = df_stock_residual[df_stock_residual['trade_date'] <= trade_date][-period:]
+    #     return df_stock_daily_residual_recent['ff3_residual'].std()
 
     def _calculate_one_stock_ff3_residual(self, df_one_stock_daily, df_fama):
         """
@@ -91,47 +91,77 @@ class FF3ResidualStd(ComplexMergeFactor):
         所以，对一只股票而言，每周的df_fama因子（市场、smb、hml）不同，就导致用它算出的这只股票的特异性数值，
         这样下来，这只股票的每周的特异性数值（用fama因子计算出来的残差），就是一个时间序列。
         这个时间序列，就是我们所要的。
+
+        "用横截面（每期）上的所有股票算出的smb/hml/rm，用其当做当期因子，然后对单只股票所有期，进行时间序列回归，可得系数权重标量，和每期残差"
+
+        参考：https://zhuanlan.zhihu.com/p/131533515
         :param df_daily: 按照时间序列，所有股票共享的fama-french的三个因子，每周3个值，N期
         :param df_fama: 按照时间序列，所有股票共享的fama-french的三个因子，每周3个值，N期
         :return: 返回的一个每只股票的特异性收益率的时间序列
         """
-
+        start_time = time.time()
+        stock_code = df_one_stock_daily.name  # 保留一下股票名称，因为下面的merge后，就会消失
         # 细节：1个时间截面上，的所有股票，共享fama的3因子数值
         df_one_stock_daily = df_one_stock_daily.merge(df_fama, on=['trade_date'], how='left')
-
+        # 细节：这个是这只股票的所有期（我们是N周）N*5天的数据进行回归
         ols_result = sm.ols(formula='pct_chg ~ R_M + SMB + HML', data=df_one_stock_daily).fit()
 
         # 获得残差，注意，这个是每个股票都每周，都计算出来一个残差来
         df_one_stock_daily['ff3_residual'] = ols_result.resid
+        utils.time_elapse(start_time,
+                          f"计算完股票[{stock_code}]的Fama-French回归残差：{len(ols_result.resid)} 行",
+                          'debug')
+
         return df_one_stock_daily[['trade_date', 'ff3_residual']]
 
+    def _handle_one_stock_residual_std(self, df_one_stock_residuals, period):
+        """
+        按照weekly的日期，逐个周五，算它向前N（1、3、6、12周）范围内的日交易收益率的标准差
+        :param weekly_row: 对应的周的那一行，是为了取得周的最后一天日期
+        :param df_stock_daily: 每日交易数据，原因实际落脚点是每日
+        :param period: （1、3、6、12周）
+        :return:返回这一周，（1、3、6、12周）范围内的，收益波动率的标准差
+        """
+        return df_one_stock_residuals.rolling(period).std()
+
     def calculate(self, stock_data):
+        """
+        计算是以天为最小单位，1、3、6、12周的窗口长度的收益率波动标准差
+        :param stock_data:
+        :return:
+        """
+
         df_weekly = stock_data.df_weekly
 
-        # 先准备好日期和股票代码两列，准备和因子合并到一起
-        df_factors = [df_weekly.ts_code, df_weekly.trade_date]
-
         # 1.先计算出基于这些股票的每期的FamaFrench的3因子（是一个每期有3个因子值的序列）
+        # df_residuals日期单位是日，不是周！
         df_residuals = self._calculate_ff3_residual(stock_data)
 
+        # 要根据trade_date做一个升序处理（2008=>2019），原因是后续需要用rolling函数，向前（旧）回溯N天
+        df_residuals = df_residuals.sort_values(['ts_code', 'trade_date'], ascending=True)
+
         # 2.按照要求计算以1、3、6、12周的滑动窗口，计算出每期的的特异性波动的方差
-        for i in N:
+        start_time = time.time()
+        for i,n in enumerate(N):
             # 变成周频
-            time_window = i * WEEK_TRADE_DAYS
+            time_window = n * WEEK_TRADE_DAYS
             # 每只股票，针对"每周"数据，都要逐个计算其残差std
-            df_residual_std_i = df_weekly.apply(
-                self._handle_one_stock_residual_std,
-                df_residuals=df_residuals,
-                period=time_window,
-                axis=1)
-            df_factors.append(df_residual_std_i)
+            # df_residual_std_i = df_weekly.apply(
+            #     self._handle_one_stock_residual_std,
+            #     df_residuals=df_residuals,
+            #     period=time_window,
+            #     axis=1)
+            # 2022.8.19这个实现效率太低了，axis=1是逐行，每只股票每天都做一次，改进之，改成按照股票分组处理，用rolling
+            df = df_residuals[['ts_code', 'trade_date', 'ff3_residual']] \
+                .groupby('ts_code') \
+                .apply(self._handle_one_stock_residual_std,
+                       period=time_window)
+            df_residuals[self.name[i]] = df
+            start_time = utils.time_elapse(start_time,
+                                           f"计算完时间窗口{i}周的所有股票Fama-French回归残差的标准差：{len(df_residuals[self.name[i]])}行",
+                                           "debug")
 
-        # 将ts_code,trade_date和多个子因子合并到一起，按照列合并
-        df_factors = pd.concat(df_factors, axis=1)  # 按照列拼接（axis=1）
-
-        # 重新改一下列名
-        df_factors.columns = ['ts_code', 'trade_date'] + self.name
-        return df_factors
+        return df_residuals[['ts_code', 'trade_date'] + self.name]
 
     def _calculate_ff3_residual(self, stock_data):
         """
@@ -143,9 +173,11 @@ class FF3ResidualStd(ComplexMergeFactor):
 
         # df_fama['trade_date', 'R_M', 'SMB', 'HML']
         # fama三因子，是 用每天的横截面'凑'出来的特征，用来后面回归单个股票的数据
+        start_time = time.time()
         df_fama = fama_model.calculate_factors(df_stocks=df_daily, df_market=df_index_daily, df_basic=df_daily_basic)
+        start_time = utils.time_elapse(start_time, f"计算完所有股票的日频Fama-French因子：{len(df_fama)}行")
 
-        assert len(df_fama)>0, "3因子数据行数应该大于0"
+        assert len(df_fama) > 0, "3因子数据行数应该大于0"
 
         """
         计算每只股票，和FF3的每天的残差
@@ -172,7 +204,10 @@ class FF3ResidualStd(ComplexMergeFactor):
         """
         # as_index=True是为了保留ts_code，但是在ubuntu服务器上不行，排查后发现是pandas==1.4.3导致，应该是个bug
         # 解决办法是降级pandas，2022.8.11
-        df_residuals = df_daily.groupby('ts_code',as_index=True).apply(self._calculate_one_stock_ff3_residual, df_fama).reset_index()
+        df_residuals = df_daily.groupby('ts_code', as_index=True).apply(self._calculate_one_stock_ff3_residual,
+                                                                        df_fama).reset_index()
+        utils.time_elapse(start_time, f"计算完所有股票的Fama-French回归残差：{len(df_residuals)}行")
+
         return df_residuals[['ts_code', 'trade_date', 'ff3_residual']]
 
 
@@ -185,11 +220,12 @@ if __name__ == '__main__':
 
     utils.init_logger(file=False)
 
-    start_date = "20180101"
-    end_date = "20200101"
+    start_time = time.time()
+    start_date = "20080101"
+    end_date = "20220801"
     # stocks = ['000007.SZ','000010.SZ']
     df_stock_basic = data_filter.filter_stocks()
-    df_stock_basic = df_stock_basic.iloc[:100]
+    df_stock_basic = df_stock_basic.iloc[:50]
 
     datasource = DataSource()
     stocks_info = StocksInfo(df_stock_basic.ts_code, start_date, end_date)
@@ -198,3 +234,4 @@ if __name__ == '__main__':
     factor_alpha_beta = FF3ResidualStd(datasource, stocks_info)
     df = factor_alpha_beta.calculate(df_stocks)
     print("因子结果\n", df)
+    utils.time_elapse(start_time,"全部处理")

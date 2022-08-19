@@ -24,6 +24,8 @@ R_it - r_f = alpha_it + beta_it * (R_mt - r_f) + e_it
 实现的时候，用了2个apply，每周五，都向前回溯60周，然后用这60周的数据回归alpha和beta
 
 """
+import time
+
 from mlstock.factors.factor import SimpleFactor, ComplexMergeFactor
 from mlstock.utils import utils
 import numpy as np
@@ -108,14 +110,21 @@ class AlphaBeta(ComplexMergeFactor):
 # python -m mlstock.factors.alpha_beta
 if __name__ == '__main__':
     utils.init_logger(file=False)
+    from mlstock.data import data_loader, data_filter
+    from mlstock.data.datasource import DataSource
+    from mlstock.data.stock_info import StocksInfo
 
-    start_date = "20180101"
+    start_date = "20080101"
     end_date = "20220101"
     stocks = ['000017.SZ']  # '600000.SH', '002357.SZ', '000404.SZ', '600230.SH']
 
-    from mlstock.data import data_loader
-    from mlstock.data.datasource import DataSource
-    from mlstock.data.stock_info import StocksInfo
+    start_time = time.time()
+    start_date = "20080101"
+    end_date = "20220801"
+    # stocks = ['000007.SZ','000010.SZ']
+    df_stock_basic = data_filter.filter_stocks()
+    df_stock_basic = df_stock_basic.iloc[:50]
+    stocks = df_stock_basic.ts_code
 
     datasource = DataSource()
     stocks_info = StocksInfo(stocks, start_date, end_date)
@@ -124,5 +133,9 @@ if __name__ == '__main__':
     print(df_stocks.df_weekly.count())
     factor_alpha_beta = AlphaBeta(datasource, stocks_info)
     df = factor_alpha_beta.calculate(df_stocks)
-    print(df[df['beta'].isna()])
-    print(df.count())
+    df_na = df[df['beta'].isna()]
+    print("Alpha Beta为空的行，%d 行" % len(df_na))
+    print(df_na)
+
+    print("结果统计\n",df.count())
+    utils.time_elapse(start_time,"全部处理")

@@ -2,6 +2,8 @@ import logging
 
 import pandas as pd
 
+from mlstock.utils.utils import logging_time
+
 logger = logging.getLogger(__name__)
 
 """
@@ -22,6 +24,7 @@ Fama-French 3 因子，是用3个因子（市值、SMB、HML）来解释收益�
 
 
 # %%定义计算函数
+@logging_time('fama-frech的因子计算(所有股票)')
 def calculate_smb_hml(df):
     """"
     参考：

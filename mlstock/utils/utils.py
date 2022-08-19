@@ -208,13 +208,19 @@ def strf_delta(tdelta, fmt):
     d = {"days": tdelta.days}
     d["hours"], rem = divmod(tdelta.seconds, 3600)
     d["minutes"], d["seconds"] = divmod(rem, 60)
+    d["milliseconds"], _ = divmod(tdelta.microseconds,1000)
     return fmt.format(**d)
 
 
-def time_elapse(start_time, title=''):
-    logger.info("%s耗时: %s ", title,
-                strf_delta(datetime.timedelta(seconds=time.time() - start_time),
-                           "{days}天{hours}小时{minutes}分{seconds}秒"))
+def time_elapse(start_time, title='', debug_level='info'):
+    if debug_level == 'debug':
+        logger.debug("%s耗时: %s ", title,
+                    strf_delta(datetime.timedelta(seconds=time.time() - start_time),
+                               "{days}天{hours}小时{minutes}分{seconds}秒{milliseconds}毫秒"))
+    else:
+        logger.info("%s耗时: %s ", title,
+                    strf_delta(datetime.timedelta(seconds=time.time() - start_time),
+                               "{days}天{hours}小时{minutes}分{seconds}秒"))
     return time.time()
 
 
@@ -455,20 +461,19 @@ def OLS(X, y):
     results = model.fit()
     return results.params, results.resid
 
+
 # python -m mlstock.utils.utils
 if __name__ == '__main__':
-
     import traceback
 
-    X = np.array([1,2,3,4,5,6])
-    y = np.array([0.1,2.1,4.5,0.3,2.4,5.0])
-    print(OLS(X,y))
+    X = np.array([1, 2, 3, 4, 5, 6])
+    y = np.array([0.1, 2.1, 4.5, 0.3, 2.4, 5.0])
+    print(OLS(X, y))
 
-    X = np.array([1,2,3,4,5,6])
-    y = np.array([0.1,2.1,np.nan,0.3,2.4,5.0])
-    print(OLS(X,y))
+    X = np.array([1, 2, 3, 4, 5, 6])
+    y = np.array([0.1, 2.1, np.nan, 0.3, 2.4, 5.0])
+    print(OLS(X, y))
 
-    X = np.array([1,2,np.nan,3,4,5])
-    y = np.array([0.1,2.1,4.5,0.3,2.4,5.0])
-    print(OLS(X,y))
-
+    X = np.array([1, 2, np.nan, 3, 4, 5])
+    y = np.array([0.1, 2.1, 4.5, 0.3, 2.4, 5.0])
+    print(OLS(X, y))
