@@ -275,11 +275,11 @@ def main(start_date, end_date, num):
     logger.info("最好的参数：%.0f, 对应的最好的均方误差：%.2f",
                 alpha_scope[results.index(max(results))],
                 max(results))
-    plt.figure(figsize=(20, 5))
+    fig = plt.figure(figsize=(20, 5))
     plt.title('Best Alpha')
     plt.plot(alpha_scope, results, c="red", label="alpha")
     plt.legend()
-    plt.show()
+    fig.savefig("data/best_alpha.jpg")
 
     # 用grid search找最好的alpha：[200,205,...,500]
     # grid search的参数是alpha，岭回归就这样一个参数，用于约束参数的平方和
