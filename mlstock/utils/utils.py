@@ -435,7 +435,7 @@ def logging_time(title=''):
         def wrapper_it(*args, **kw):
             start_time = time.time()
             result = func(*args, **kw)
-            time_elapse(start_time, title)
+            time_elapse(start_time, title, 'debug')
             return result
 
         return wrapper_it

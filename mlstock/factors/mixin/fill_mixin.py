@@ -24,6 +24,9 @@ class FillMixin:
         :param df_stocks: df是原始的周频数据，以周五的日期为准
         :param df_finance: 财务数据，只包含财务公告日期，要求之前已经做了ttm数据
         """
+        if type(finance_column_names)!=list:
+            finance_column_names = [finance_column_names]
+
         # 按照公布日期倒序排（日期从新到旧）,<=== '倒'序很重要，这样才好找到对应日的财务数据
         df_finance = df_finance.sort_values('ann_date')
         # 开始做join合并，注意注意，用outer，外连接，这样就不会落任何两边的日期（财务的，和，股票交易数据的）
