@@ -142,7 +142,9 @@ def process(df_features, factor_names, start_date, end_date):
     logger.info("过滤掉[%s]之前的数据（为防止技术指标nan）后：%d => %d 行", start_date, original_length, len(df_features))
 
     logger.info("(调试)特征处理之前的数据情况：\n%r", df_features.describe())
-    logger.info("(调试)特征处理之前NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        logger.info("(调试)特征处理之前NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
 
     """
     如果target缺失比较多，就删除掉这些股票
@@ -207,8 +209,9 @@ def process(df_features, factor_names, start_date, end_date):
     df_features[factor_names] = scaler.transform(df_features_only)
     logger.info("对%d个特征进行了标准化(中位数去极值)处理：%d 行", len(factor_names), len(df_features))
 
-    # 去除所有的NAN数据
-    logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
+    # 去除所有的NAN数据(with用来显示所有航)
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        logger.info("NA统计：数据特征中的NAN数：\n%r", df_features[factor_names].isna().sum().sort_values())
     df_features = filter_invalid_data(df_features, factor_names)
 
     original_length = len(df_features)

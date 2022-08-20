@@ -60,13 +60,14 @@ class TurnoverReturn(ComplexMergeFactor):
         """
         df = df.sort_values(['ts_code', 'trade_date'])
 
-        import pdb;pdb.set_trace()
+
         for i in N:
             # x5，按照每周交易日5天计算的
             # 我靠！隐藏的很深的一个bug，找各种写法会导致中间莫名其妙的出现nan，而且计算的也不对，改为后者就ok了
             # df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
             df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().reset_index(level=0, drop=True)
 
+        import pdb;pdb.set_trace()
         # 返回ts_code和trade_date是为了和周频数据做join
         return df[['trade_date', 'ts_code'] + self.name]
 
@@ -97,9 +98,9 @@ if __name__ == '__main__':
     pandas.set_option('display.max_rows', 1000000)
     utils.init_logger(file=False)
 
-    start_date = "20180101"
+    start_date = "20080101"
     end_date = "20200101"
-    stocks = ['000401.SZ']
+    stocks = ['000001.SZ']
     datasource = DataSource()
     stocks_info = StocksInfo(stocks, start_date, end_date)
     stock_data = data_loader.load(datasource, stocks, start_date, end_date)
@@ -113,4 +114,4 @@ if __name__ == '__main__':
     df = df[df.trade_date>start_date]
     print(df)
     print("NA缺失比例", df.isna().sum() / len(df))
-    print(df[(df.ts_code=='000401.SZ')&(df.trade_date=='20180629')])
+    # print(df[(df.ts_code=='000401.SZ')&(df.trade_date=='20180629')])
