@@ -60,6 +60,7 @@ class TurnoverReturn(ComplexMergeFactor):
         """
         df = df.sort_values(['ts_code', 'trade_date'])
 
+        import pdb;pdb.set_trace()
         for i in N:
             # x5，按照每周交易日5天计算的
             # 我靠！隐藏的很深的一个bug，找各种写法会导致中间莫名其妙的出现nan，而且计算的也不对，改为后者就ok了
