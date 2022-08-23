@@ -324,7 +324,7 @@ def search_best_hyperparams(X_train, y_train):
     # 保存超参的图像
     fig = plt.figure(figsize=(20, 5))
     plt.title('Best Alpha')
-    plt.plot(alpha_scope, results, c="red", label="alpha")
+    plt.plot(alpha_scope, [results[i] for i in alpha_scope], c="red", label="alpha")
     plt.legend()
     fig.savefig("data/best_alpha.jpg")
 
