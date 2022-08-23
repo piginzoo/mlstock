@@ -17,7 +17,7 @@ from mlstock.factors.turnover_return import TurnoverReturn
 """
 所有的因子配置，有的因子类只包含一个feature，有的因子类可能包含多个features。
 """
-FACTORS = [TurnoverReturn]
+FACTORS = [Income]
 
 # FACTORS = [TurnoverReturn,
 #            Return,
