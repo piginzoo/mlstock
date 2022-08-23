@@ -67,7 +67,6 @@ class TurnoverReturn(ComplexMergeFactor):
             # df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().values
             df[f'turnover_return_{i}w'] = df.groupby('ts_code').turnover_return.rolling(i * 5).mean().reset_index(level=0, drop=True)
 
-        import pdb;pdb.set_trace()
         # 返回ts_code和trade_date是为了和周频数据做join
         return df[['trade_date', 'ts_code'] + self.name]
 

@@ -361,7 +361,7 @@ def filter_invalid_data(df, factor_names):
 """
 python -m mlstock.ml.train -d
 python -m mlstock.ml.train -d -o train
-python -m mlstock.ml.train -n 10 -d
+python -m mlstock.ml.train -n 50 -d
 """
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
