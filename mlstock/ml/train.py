@@ -1,7 +1,9 @@
 import argparse
 import logging
+import os.path
 import time
 
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -57,11 +59,11 @@ def load(start_date, end_date, num):
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
 
     logger.info("因子加载完成，合计 %d 行数据，%d个因子:\n%r", len(df_weekly), len(factor_names), factor_names)
-    time_elapse(start_time, "⭐️ 全部因子加载")
 
     df_weekly = load_index(df_weekly, start_date, end_date, datasource)
 
     save_csv("raw", df_weekly, start_date, end_date)
+    time_elapse(start_time, "⭐️ 全部因子加载完成")
 
     return df_weekly, factor_names
 
@@ -133,6 +135,8 @@ def process(df_features, factor_names, start_date, end_date):
     :param start_date: 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
     :return:
     """
+
+    start_time = time.time()
 
     """
     因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
@@ -235,6 +239,7 @@ def process(df_features, factor_names, start_date, end_date):
 
     logger.info("特征处理之后的数据情况：\n%r", df_features.describe())
 
+    time_elapse(start_time, "⭐️ 全部因子预处理完成")
     return df_features
 
 
@@ -244,30 +249,52 @@ def save_csv(name, df, start_date, end_date):
     logger.info("保存 %d 行数据到文件：%s", len(df), csv_file_name)
 
 
-def main(start_date, end_date, num):
-    # 加载特征、基准收益
-    df_weekly, factor_names = load(start_date, end_date, num)
+def main(start_date, end_date, num, option="all", data_file_name=None):
+    """
+    --
+    :param start_date:
+    :param end_date:
+    :param num:
+    :param option: type=str, default="all", help="all|train|data : 所有流程|仅训练|仅加载数据"
+    :param data_file_name:
+    :return:
+    """
 
-    # 处理特征，剔除异常等
-    df_features = df_weekly[['ts_code', 'trade_date', 'target'] + factor_names]
-    df_features = process(df_features, factor_names, start_date, end_date)
+    start_time = time.time()
+
+    if option == "train":
+        start_time1 = time.time()
+        assert data_file_name is not None, "训练数据不能为空"
+        df_features = pd.read_csv(data_file_name)
+        time_elapse(start_time1, f"从文件中加载训练数据（股票+日期+下期收益+各类特征s）: {data_file_name}")
+    else:
+        # 加载特征、基准收益
+        df_weekly, factor_names = load(start_date, end_date, num)
+        assert len(df_weekly) > 0
+
+        # 处理特征，剔除异常等
+        df_features = df_weekly[['ts_code', 'trade_date', 'target'] + factor_names]
+        df_features = process(df_features, factor_names, start_date, end_date)
+        if option == "data":
+            time_elapse(start_time, "⭐️ 因子加载、因子处理完成")
+            return
 
     # 准备训练用数据，需要numpy类型
-    assert len(df_weekly) > 0
     X_train = df_features[factor_names].values
     y_train = df_features.target
 
     # 划分训练集和测试集，测试集占总数据的15%，随机种子为10
     X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.15, random_state=10)
 
-    # # 对train使用交叉验证，分成10份，挨个做K-Fold，训练
-    # cv_scores = []
-    # for n in range(5):
-    #     regession = linear_model.LinearRegression()
-    #     scores = cross_val_score(regession, X_train, y_train, cv=10, scoring='neg_mean_squared_error')
-    #     cv_scores.append(scores.mean())
-    # logger.info("成绩：\n%r", cv_scores)
-    search_best_hyperparams(X_train, y_train)
+    best_hyperparam = search_best_hyperparams(X_train, y_train)
+
+    ridge = Ridge(alpha=best_hyperparam)
+    ridge.fit(X_train, y_train)
+    if not os.path.exists("./model"): os.mkdir("./model")
+    model_file_path = f"./model/ridge_{utils.now()}.model"
+    joblib.dump(ridge, model_file_path)
+    logger.info("训练结果保存到：%s", model_file_path)
+    time_elapse(start_time, "⭐️ 全部训练完成")
 
 
 def search_best_hyperparams(X_train, y_train):
@@ -282,16 +309,19 @@ def search_best_hyperparams(X_train, y_train):
     results = {}
     alpha_scope = np.arange(start=0, stop=1000, step=100)
     for i in alpha_scope:
+        # Ridge和Lasso回归分别代表L1和L2的正则化，L1会把系数压缩到0，而L2则不会，同时L1还有挑选特征的作用
         ridge = Ridge(alpha=i)
         results[i] = cross_val_score(ridge, X_train, y_train, cv=10, scoring='neg_mean_squared_error').mean()
 
     # 按照value排序：{1: 1, 2: 2, 3: 3} =>[(3, 3), (2, 2), (1, 1)]
     sorted_results = sorted(results.items(), key=lambda x: (x[1], x[0]), reverse=True)
 
-    logger.info("超参数/样本和预测的均方误差：%r",results)
+    logger.info("超参数/样本和预测的均方误差：%r", results)
     logger.info("最好的超参数为：%.0f, 对应的最好的均方误差的均值：%.2f",
                 sorted_results[0][0],
                 sorted_results[0][1])
+
+    # 保存超参的图像
     fig = plt.figure(figsize=(20, 5))
     plt.title('Best Alpha')
     plt.plot(alpha_scope, results, c="red", label="alpha")
@@ -312,6 +342,9 @@ def search_best_hyperparams(X_train, y_train):
     # # 得到的结果是495，确实和上面人肉跑是一样的结果
     # logger.info("GridSarch最好的参数:%.5f", grid_search.best_estimator_.alpha)
 
+    best_hyperparam = sorted_results[0][0]
+    return best_hyperparam
+
 
 def filter_invalid_data(df, factor_names):
     for factor_name in factor_names:
@@ -326,7 +359,8 @@ def filter_invalid_data(df, factor_names):
 
 
 """
-python -m mlstock.ml.train
+python -m mlstock.ml.train -d
+python -m mlstock.ml.train -d -o train
 python -m mlstock.ml.train -n 10 -d
 """
 if __name__ == '__main__':
@@ -334,6 +368,8 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--start_date', type=str, default="20090101", help="开始日期")
     parser.add_argument('-e', '--end_date', type=str, default="20220801", help="结束日期")
     parser.add_argument('-n', '--num', type=int, default=100000, help="股票数量，调试用")
+    parser.add_argument('-o', '--option', type=str, default="all", help="all|train|data : 所有流程|仅训练|仅加载数据")
+    parser.add_argument('-f', '--file', type=str, default=None, help="数据文件")
     parser.add_argument('-d', '--debug', action='store_true', default=False, help="是否调试")
     args = parser.parse_args()
 
@@ -343,4 +379,4 @@ if __name__ == '__main__':
     else:
         utils.init_logger(file=True, log_level=logging.INFO)
 
-    main(args.start_date, args.end_date, args.num)
+    main(args.start_date, args.end_date, args.num, args.option)
