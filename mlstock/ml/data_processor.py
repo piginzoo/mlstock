@@ -1,14 +1,13 @@
+import json
 import logging
 import os
 import time
-import json
+
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from mlstock.const import CODE_DATE
-from mlstock.data import data_filter, data_loader
-from mlstock.data.datasource import DataSource
-from mlstock.data.stock_info import StocksInfo
+from mlstock.data import data_filter,data_loader
 from mlstock.ml.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.industry_neutral import IndustryMarketNeutral
@@ -17,23 +16,19 @@ from mlstock.utils.utils import time_elapse
 logger = logging.getLogger(__name__)
 
 
-def load(start_date, end_date, num):
-    start_time = time.time()
-    datasource = DataSource()
-
+def load_data(data_source, start_date, end_date, num):
     # 过滤非主板、非中小板股票、且上市在1年以上的非ST股票
     df_stock_basic = data_filter.filter_stocks()
     df_stock_basic = df_stock_basic.iloc[:num]
-    df_stock_basic = process_industry(df_stock_basic) # 把industry列换成ID
+    df_stock_basic = process_industry(df_stock_basic)  # 把industry列换成ID
 
     ts_codes = df_stock_basic.ts_code
-    stocks_info = StocksInfo(ts_codes, start_date, end_date)
 
     # 临时保存一下，用于本地下载数据提供列表（调试用）
     # df_stock_basic.ts_code.to_csv("data/stocks.txt", index=False)
 
     # 加载周频数据
-    stock_data = data_loader.load(datasource, ts_codes, start_date, end_date)
+    stock_data = data_loader.load(data_source, ts_codes, start_date, end_date)
 
     # 把基础信息merge到周频数据中
     df_weekly = stock_data.df_weekly.merge(df_stock_basic, on='ts_code', how='left')
@@ -45,17 +40,37 @@ def load(start_date, end_date, num):
     df_weekly = df_weekly[a - b > pd.Timedelta(12, unit='w')]
     logger.info("剔除掉上市12周内的数据：%d=>%d", old_length, len(df_weekly))
 
+    stock_data.df_weekly = df_weekly
+    return stock_data, ts_codes
+
+
+def load_factors(data_source, stock_data, stocks_info):
     factor_names = []
+    df_weekly = stock_data.df_weekly
+
     # 获取每一个因子（特征），并且，并入到股票数据中
     for factor_class in FACTORS:
-        factor = factor_class(datasource, stocks_info)
+        factor = factor_class(data_source, stocks_info)
         df_factor = factor.calculate(stock_data)
         df_weekly = factor.merge(df_weekly, df_factor)
         factor_names += factor.name if type(factor.name) == list else [factor.name]
         logger.info("获取因子%r %d 行数据", factor.name, len(df_factor))
 
     logger.info("因子加载完成，合计 %d 行数据，%d个因子:\n%r", len(df_weekly), len(factor_names), factor_names)
+    return df_weekly, factor_names
 
+
+def load(start_date, end_date, num):
+    start_time = time.time()
+    data_source = DataSource()
+
+    # 加载股票数据
+    stock_data, ts_codes = load_data(data_source, start_date, end_date, num)
+
+    # 加载（计算）因子
+    df_weekly, factor_names = load_factors(data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
+
+    # 加载指数数据
     df_weekly = load_index(df_weekly, start_date, end_date, datasource)
 
     save_csv("raw", df_weekly, start_date, end_date)
@@ -161,7 +176,7 @@ def process(df_weekly, factor_names, start_date, end_date, is_industry_market_ne
     """
     # 计算每只股票的每个特征的缺失百分比
     # 仅用[ 特征s, 股票,日期 ] 这些列作为统计手段
-    df_na_miss_percent_by_code = df_weekly[CODE_DATE+factor_names].groupby(by='ts_code').apply(
+    df_na_miss_percent_by_code = df_weekly[CODE_DATE + factor_names].groupby(by='ts_code').apply(
         lambda df: (df.shape[0] - df.count()) / df.shape[0])
 
     # 找出最大的那个特征的缺失比，如果其>80%，就剔除这只股票
@@ -236,13 +251,13 @@ def process(df_weekly, factor_names, start_date, end_date, is_industry_market_ne
     # 行业中性化处理
     if is_industry_market_neutral:
         start_time1 = time.time()
-        industry_market_neutral = IndustryMarketNeutral()
+        industry_market_neutral = IndustryMarketNeutral(factor_names)
         industry_market_neutral.fit()
         df_weekly = industry_market_neutral.transform(df_weekly)
-        time_elapse(start_time1,"行业中性化处理")
+        time_elapse(start_time1, "行业中性化处理")
 
     save_csv("processed", df_weekly, start_date, end_date)
-    save_csv("features", df_weekly[CODE_DATE+factor_names], start_date, end_date)
+    save_csv("features", df_weekly[CODE_DATE + factor_names], start_date, end_date)
 
     logger.info("特征处理之后的数据情况：\n%r", df_weekly[CODE_DATE + factor_names].describe())
 
@@ -312,15 +327,9 @@ def process_industry(df_basic):
 
 # python -m mlstock.ml.data_processor
 if __name__ == '__main__':
-    from mlstock.data import data_filter
-    from mlstock.data import data_loader, data_filter
-    from mlstock.data.datasource import DataSource
-    from mlstock.data.stock_info import StocksInfo
-
     utils.init_logger(file=False)
-
+    from mlstock.data.datasource import DataSource
     datasource = DataSource()
     df_stock_basic = datasource.stock_basic()
-
     df_basic = process_industry(df_stock_basic)
     print(df_basic)
