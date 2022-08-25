@@ -9,12 +9,14 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split, cross_val_score
-
+from xgboost import XGBClassifier
+from sklearn.model_selection import GridSearchCV
 from mlstock.ml import data_processor
 from mlstock.utils import utils
 from mlstock.utils.utils import time_elapse
 
 logger = logging.getLogger(__name__)
+
 
 def main(start_date, end_date, num, option="all", data_file_name=None):
     """
@@ -30,7 +32,7 @@ def main(start_date, end_date, num, option="all", data_file_name=None):
     start_time = time.time()
 
     if option == "train":
-        logger.info("仅训练（不做数据清洗），数据预加载自：%s",data_file_name)
+        logger.info("仅训练（不做数据清洗），数据预加载自：%s", data_file_name)
         start_time1 = time.time()
         assert data_file_name is not None, "训练数据不能为空"
         df_features = pd.read_csv(data_file_name)
@@ -58,6 +60,15 @@ def main(start_date, end_date, num, option="all", data_file_name=None):
     # 划分训练集和测试集，测试集占总数据的15%，随机种子为10
     X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.15, random_state=10)
 
+    # train_pct(X_train, y_train)
+
+    train_winloss(X_train, y_train)
+
+
+def train_pct(X_train, y_train):
+    """用岭回归预测下周收益"""
+
+    start_time = time.time()
     best_hyperparam = search_best_hyperparams(X_train, y_train)
 
     ridge = Ridge(alpha=best_hyperparam)
@@ -66,7 +77,7 @@ def main(start_date, end_date, num, option="all", data_file_name=None):
     model_file_path = f"./model/ridge_{utils.now()}.model"
     joblib.dump(ridge, model_file_path)
     logger.info("训练结果保存到：%s", model_file_path)
-    time_elapse(start_time, "⭐️ 全部训练完成")
+    time_elapse(start_time, "⭐️ 岭回归训练完成")
 
 
 def search_best_hyperparams(X_train, y_train):
@@ -118,9 +129,41 @@ def search_best_hyperparams(X_train, y_train):
     return best_hyperparam
 
 
-def train_winloss():
-    import warnings
-    warnings.filterwarnings("ignore")
+def train_winloss(X_train, y_train):
+    """
+    Xgboost来做输赢判断，参考：https://cloud.tencent.com/developer/article/1656126
+    :return:
+    """
+    start_time = time.time()
+    # 创建xgb分类模型实例
+    model = XGBClassifier()
+    # 待搜索的参数列表空间
+    param_lst = {"max_depth": [3, 5, 7, 9],
+                 "n_estimators": [*range(10, 110, 20)]}  # [10, 30, 50, 70, 90]
+    # 创建网格搜索
+    grid_search = GridSearchCV(model,
+                               param_grid=param_lst,
+                               cv=5,
+                               verbose=10,
+                               n_jobs=-1)
+    # 基于flights数据集执行搜索
+    grid_search.fit(X_train, y_train)
+
+    # 输出搜索结果
+    logger.debug("GridSearch出最优参数：%r", grid_search.best_estimator_)
+    import pdb;
+    pdb.set_trace()
+
+    xgboost = XGBClassifier(max_depth=5, min_child_weight=6, n_estimators=300)
+    xgboost.fit()
+    if not os.path.exists("./model"): os.mkdir("./model")
+    model_file_path = f"./model/ridge_{utils.now()}.model"
+    joblib.dump(xgboost, model_file_path)
+    logger.info("训练结果保存到：%s", model_file_path)
+
+    # 输出搜索结果
+    logger.info("", grid_search.best_estimator_)
+    time_elapse(start_time, "⭐️ xgboost胜败分类训练完成")
 
 
 """
