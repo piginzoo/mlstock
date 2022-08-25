@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 from mlstock.const import CODE_DATE
 from mlstock.data import data_filter,data_loader
+from mlstock.data.stock_info import StocksInfo
 from mlstock.ml.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.industry_neutral import IndustryMarketNeutral
