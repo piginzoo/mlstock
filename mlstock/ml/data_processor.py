@@ -12,6 +12,7 @@ from mlstock.ml.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.industry_neutral import IndustryMarketNeutral
 from mlstock.utils.utils import time_elapse
+from mlstock.data.datasource import DataSource
 
 logger = logging.getLogger(__name__)
 
@@ -328,7 +329,6 @@ def process_industry(df_basic):
 # python -m mlstock.ml.data_processor
 if __name__ == '__main__':
     utils.init_logger(file=False)
-    from mlstock.data.datasource import DataSource
     datasource = DataSource()
     df_stock_basic = datasource.stock_basic()
     df_basic = process_industry(df_stock_basic)
