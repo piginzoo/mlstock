@@ -9,10 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class StakeHolder(ComplexMergeFactor, FillMixin):
+    """
+    股东变化率
+    """
 
     @property
     def name(self):
-        return 'stake_holder'
+        return 'stake_holder_chg'
 
     @property
     def cname(self):
@@ -29,7 +32,7 @@ class StakeHolder(ComplexMergeFactor, FillMixin):
                                                               self.stocks_info.end_date)
         df_stake_holder = df_stake_holder.sort_values(by='ann_date')
         df = self.fill(df_weekly, df_stake_holder, 'holder_num')
-        df = df.rename(columns={'holder_num': self.name})
+        df[self.name] = (df.holder_num - df.holder_num.shift(1)) / df.holder_num.shift(1)
         return df[['ts_code', 'trade_date', self.name]]
 
 
