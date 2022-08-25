@@ -73,7 +73,7 @@ def load(start_date, end_date, num):
     df_weekly, factor_names = load_factors(data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
 
     # 加载指数数据
-    df_weekly = load_index(df_weekly, start_date, end_date, datasource)
+    df_weekly = load_index(df_weekly, start_date, end_date, data_source)
 
     save_csv("raw", df_weekly, start_date, end_date)
     time_elapse(start_time, "⭐️ 全部因子加载完成")
