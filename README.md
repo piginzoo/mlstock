@@ -1,4 +1,3 @@
-
 # 前言
 
 感谢B站UP主[致敬大神](https://www.bilibili.com/video/BV1564y1b7PR)，这个项目是站在她的华泰金工的研报复现的基础上的一个项目。
