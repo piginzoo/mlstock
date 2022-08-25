@@ -258,8 +258,10 @@ def process(df_weekly, factor_names, start_date, end_date, is_industry_market_ne
         df_weekly = industry_market_neutral.transform(df_weekly)
         time_elapse(start_time1, "行业中性化处理")
 
-    save_csv("processed", df_weekly, start_date, end_date)
-    save_csv("features", df_weekly[CODE_DATE + factor_names], start_date, end_date)
+    save_csv("processed"+("_industry_neutral" if is_industry_market_neutral else ""),
+             df_weekly, start_date, end_date)
+    save_csv("features"+("_industry_neutral" if is_industry_market_neutral else ""),
+             df_weekly[CODE_DATE + factor_names], start_date, end_date)
 
     logger.info("特征处理之后的数据情况：\n%r", df_weekly[CODE_DATE + factor_names].describe())
 
@@ -269,7 +271,7 @@ def process(df_weekly, factor_names, start_date, end_date, is_industry_market_ne
 
 def save_csv(name, df, start_date, end_date):
     csv_file_name = "data/{}_{}_{}_{}.csv".format(name, start_date, end_date, utils.now())
-    df.to_csv(csv_file_name, index=False)
+    df.to_csv(csv_file_name, header=True, index=False) # 保留列名
     logger.info("保存 %d 行数据到文件：%s", len(df), csv_file_name)
 
 

@@ -11,6 +11,8 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split, cross_val_score
 from xgboost import XGBClassifier
 from sklearn.model_selection import GridSearchCV
+
+from mlstock.const import CODE_DATE
 from mlstock.ml import data_processor
 from mlstock.utils import utils
 from mlstock.utils.utils import time_elapse
@@ -18,7 +20,17 @@ from mlstock.utils.utils import time_elapse
 logger = logging.getLogger(__name__)
 
 
-def main(start_date, end_date, num, option="all", data_file_name=None):
+def __get_latest_feature_file():
+    import os
+    files = os.listdir("data")
+    files = [f for f in files if "features" in f]
+    files = [os.path.join("data", f) for f in files]
+    files.sort(key=lambda f: os.path.getmtime(f))
+    files.reverse()
+    return files[0]
+
+
+def main(start_date, end_date, num, is_industry_neutral, option="all", data_file_name=None):
     """
     --
     :param start_date:
@@ -34,8 +46,12 @@ def main(start_date, end_date, num, option="all", data_file_name=None):
     if option == "train":
         logger.info("仅训练（不做数据清洗），数据预加载自：%s", data_file_name)
         start_time1 = time.time()
-        assert data_file_name is not None, "训练数据不能为空"
-        df_features = pd.read_csv(data_file_name)
+        if data_file_name is None:
+            logger.info("未提供特征文件名，使用data目录中最新的文件")
+            data_file_name = __get_latest_feature_file()
+        df_features = pd.read_csv(data_file_name,header=True)
+        df_features['trade_date'] = df_features['trade_date'].astype(str)
+        factor_names = [item for item in df_features.columns if item not in CODE_DATE] # 只保留特征名
         time_elapse(start_time1, f"从文件中加载训练数据（股票+日期+下期收益+各类特征s）: {data_file_name}")
     else:
         logger.info("加载和清洗数据")
@@ -45,7 +61,7 @@ def main(start_date, end_date, num, option="all", data_file_name=None):
         assert len(df_weekly) > 0
 
         # 处理特征，剔除异常等
-        df_features = data_processor.process(df_weekly, factor_names, start_date, end_date)
+        df_features = data_processor.process(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
         if option == "data":
             logger.info("仅仅加载和清洗数据，不做训练")
             time_elapse(start_time, "⭐️ 因子加载、因子处理完成")
@@ -178,6 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num', type=int, default=100000, help="股票数量，调试用")
     parser.add_argument('-o', '--option', type=str, default="all", help="all|train|data : 所有流程|仅训练|仅加载数据")
     parser.add_argument('-f', '--file', type=str, default=None, help="数据文件")
+    parser.add_argument('-in', '--industry_neutral', action='store_true', default=False, help="是否做行业中性处理")
     parser.add_argument('-d', '--debug', action='store_true', default=False, help="是否调试")
     args = parser.parse_args()
 
@@ -187,4 +204,8 @@ if __name__ == '__main__':
     else:
         utils.init_logger(file=True, log_level=logging.INFO)
 
-    main(args.start_date, args.end_date, args.num, args.option)
+    main(start_date=args.start_date,
+         end_date=args.end_date,
+         num=args.num,
+         is_industry_neutral=args.industry_neutral,
+         option=args.option)
