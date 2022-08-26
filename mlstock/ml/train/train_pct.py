@@ -28,10 +28,7 @@ class TrainPct(Train):
 
         ridge = Ridge(alpha=best_hyperparam)
         ridge.fit(X_train, y_train)
-        if not os.path.exists("./model"): os.mkdir("./model")
-        model_file_path = f"./model/ridge_{utils.now()}.model"
-        joblib.dump(ridge, model_file_path)
-        logger.info("训练结果保存到：%s", model_file_path)
+        return ridge
 
     def evaluate(self):
         pass

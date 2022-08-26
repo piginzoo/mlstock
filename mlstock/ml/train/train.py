@@ -34,7 +34,8 @@ class Train:
 
         # 训练
         start_time = time.time()
-        self._train(X_train, y_train)
+        model = self._train(X_train, y_train)
+        self.save_model(model)
         time_elapse(start_time, "⭐️ 岭回归训练完成")
 
     def get_model_name(self):
