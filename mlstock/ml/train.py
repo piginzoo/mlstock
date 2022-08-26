@@ -49,7 +49,7 @@ def main(start_date, end_date, num, is_industry_neutral, option="all", data_file
         if data_file_name is None:
             logger.info("未提供特征文件名，使用data目录中最新的文件")
             data_file_name = __get_latest_feature_file()
-        df_features = pd.read_csv(data_file_name,header=True)
+        df_features = pd.read_csv(data_file_name,header=0) # 带header读取，第一行是header:
         df_features['trade_date'] = df_features['trade_date'].astype(str)
         factor_names = [item for item in df_features.columns if item not in CODE_DATE] # 只保留特征名
         time_elapse(start_time1, f"从文件中加载训练数据（股票+日期+下期收益+各类特征s）: {data_file_name}")
