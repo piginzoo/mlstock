@@ -33,8 +33,6 @@ class TrainWinLoss(Train):
         # 待搜索的参数列表空间
         param_lst = {"max_depth": [3, 5, 7, 9],
                      "n_estimators": [*range(10, 110, 20)]}  # [10, 30, 50, 70, 90]
-        param_lst = {"max_depth": [3, 5],
-                     "n_estimators": [30, 50]}
 
         # 创建网格搜索
         grid_search = GridSearchCV(model,
