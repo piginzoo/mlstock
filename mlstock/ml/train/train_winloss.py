@@ -1,6 +1,6 @@
 import logging
 import time
-
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
 
@@ -24,7 +24,10 @@ class TrainWinLoss(Train):
         Xgboost来做输赢判断，参考：https://cloud.tencent.com/developer/article/1656126
         :return:
         """
-        start_time = time.time()
+        # https://so.muouseo.com/qa/em6w1x8w20k8.html
+        le = LabelEncoder()
+        y_train = le.fit_transform(y_train)
+
         # 创建xgb分类模型实例
         model = XGBClassifier()
         # 待搜索的参数列表空间
