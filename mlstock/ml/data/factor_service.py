@@ -374,7 +374,9 @@ def process_industry(df_basic):
     # 返回处理后的数据
     return df_basic
 
-
+"""
+python -m mlstock.ml.data.factor_service -n 50 -d -s 20080101 -e 20220901
+"""
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 

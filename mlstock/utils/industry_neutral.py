@@ -2,7 +2,6 @@ import pandas as pd
 from sklearn import linear_model
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from mlstock.ml.data import data_processor
 from mlstock.utils import utils
 
 """
@@ -84,28 +83,27 @@ class IndustryMarketNeutral(BaseEstimator, TransformerMixin):
         df[self.factor_names] = df[self.factor_names].apply(lambda y: self._regression_pred(X, y))
         return df
 
-
 # python -m mlstock.utils.industry_neutral
-if __name__ == '__main__':
-    from mlstock.data.datasource import DataSource
-    from mlstock.data.stock_info import StocksInfo
-
-    utils.init_logger(file=False)
-
-    start_date = "20080101"
-    end_date = "20220801"
-    datasource = DataSource()
-    stock_data, ts_codes = data_processor.load_stock_data(datasource, start_date, end_date, 20)
-
-    from mlstock.factors.macd import MACD
-    factor = MACD(datasource, StocksInfo(ts_codes, start_date, end_date))
-    df_factor = factor.calculate(stock_data)
-    df_weekly = factor.merge(stock_data.df_weekly, df_factor)
-    df_weekly = pd.merge(df_weekly, stock_data.df_daily_basic, how='left', on=['ts_code','trade_date'])
-
-    industry_market_neutral = IndustryMarketNeutral([factor.name],
-                                                    market_value_name='total_mv_log',
-                                                    industry_name='industry')
-    industry_market_neutral.fit(df_weekly)
-    df_weekly = industry_market_neutral.transform(df_weekly)
-    print(df_weekly)
+# if __name__ == '__main__':
+#     from mlstock.data.datasource import DataSource
+#     from mlstock.data.stock_info import StocksInfo
+#
+#     utils.init_logger(file=False)
+#
+#     start_date = "20080101"
+#     end_date = "20220801"
+#     datasource = DataSource()
+#     stock_data, ts_codes = load_stock_data(datasource, start_date, end_date, 20)
+#
+#     from mlstock.factors.macd import MACD
+#     factor = MACD(datasource, StocksInfo(ts_codes, start_date, end_date))
+#     df_factor = factor.calculate(stock_data)
+#     df_weekly = factor.merge(stock_data.df_weekly, df_factor)
+#     df_weekly = pd.merge(df_weekly, stock_data.df_daily_basic, how='left', on=['ts_code','trade_date'])
+#
+#     industry_market_neutral = IndustryMarketNeutral([factor.name],
+#                                                     market_value_name='total_mv_log',
+#                                                     industry_name='industry')
+#     industry_market_neutral.fit(df_weekly)
+#     df_weekly = industry_market_neutral.transform(df_weekly)
+#     print(df_weekly)

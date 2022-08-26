@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os.path
 
@@ -49,13 +50,14 @@ def main(args):
 
 
 """
-python -m mlstock.ml.train -d
-python -m mlstock.ml.train -d --train all
-python -m mlstock.ml.train -d --train pct
-python -m mlstock.ml.train -d --train winloss
-python -m mlstock.ml.train -d --train winloss --preload data/features_20180101_20200101_20220815165011.csv
-python -m mlstock.ml.train -n 50 -d
-python -m mlstock.ml.train -n 50 -d -s 20080101 -e 20220901
+python -m mlstock.ml.main -d
+python -m mlstock.ml.main -d --train all
+python -m mlstock.ml.main -d --train pct
+python -m mlstock.ml.main -d --train winloss
+python -m mlstock.ml.main -d --train winloss --preload data/features_20180101_20200101_20220815165011.csv
+python -m mlstock.ml.main -n 50 -d
+python -m mlstock.ml.main -n 50 -d -s 20080101 -e 20220901
+python -m mlstock.ml.main -n 50 -d -s 20180101 -e 20200101
 """
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
