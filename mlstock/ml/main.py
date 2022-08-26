@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     # 数据相关的
     parser.add_argument('-s', '--start_date', type=str, default="20090101", help="开始日期")
-    parser.add_argument('-e', '--end_date', type=str, default="20220801", help="结束日期")
+    parser.add_argument('-e', '--end_date', type=str, default="20220901", help="结束日期")
     parser.add_argument('-n', '--num', type=int, default=100000, help="股票数量，调试用")
     parser.add_argument('-p', '--preload', type=str, default=None, help="预先加载的因子数据文件的路径，不再从头计算因子")
     parser.add_argument('-in', '--industry_neutral', action='store_true', default=False, help="是否做行业中性处理")
