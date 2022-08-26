@@ -1,9 +1,8 @@
 import logging
-import time
 
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
-from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
 from mlstock.ml.train.train import Train
@@ -32,29 +31,23 @@ class TrainWinLoss(Train):
         y_train = le.fit_transform(y_train)
 
         # 创建xgb分类模型实例
-        model = XGBClassifier()
+        model = XGBClassifier(nthread=1)
         # 待搜索的参数列表空间
         param_lst = {"max_depth": [3, 5, 7, 9],
-                     "n_estimators": [*range(10, 110, 20)],
-                     "nthread": 10}  # [10, 30, 50, 70, 90]
+                     "n_estimators": [*range(10, 110, 20)]}  # [10, 30, 50, 70, 90]
 
         # 创建网格搜索
         grid_search = GridSearchCV(model,
                                    param_grid=param_lst,
                                    cv=5,
                                    verbose=10,
-                                   n_jobs=-1,
-                                   scoring='auc')
+                                   scoring='auc',
+                                   n_jobs=16)  # 最多16个进程同时跑
         # 基于flights数据集执行搜索
         grid_search.fit(X_train, y_train)
 
         # 输出搜索结果
         logger.debug("GridSearch出最优参数：%r", grid_search.best_estimator_)
-
-        # import pdb; pdb.set_trace()
-        # xgboost = XGBClassifier(max_depth=grid_search.best_estimator_.max_depth,
-        #                         n_estimators=grid_search.best_estimator_.n_estimators)
-        # xgboost.fit(X_train, y_train)
 
         return grid_search.best_estimator_
 

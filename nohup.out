@@ -1,0 +1,6 @@
+2022-08-26 20:24:26,894 - INFO - train_winloss.py:20 P5252: 设置target为分类：0跌，1涨
+【调试模式】
+开始初始化日志：file=True, simple=False
+日志：创建控制台处理器
+日志：创建文件处理器 ./logs/202208262024.log
+Fitting 5 folds for each of 20 candidates, totalling 100 fits
