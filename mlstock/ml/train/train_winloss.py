@@ -1,5 +1,7 @@
 import logging
 import time
+
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
@@ -33,14 +35,16 @@ class TrainWinLoss(Train):
         model = XGBClassifier()
         # 待搜索的参数列表空间
         param_lst = {"max_depth": [3, 5, 7, 9],
-                     "n_estimators": [*range(10, 110, 20)]}  # [10, 30, 50, 70, 90]
+                     "n_estimators": [*range(10, 110, 20)],
+                     "nthread": 10}  # [10, 30, 50, 70, 90]
 
         # 创建网格搜索
         grid_search = GridSearchCV(model,
                                    param_grid=param_lst,
                                    cv=5,
                                    verbose=10,
-                                   n_jobs=-1)
+                                   n_jobs=-1,
+                                   scoring='auc')
         # 基于flights数据集执行搜索
         grid_search.fit(X_train, y_train)
 
@@ -54,5 +58,24 @@ class TrainWinLoss(Train):
 
         return grid_search.best_estimator_
 
-    def evaluate(self):
-        pass
+    def evaluate(self, model, df_train, df_test):
+        """
+        https://ningshixian.github.io/2020/08/24/sklearn%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/
+        :param df:
+        :param model:
+        :return:
+        """
+
+        def _calculate_metrics(df):
+            y_pred = model.predict(df)
+            y = df.target
+
+            metrics = {}
+            metrics['accuracy'] = accuracy_score(y, y_pred)
+            metrics['precision'] = precision_score(y, y_pred)
+            metrics['recall'] = recall_score(y, y_pred)
+            metrics['f1'] = f1_score(y, y_pred)
+
+            return metrics
+
+        return _calculate_metrics(df_train), _calculate_metrics(df_test)

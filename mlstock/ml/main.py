@@ -31,21 +31,18 @@ def load_data(args):
 def main(args):
     df_data, factor_names = load_data(args)
 
-    train_pct = TrainPct()
-    train_winloss = TrainWinLoss()
+    train_pct = TrainPct(factor_names)
+    train_winloss = TrainWinLoss(factor_names)
+
     if args.train == 'all':
-        train_pct.train(df_data, factor_names)
-        train_pct.evaluate()
-        train_winloss.train(df_data, factor_names)
-        train_winloss.evaluate()
+        train_pct.evaluate(train_pct.train(df_data))
+        train_winloss.evaluate(train_winloss.train(df_data))
         return
     if args.train == 'pct':
-        train_pct.train(df_data, factor_names)
-        train_pct.evaluate()
+        train_pct.evaluate(train_pct.train(df_data))
         return
     if args.train == 'winloss':
-        train_winloss.train(df_data, factor_names)
-        train_winloss.evaluate()
+        train_winloss.evaluate(train_winloss.train(df_data))
         return
 
 
