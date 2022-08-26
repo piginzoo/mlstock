@@ -123,7 +123,7 @@ def load_from_file(factors_file_path):
     :return:
     """
 
-    df_features = pd.read_csv(factors_file_path, header=True)
+    df_features = pd.read_csv(factors_file_path, header=0)
     df_features['trade_date'] = df_features['trade_date'].astype(str)
     df_features['target'] = df_features['trade_date'].astype(int)
     factor_names = [item for item in df_features.columns if item not in CODE_DATE]  # 只保留特征名

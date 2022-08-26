@@ -17,6 +17,7 @@ class TrainWinLoss(Train):
 
     def set_target(self, df_data):
         df_data['target'] = df_data.target.apply(lambda x: 1 if x > 0 else 0)
+        logger.info("设置target为分类：0跌，1涨")
         return df_data
 
     def _train(self, X_train, y_train):
