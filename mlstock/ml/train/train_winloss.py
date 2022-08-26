@@ -45,3 +45,6 @@ class TrainWinLoss(Train):
 
         xgboost = XGBClassifier(max_depth=5, min_child_weight=6, n_estimators=300)
         xgboost.fit()
+
+    def evaluate(self):
+        pass
