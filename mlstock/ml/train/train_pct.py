@@ -33,6 +33,9 @@ class TrainPct(Train):
         joblib.dump(ridge, model_file_path)
         logger.info("训练结果保存到：%s", model_file_path)
 
+    def evaluate(self):
+        pass
+
     def search_best_hyperparams(self, X_train, y_train):
         """
         超找最好的超参
