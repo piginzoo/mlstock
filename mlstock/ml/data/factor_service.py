@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -7,18 +8,59 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from mlstock.const import CODE_DATE
-from mlstock.data import data_filter,data_loader
+from mlstock.data import data_filter, data_loader
+from mlstock.data.datasource import DataSource
 from mlstock.data.stock_info import StocksInfo
-from mlstock.ml.factor_conf import FACTORS
+from mlstock.ml.data.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.industry_neutral import IndustryMarketNeutral
 from mlstock.utils.utils import time_elapse
-from mlstock.data.datasource import DataSource
 
 logger = logging.getLogger(__name__)
 
 
-def load_data(data_source, start_date, end_date, num):
+def calculate(start_date, end_date, num, is_industry_neutral):
+    """
+    从头开始计算因子
+    :param start_date:
+    :param end_date:
+    :param num:
+    :return:
+    """
+
+    start_time = time.time()
+    data_source = DataSource()
+
+    # 加载股票数据
+    stock_data, ts_codes = load_stock_data(data_source, start_date, end_date, num)
+
+    # 加载（计算）因子
+    df_weekly, factor_names = calculate_factors(data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
+
+    # 加载指数数据
+    df_weekly = load_index(df_weekly, start_date, end_date, data_source)
+
+    # 显存一份最原始的数据
+    save_csv("raw", df_weekly, start_date, end_date)
+    time_elapse(start_time, "⭐️ 全部因子加载完成")
+
+    df_data = post_process_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
+    save_csv("features" + ("_industry_neutral" if is_industry_neutral else ""), df_data, start_date, end_date)
+
+    return df_data, factor_names
+
+
+def load_stock_data(data_source, start_date, end_date, num):
+    """
+    筛选出合适的股票，并，加载数据
+
+    :param data_source:
+    :param start_date:
+    :param end_date:
+    :param num:
+    :return:
+    """
+
     # 过滤非主板、非中小板股票、且上市在1年以上的非ST股票
     df_stock_basic = data_filter.filter_stocks()
     df_stock_basic = df_stock_basic.iloc[:num]
@@ -46,7 +88,18 @@ def load_data(data_source, start_date, end_date, num):
     return stock_data, ts_codes
 
 
-def load_factors(data_source, stock_data, stocks_info):
+def calculate_factors(data_source, stock_data, stocks_info):
+    """
+    计算每一个因子，因子列表来自于factor_conf.py
+
+    :param data_source:
+    :param stock_data:
+    :param stocks_info:
+    :return:
+    """
+
+    logger.info("加载和清洗数据")
+
     factor_names = []
     df_weekly = stock_data.df_weekly
 
@@ -62,24 +115,19 @@ def load_factors(data_source, stock_data, stocks_info):
     return df_weekly, factor_names
 
 
-def load(start_date, end_date, num):
-    start_time = time.time()
-    data_source = DataSource()
+def load_from_file(factors_file_path):
+    """
+    从文件中，直接加载因子数据
 
-    # 加载股票数据
-    stock_data, ts_codes = load_data(data_source, start_date, end_date, num)
+    :param factors_file_path:
+    :return:
+    """
 
-    # 加载（计算）因子
-    df_weekly, factor_names = load_factors(data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
-
-    # 加载指数数据
-    df_weekly = load_index(df_weekly, start_date, end_date, data_source)
-
-    # 显存一份最原始的数据
-    save_csv("raw", df_weekly, start_date, end_date)
-    time_elapse(start_time, "⭐️ 全部因子加载完成")
-
-    return df_weekly, factor_names
+    df_features = pd.read_csv(factors_file_path, header=True)
+    df_features['trade_date'] = df_features['trade_date'].astype(str)
+    df_features['target'] = df_features['trade_date'].astype(int)
+    factor_names = [item for item in df_features.columns if item not in CODE_DATE]  # 只保留特征名
+    return df_features, factor_names
 
 
 def load_index(df_weekly, start_date, end_date, datasource):
@@ -141,7 +189,7 @@ def _scaller(x, df_median, df_scope):
     return x
 
 
-def process(df_weekly, factor_names, start_date, end_date, is_industry_market_neutral):
+def post_process_factors(df_weekly, factor_names, start_date, end_date, is_industry_market_neutral):
     """
     对数据进行预计处理，这步很重要，也很慢
     :param df_features:
@@ -259,21 +307,17 @@ def process(df_weekly, factor_names, start_date, end_date, is_industry_market_ne
         df_weekly = industry_market_neutral.transform(df_weekly)
         time_elapse(start_time1, "行业中性化处理")
 
-    save_csv("processed"+("_industry_neutral" if is_industry_market_neutral else ""),
-             df_weekly, start_date, end_date)
     # 保存最后的训练数据：ts_code、trade_date、factors、target
-    save_csv("features"+("_industry_neutral" if is_industry_market_neutral else ""),
-             df_weekly[CODE_DATE + factor_names + ['target']], start_date, end_date)
-
-    logger.info("特征处理之后的数据情况：\n%r", df_weekly[CODE_DATE + factor_names].describe())
+    df_data = df_weekly[CODE_DATE + factor_names + ['target']]
+    logger.info("特征处理之后的数据情况：\n%r", df_data.describe())
 
     time_elapse(start_time, "⭐️ 全部因子预处理完成")
-    return df_weekly[CODE_DATE + factor_names]
+    return df_data
 
 
 def save_csv(name, df, start_date, end_date):
     csv_file_name = "data/{}_{}_{}_{}.csv".format(name, start_date, end_date, utils.now())
-    df.to_csv(csv_file_name, header=True, index=False) # 保留列名
+    df.to_csv(csv_file_name, header=True, index=False)  # 保留列名
     logger.info("保存 %d 行数据到文件：%s", len(df), csv_file_name)
 
 
@@ -331,10 +375,24 @@ def process_industry(df_basic):
     return df_basic
 
 
-# python -m mlstock.ml.data_processor
 if __name__ == '__main__':
-    utils.init_logger(file=False)
-    datasource = DataSource()
-    df_stock_basic = datasource.stock_basic()
-    df_basic = process_industry(df_stock_basic)
-    print(df_basic)
+    parser = argparse.ArgumentParser()
+
+    # 数据相关的
+    parser.add_argument('-s', '--start_date', type=str, default="20090101", help="开始日期")
+    parser.add_argument('-e', '--end_date', type=str, default="20220801", help="结束日期")
+    parser.add_argument('-n', '--num', type=int, default=100000, help="股票数量，调试用")
+    parser.add_argument('-in', '--industry_neutral', action='store_true', default=False, help="是否做行业中性处理")
+
+    # 全局的
+    parser.add_argument('-d', '--debug', action='store_true', default=True, help="是否调试")
+
+    args = parser.parse_args()
+
+    if args.debug:
+        print("【调试模式】")
+        utils.init_logger(file=True, log_level=logging.DEBUG)
+    else:
+        utils.init_logger(file=True, log_level=logging.INFO)
+
+    calculate(args.start_date, args.end_date, args.num, args.industry_neutral)

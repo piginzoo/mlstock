@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn import linear_model
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from mlstock.ml import data_processor
+from mlstock.ml.data import data_processor
 from mlstock.utils import utils
 
 """
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     start_date = "20080101"
     end_date = "20220801"
     datasource = DataSource()
-    stock_data, ts_codes = data_processor.load_data(datasource, start_date, end_date, 20)
+    stock_data, ts_codes = data_processor.load_stock_data(datasource, start_date, end_date, 20)
 
     from mlstock.factors.macd import MACD
     factor = MACD(datasource, StocksInfo(ts_codes, start_date, end_date))
