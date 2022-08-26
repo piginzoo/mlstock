@@ -30,7 +30,7 @@ class TrainWinLoss(Train):
         y_train = le.fit_transform(y_train)
 
         # 创建xgb分类模型实例
-        model = XGBClassifier()
+        model = XGBClassifier(nthread=1)
         # 待搜索的参数列表空间
         param_lst = {"max_depth": [3, 5, 7, 9],
                      "n_estimators": [*range(10, 110, 20)]}  # [10, 30, 50, 70, 90]
@@ -40,7 +40,7 @@ class TrainWinLoss(Train):
                                    param_grid=param_lst,
                                    cv=5,
                                    verbose=10,
-                                   n_jobs=-1)
+                                   n_jobs=18) # 最多18个进程同时跑
         # 基于flights数据集执行搜索
         grid_search.fit(X_train, y_train)
 
