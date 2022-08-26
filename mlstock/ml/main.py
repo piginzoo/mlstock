@@ -10,7 +10,7 @@ from mlstock.utils import utils
 logger = logging.getLogger(__name__)
 
 
-def load_data():
+def load_data(args):
     start_date = args.start_date
     end_date = args.end_date
     num = args.num
