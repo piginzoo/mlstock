@@ -75,6 +75,7 @@ def load(start_date, end_date, num):
     # 加载指数数据
     df_weekly = load_index(df_weekly, start_date, end_date, data_source)
 
+    # 显存一份最原始的数据
     save_csv("raw", df_weekly, start_date, end_date)
     time_elapse(start_time, "⭐️ 全部因子加载完成")
 
@@ -260,8 +261,9 @@ def process(df_weekly, factor_names, start_date, end_date, is_industry_market_ne
 
     save_csv("processed"+("_industry_neutral" if is_industry_market_neutral else ""),
              df_weekly, start_date, end_date)
+    # 保存最后的训练数据：ts_code、trade_date、factors、target
     save_csv("features"+("_industry_neutral" if is_industry_market_neutral else ""),
-             df_weekly[CODE_DATE + factor_names], start_date, end_date)
+             df_weekly[CODE_DATE + factor_names + ['target']], start_date, end_date)
 
     logger.info("特征处理之后的数据情况：\n%r", df_weekly[CODE_DATE + factor_names].describe())
 
