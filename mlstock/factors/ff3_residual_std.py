@@ -108,9 +108,10 @@ class FF3ResidualStd(ComplexMergeFactor):
 
         # 获得残差，注意，这个是每个股票都每周，都计算出来一个残差来
         df_one_stock_daily['ff3_residual'] = ols_result.resid
-        utils.time_elapse(start_time,
-                          f"计算完股票[{stock_code}]的Fama-French回归残差：{len(ols_result.resid)} 行",
-                          'debug')
+
+        # utils.time_elapse(start_time,
+        #                   f"计算完股票[{stock_code}]的Fama-French回归残差：{len(ols_result.resid)} 行",
+        #                   'debug')
 
         return df_one_stock_daily[['trade_date', 'ff3_residual']]
 
