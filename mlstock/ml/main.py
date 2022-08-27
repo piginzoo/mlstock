@@ -24,8 +24,8 @@ def load_data(args):
         return df_data, factor_names
 
     # 那么就需要从新计算了
-    df_data, factor_names = factor_service.calculate(start_date, end_date, num, is_industry_neutral)
-    return df_data, factor_names
+    df_weekly, factor_names = factor_service.calculate(start_date, end_date, num, is_industry_neutral)
+    return df_weekly, factor_names
 
 
 def main(args):

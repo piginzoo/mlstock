@@ -5,11 +5,10 @@ import time
 import joblib
 from sklearn.model_selection import train_test_split
 
+from mlstock.const import TRAIN_TEST_SPLIT_DATE
 from mlstock.utils.utils import time_elapse
 
 logger = logging.getLogger(__name__)
-
-TRAIN_TEST_SPLIT_DATE = '20190101'
 
 
 class Train:
@@ -26,14 +25,14 @@ class Train:
     def _train(self, X_train, y_train):
         raise NotImplemented()
 
-    def train(self, df_features):
+    def train(self, df_weekly):
         # 根据子类，来调整target（分类要变成0:1)
-        df_features = self.set_target(df_features)
+        df_weekly = self.set_target(df_weekly)
 
         # 划分训练集和测试集，测试集占总数据的15%，随机种子为10(如果不定义，会每次都不一样）
         # 2009.1~2022.8,165个月，Test比例0.3，大约是2019.1~2022.8，正好合适
-        df_train = df_features[df_features.trade_date < TRAIN_TEST_SPLIT_DATE]
-        df_test = df_features[df_features.trade_date >= TRAIN_TEST_SPLIT_DATE]
+        df_train = df_weekly[df_weekly.trade_date < TRAIN_TEST_SPLIT_DATE]
+        df_test = df_weekly[df_weekly.trade_date >= TRAIN_TEST_SPLIT_DATE]
         X_train = df_train[self.factor_names].values
         y_train = df_train.target
 

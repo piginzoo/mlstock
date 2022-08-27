@@ -34,5 +34,21 @@ FACTORS = [TurnoverReturn,
            AlphaBeta,
            StakeHolder]
 
-# 测试用
+
+def get_factor_names():
+    """
+    获得所有的因子名
+    :return:
+    """
+
+    names = []
+    for f in FACTORS:
+        _names = f(None, None).name
+        if type(_names) == list:
+            names += _names
+        else:
+            names += [_names]
+    return names
+
+    # 测试用
 # FACTORS = [Income]

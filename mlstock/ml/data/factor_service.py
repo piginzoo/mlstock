@@ -7,7 +7,7 @@ import time
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from mlstock.const import CODE_DATE
+from mlstock.const import CODE_DATE, BASELINE_INDEX_CODE
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
 from mlstock.data.stock_info import StocksInfo
@@ -37,17 +37,19 @@ def calculate(start_date, end_date, num, is_industry_neutral):
     # 加载（计算）因子
     df_weekly, factor_names = calculate_factors(data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
 
-    # 加载指数数据
-    df_weekly = load_index(df_weekly, start_date, end_date, data_source)
-
     # 显存一份最原始的数据
-    save_csv("raw", df_weekly, start_date, end_date)
     time_elapse(start_time, "⭐️ 全部因子加载完成")
 
-    df_data = post_process_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
-    save_csv("features" + ("_industry_neutral" if is_industry_neutral else ""), df_data, start_date, end_date)
+    df_weekly = clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
 
-    return df_data, factor_names
+    # 加载指数数据
+    df_weekly = prepare_target(df_weekly, start_date, end_date, data_source)
+
+    # 保存原始数据和处理后的数据
+    # save_csv("raw", df_weekly, start_date, end_date)
+    save_csv("processed" + ("_industry_neutral" if is_industry_neutral else ""), df_weekly, start_date, end_date)
+
+    return df_weekly, factor_names
 
 
 def load_stock_data(data_source, start_date, end_date, num):
@@ -130,28 +132,33 @@ def load_from_file(factors_file_path):
     return df_features, factor_names
 
 
-def load_index(df_weekly, start_date, end_date, datasource):
+def prepare_target(df_weekly, start_date, end_date, datasource):
     """
-    加载基准的收益率
+    计算基准的收益率等各种预测用的收益率
     :param df_weekly:
     :param datasource:
     :return:
     """
 
-    # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - pct_chg_hs300)
-    df_hs300 = datasource.index_weekly("000300.SH", start_date, end_date)
-    df_hs300 = df_hs300[['trade_date', 'pct_chg']]
-    df_hs300 = df_hs300.rename(columns={'pct_chg': 'pct_chg_hs300'})
-    logger.info("下载沪深300 %s~%s 数据 %d 条", start_date, end_date, len(df_hs300))
+    # 合并沪深300的周收益率，为何用它呢，是为了计算超额收益(r_i = pct_chg - next_pct_chg_baseline)
+    df_baseline = datasource.index_weekly(BASELINE_INDEX_CODE, start_date, end_date)
+    df_baseline = df_baseline[['trade_date', 'pct_chg']]
+    df_baseline = df_baseline.rename(columns={'pct_chg': 'pct_chg_baseline'})
+    logger.info("下载基准[%s] %s~%s 数据 %d 条", BASELINE_INDEX_CODE, start_date, end_date, len(df_baseline))
 
-    df_weekly = df_weekly.merge(df_hs300, on=['trade_date'], how='left')
-    logger.info("合并沪深300 %d=>%d", len(df_weekly), len(df_weekly))
+    df_weekly = df_weekly.merge(df_baseline, on=['trade_date'], how='left')
+    logger.info("合并基准[%s] %d=>%d",BASELINE_INDEX_CODE,  len(df_weekly), len(df_weekly))
 
-    # 计算出和基准（沪深300）的超额收益率，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
-    df_weekly['rm_rf'] = df_weekly.pct_chg - df_weekly.pct_chg_hs300
+    # 计算出和基准的超额收益率，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
+    df_weekly['rm_rf'] = df_weekly.pct_chg - df_weekly.pct_chg_baseline
 
-    # target即预测目标，是下一期的超额收益
+    # target即预测目标，是"下一期"的超额收益，训练主要靠这个，他就是训练的y
     df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1)
+
+    # 下一期的收益率，这个是为了将来做回测评价用，注意，是下一期，所以做了shift(-1)
+    df_weekly['next_pct_chg'] = df_weekly.groupby('ts_code').pct_chg.shift(-1)
+    df_weekly['next_pct_chg_baseline'] = df_weekly.groupby('ts_code').pct_chg_baseline.shift(-1)
+
     return df_weekly
 
 
@@ -189,9 +196,9 @@ def _scaller(x, df_median, df_scope):
     return x
 
 
-def post_process_factors(df_weekly, factor_names, start_date, end_date, is_industry_market_neutral):
+def clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_market_neutral):
     """
-    对数据进行预计处理，这步很重要，也很慢
+    对因子数据做进一步的清洗，这步很重要，也很慢
     :param df_features:
     :param factor_names:
     :param start_date: 因为前面的日期中，为了防止MACD之类的技术指标出现NAN预加载了数据，所以要过滤掉这些start_date之前的数据
@@ -312,7 +319,7 @@ def post_process_factors(df_weekly, factor_names, start_date, end_date, is_indus
     logger.info("特征处理之后的数据情况：\n%r", df_data.describe())
 
     time_elapse(start_time, "⭐️ 全部因子预处理完成")
-    return df_data
+    return df_weekly
 
 
 def save_csv(name, df, start_date, end_date):
