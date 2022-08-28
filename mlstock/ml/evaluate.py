@@ -46,7 +46,7 @@ def regression_metrics(df, model):
 
     df['y_pred'] = model.predict(X)
 
-    metrics['corr'] = df[['next_pct_change', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
+    metrics['corr'] = df[['next_pct_chg', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
 
     # 看一下rank的IC，不看值相关性，而是看排名的相关性
     df['y_rank'] = df.y.rank(ascending=False)  # 并列的默认使用排名均值
