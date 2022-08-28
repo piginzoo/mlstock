@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import cross_val_score
 
-from mlstock.ml.train.train_action import TrainAction
+from mlstock.ml.train_action.train_action import TrainAction
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)

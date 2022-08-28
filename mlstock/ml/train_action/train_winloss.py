@@ -5,7 +5,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
-from mlstock.ml.train.train_action import TrainAction
+from mlstock.ml.train_action.train_action import TrainAction
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
