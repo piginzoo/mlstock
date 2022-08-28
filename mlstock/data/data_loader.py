@@ -56,8 +56,6 @@ def load(datasource, stock_codes, start_date, end_date):
     df_daily_basic = df_daily_basic.sort_values(['ts_code', 'trade_date'])
     df_daily_basic[['total_mv', 'pe_ttm', 'ps_ttm', 'pb']] = \
         df_daily_basic.groupby('ts_code').ffill().bfill()[['total_mv', 'pe_ttm', 'ps_ttm', 'pb']]
-    # 对市值去对数，降低这个值的范围，这个新对数市值，后面行业中性化会用
-    df_daily_basic['total_mv_log'] = df_daily_basic.total_mv.apply(np.log)
 
     logger.info("加载[%d]只股票 %s~%s 的日频基础(basic)数据 %d 行，耗时%.0f秒",
                 len(stock_codes),
