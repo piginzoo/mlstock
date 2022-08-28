@@ -8,10 +8,6 @@ def handle(df,model,factor_names):
         df['y_pred'] = df[factor_names].apply(lambda x:model.predict(x), axis=1)
         df['y_pred_rank'] = df.groupby('trade_date').y_pred.rank(ascending=False)
 
-    # 先按照日期 + 预测的rank排序
-    df = df.sort_values(['trade_date', 'y_pred_rank'])
-    # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
-    df_pct = df.groupby('trade_date').apply(lambda df_group: df_group[:30].next_pct_change.mean())
     return df_pct
 
 
