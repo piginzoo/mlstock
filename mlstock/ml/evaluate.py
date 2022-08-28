@@ -23,8 +23,9 @@ def classification_metrics(df, model):
     """
 
     X = _extract_features(df)
+    y = df.target.apply(lambda x: 1 if x > 0 else 0)
+
     y_pred = model.predict(X)
-    y = df.target
 
     metrics = {}
     metrics['accuracy'] = accuracy_score(y, y_pred)
@@ -42,6 +43,7 @@ def regression_metrics(df, model):
     """
     metrics = {}
 
+    df['y'] = df['target']
     X = _extract_features(df)
 
     df['y_pred'] = model.predict(X)
@@ -53,11 +55,11 @@ def regression_metrics(df, model):
     df['y_pred_rank'] = df.y_pred.rank(ascending=False)
     metrics['rank_corr'] = df[['y_rank', 'y_pred_rank']].corr().iloc[0, 1]
 
-    metrics['RMSE'] = np.sqrt(mean_squared_error(df.target, df['y_pred']))
+    metrics['RMSE'] = np.sqrt(mean_squared_error(df.y, df.y_pred))
 
-    metrics['MA'] = mean_absolute_error(df.target, df['y_pred'])
+    metrics['MA'] = mean_absolute_error(df.y, df.y_pred)
 
-    metrics['R2'] = r2_score(df.target, df['y_pred'])
+    metrics['R2'] = r2_score(df.y, df.y_pred)
 
     logger.debug("计算出分类指标：%r", metrics)
     return metrics
