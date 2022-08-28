@@ -55,7 +55,7 @@ def main(args):
 def calculate_pct_chg(df):
     # 先把所有预测为跌的全部过滤掉
     original_size = len(df)
-    df = df[df.pred_winloss == 1]
+    df = df[df.y_pred == 1]
     logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
 
     # 先按照日期 + 预测的rank排序
