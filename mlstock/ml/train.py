@@ -33,14 +33,7 @@ def main(args):
 
 
 """
-python -m mlstock.ml.main -d
-python -m mlstock.ml.main -d --train all
-python -m mlstock.ml.main -d --train pct
-python -m mlstock.ml.main -d --train winloss
-python -m mlstock.ml.main -d --train winloss --data data/features_20180101_20200101_20220815165011.csv
-python -m mlstock.ml.main -n 50 -d
-python -m mlstock.ml.main -n 50 -d -s 20080101 -e 20220901
-python -m mlstock.ml.main -n 50 -d -s 20180101 -e 20200101
+python -m mlstock.ml.train --train all --data data/
 """
 if __name__ == '__main__':
     utils.init_logger(file=True, log_level=logging.DEBUG)
