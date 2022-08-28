@@ -41,10 +41,11 @@ def calculate(start_date, end_date, num, is_industry_neutral):
     # 显存一份最原始的数据
     time_elapse(start_time, "⭐️ 全部因子加载完成")
 
-    df_weekly = clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
-
-    # 加载指数数据
+    # 加载基准（指数）数据
     df_weekly = prepare_target(df_weekly, start_date, end_date, data_source)
+
+    # 清晰因子数据
+    df_weekly = clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
 
     # 保存原始数据和处理后的数据
     # save_csv("raw", df_weekly, start_date, end_date)
