@@ -33,7 +33,7 @@ def main(args):
 
 
 """
-python -m mlstock.ml.train_action --train_action all --data data/
+python -m mlstock.ml.train --train all --data data/
 """
 if __name__ == '__main__':
     utils.init_logger(file=True, log_level=logging.DEBUG)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     parser.add_argument('-in', '--industry_neutral', action='store_true', default=False, help="是否做行业中性处理")
 
     # 训练相关的
-    parser.add_argument('-t', '--train_action', type=str, default="all", help="all|pct|winloss : 训练所有|仅训练收益|仅训练涨跌")
+    parser.add_argument('-t', '--train', type=str, default="all", help="all|pct|winloss : 训练所有|仅训练收益|仅训练涨跌")
     args = parser.parse_args()
 
     main(args)
