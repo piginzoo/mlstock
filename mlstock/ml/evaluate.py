@@ -7,14 +7,14 @@ import numpy as np
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, accuracy_score, precision_score, \
     recall_score, f1_score
 
-from mlstock.ml.data import factor_service
+from mlstock.ml.data import factor_service, factor_conf
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
 
 
 def _extract_features(df):
-    return df[factor_service.get_factor_names()]
+    return df[factor_conf.get_factor_names()]
 
 
 def regression_metrics(df, model):
@@ -43,7 +43,7 @@ def classification_metrics(df, model):
     metrics = {}
 
     df = _extract_features(df)
-    
+
     df['y_pred'] = df.apply(lambda x: model.predict(x), axis=1)
 
     metrics['corr'] = df[['y', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
