@@ -1,6 +1,7 @@
 import argparse
 
 from mlstock.ml.data import factor_service
+from mlstock.utils import utils
 
 
 def load_data(args):
@@ -12,9 +13,12 @@ def load_data(args):
     # 那么就需要从新计算了
     df_weekly, factor_names = factor_service.calculate(start_date, end_date, num, is_industry_neutral)
     return df_weekly, factor_names
-
-
+"""
+python -m mlstock.ml.prepare_factor -n 50 -in -s 20080101 -e 20220901
+"""
 if __name__ == '__main__':
+    utils.init_logger(file=True)
+
     parser = argparse.ArgumentParser()
 
     # 数据相关的
