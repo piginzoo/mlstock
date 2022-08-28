@@ -13,7 +13,7 @@ def main(args):
     utils.check_file_path(args.data)
 
     df_data = factor_service.load_from_file(args.data)
-    df_data = factor_service.extract_features(df_data)
+    df_data = factor_service.extract_train_data(df_data)
 
     factor_names = factor_conf.get_factor_names()
 
