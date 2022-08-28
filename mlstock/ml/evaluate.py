@@ -17,7 +17,7 @@ def _extract_features(df):
     return df[factor_conf.get_factor_names()]
 
 
-def regression_metrics(df, model):
+def classification_metrics(df, model):
     """
     https://ningshixian.github.io/2020/08/24/sklearn%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/
     """
@@ -36,7 +36,7 @@ def regression_metrics(df, model):
     return metrics
 
 
-def classification_metrics(df, model):
+def regression_metrics(df, model):
     """
     https://blog.csdn.net/u012735708/article/details/84337262
     """
@@ -46,7 +46,7 @@ def classification_metrics(df, model):
 
     df['y_pred'] = model.predict(X)
 
-    metrics['corr'] = df[['y', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
+    metrics['corr'] = df[['next_pct_change', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
 
     # 看一下rank的IC，不看值相关性，而是看排名的相关性
     df['y_rank'] = df.y.rank(ascending=False)  # 并列的默认使用排名均值
