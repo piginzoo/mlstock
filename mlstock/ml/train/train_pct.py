@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import cross_val_score
 
-from mlstock.ml.train.train import Train
+from mlstock.ml.train.train_action import TrainAction
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ from sklearn.metrics import mean_absolute_error  # 平方绝对误差
 from sklearn.metrics import r2_score  # R square
 
 
-class TrainPct(Train):
+class TrainPct(TrainAction):
 
     def get_model_name(self):
         return f"pct_ridge_{utils.now()}.model"
@@ -33,35 +33,7 @@ class TrainPct(Train):
         ridge.fit(X_train, y_train)
         return ridge
 
-    def evaluate(self, model, df_train, df_test):
-        """
-        https://blog.csdn.net/u012735708/article/details/84337262
-        :param df:
-        :param model:
-        :return:
-        """
 
-        def _calculate_metrics(df):
-            metrics = {}
-
-            df['y_pred'] = model.predict(df)
-
-            metrics['corr'] = df[['y', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
-
-            # 看一下rank的IC，不看值相关性，而是看排名的相关性
-            df['y_rank'] = df.y.rank(ascending=False)  # 并列的默认使用排名均值
-            df['y_pred_rank'] = df.y_pred.rank(ascending=False)
-            metrics['rank_corr'] = df[['y_rank', 'y_pred_rank']].corr().iloc[0, 1]
-
-            metrics['RMSE'] = np.sqrt(mean_squared_error(df.target, df['y_pred']))
-
-            metrics['MA'] = mean_absolute_error(df.target, df['y_pred'])
-
-            metrics['R2'] = r2_score(df.target, df['y_pred'])
-
-            return metrics
-
-        return _calculate_metrics(df_train),_calculate_metrics(df_test)
 
     def search_best_hyperparams(self, X_train, y_train):
         """

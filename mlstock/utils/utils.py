@@ -208,15 +208,15 @@ def strf_delta(tdelta, fmt):
     d = {"days": tdelta.days}
     d["hours"], rem = divmod(tdelta.seconds, 3600)
     d["minutes"], d["seconds"] = divmod(rem, 60)
-    d["milliseconds"], _ = divmod(tdelta.microseconds,1000)
+    d["milliseconds"], _ = divmod(tdelta.microseconds, 1000)
     return fmt.format(**d)
 
 
 def time_elapse(start_time, title='', debug_level='info'):
     if debug_level == 'debug':
         logger.debug("%s耗时: %s ", title,
-                    strf_delta(datetime.timedelta(seconds=time.time() - start_time),
-                               "{days}天{hours}小时{minutes}分{seconds}秒{milliseconds}毫秒"))
+                     strf_delta(datetime.timedelta(seconds=time.time() - start_time),
+                                "{days}天{hours}小时{minutes}分{seconds}秒{milliseconds}毫秒"))
     else:
         logger.info("%s耗时: %s ", title,
                     strf_delta(datetime.timedelta(seconds=time.time() - start_time),
@@ -460,6 +460,13 @@ def OLS(X, y):
     model = sm.OLS(y, X)  # 定义x，y
     results = model.fit()
     return results.params, results.resid
+
+
+def check_file_path(file_path):
+    if not os.path.exists(file_path):
+        msg = f"文件[{file_path}]不存在！"
+        logger.error(msg)
+        raise ValueError(msg)
 
 
 # python -m mlstock.utils.utils

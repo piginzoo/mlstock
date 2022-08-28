@@ -3,7 +3,6 @@ import os.path
 import time
 
 import joblib
-from sklearn.model_selection import train_test_split
 
 from mlstock.const import TRAIN_TEST_SPLIT_DATE
 from mlstock.utils.utils import time_elapse
@@ -11,15 +10,12 @@ from mlstock.utils.utils import time_elapse
 logger = logging.getLogger(__name__)
 
 
-class Train:
+class TrainAction:
 
     def __init__(self, factor_names):
         self.factor_names = factor_names
 
     def set_target(self):
-        raise NotImplemented()
-
-    def evaluate(self):
         raise NotImplemented()
 
     def _train(self, X_train, y_train):

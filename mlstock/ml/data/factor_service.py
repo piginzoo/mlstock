@@ -7,10 +7,11 @@ import time
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from mlstock.const import CODE_DATE, BASELINE_INDEX_CODE
+from mlstock.const import CODE_DATE, BASELINE_INDEX_CODE, TARGET
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
 from mlstock.data.stock_info import StocksInfo
+from mlstock.ml.data import factor_conf
 from mlstock.ml.data.factor_conf import FACTORS
 from mlstock.utils import utils
 from mlstock.utils.industry_neutral import IndustryMarketNeutral
@@ -124,12 +125,21 @@ def load_from_file(factors_file_path):
     :param factors_file_path:
     :return:
     """
-
+    if not os.path.exists(factors_file_path):
+        raise ValueError(f"因子数据文件不存在：{factors_file_path}")
     df_features = pd.read_csv(factors_file_path, header=0)
     df_features['trade_date'] = df_features['trade_date'].astype(str)
     df_features['target'] = df_features['trade_date'].astype(int)
-    factor_names = [item for item in df_features.columns if item not in CODE_DATE]  # 只保留特征名
-    return df_features, factor_names
+    return df_features
+
+
+def extract_features(df):
+    """
+    仅保留训练用的列
+    :param factors_file_path:
+    :return:
+    """
+    return df[CODE_DATE + factor_conf.get_factor_names() + TARGET]
 
 
 def prepare_target(df_weekly, start_date, end_date, datasource):
@@ -147,7 +157,7 @@ def prepare_target(df_weekly, start_date, end_date, datasource):
     logger.info("下载基准[%s] %s~%s 数据 %d 条", BASELINE_INDEX_CODE, start_date, end_date, len(df_baseline))
 
     df_weekly = df_weekly.merge(df_baseline, on=['trade_date'], how='left')
-    logger.info("合并基准[%s] %d=>%d",BASELINE_INDEX_CODE,  len(df_weekly), len(df_weekly))
+    logger.info("合并基准[%s] %d=>%d", BASELINE_INDEX_CODE, len(df_weekly), len(df_weekly))
 
     # 计算出和基准的超额收益率，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
     df_weekly['rm_rf'] = df_weekly.pct_chg - df_weekly.pct_chg_baseline
@@ -380,6 +390,7 @@ def process_industry(df_basic):
 
     # 返回处理后的数据
     return df_basic
+
 
 """
 python -m mlstock.ml.data.factor_service -n 50 -d -s 20080101 -e 20220901

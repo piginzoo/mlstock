@@ -5,13 +5,13 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
-from mlstock.ml.train.train import Train
+from mlstock.ml.train.train_action import TrainAction
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
 
 
-class TrainWinLoss(Train):
+class TrainWinLoss(TrainAction):
 
     def get_model_name(self):
         return f"winloss_xgboost_{utils.now()}.model"
@@ -50,25 +50,3 @@ class TrainWinLoss(Train):
         logger.debug("GridSearch出最优参数：%r", grid_search.best_estimator_)
 
         return grid_search.best_estimator_
-
-    def evaluate(self, model, df_train, df_test):
-        """
-        https://ningshixian.github.io/2020/08/24/sklearn%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/
-        :param df:
-        :param model:
-        :return:
-        """
-
-        def _calculate_metrics(df):
-            y_pred = model.predict(df)
-            y = df.target
-
-            metrics = {}
-            metrics['accuracy'] = accuracy_score(y, y_pred)
-            metrics['precision'] = precision_score(y, y_pred)
-            metrics['recall'] = recall_score(y, y_pred)
-            metrics['f1'] = f1_score(y, y_pred)
-
-            return metrics
-
-        return _calculate_metrics(df_train), _calculate_metrics(df_test)
