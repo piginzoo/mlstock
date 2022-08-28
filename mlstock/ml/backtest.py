@@ -65,7 +65,7 @@ def calculate_pct_chg(df):
     df_pct = df.groupby('trade_date')['next_pct_chg', 'next_pct_chg_baseline'].apply(
         lambda df_group: df_group[:30].mean())
     df_pct[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = df_pct.apply(lambda x: (x + 1).cumprod() - 1)
-    return df_pct
+    return df_pct.reset_index()
 
 
 def plot(df):
@@ -77,7 +77,7 @@ def plot(df):
     :param df:
     :return:
     """
-    plt.rcParams['font.sans-serif'] = 'Microsoft YaHei'  # 中文和负号的正常显示
+    plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
 
     x = df.trade_date.values
