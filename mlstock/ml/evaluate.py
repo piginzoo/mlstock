@@ -26,7 +26,6 @@ def classification_metrics(df, model):
     y = df.target.apply(lambda x: 1 if x > 0 else 0)
 
     y_pred = model.predict(X)
-
     metrics = {}
     metrics['accuracy'] = accuracy_score(y, y_pred)
     metrics['precision'] = precision_score(y, y_pred)
@@ -90,7 +89,7 @@ def main(args):
         regression_metrics(df_data, model_pct)
 
     if model_winloss:
-        classification_metrics(df_data, model_pct)
+        classification_metrics(df_data, model_winloss)
 
 
 """
