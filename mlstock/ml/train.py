@@ -21,14 +21,14 @@ def main(args):
     train_winloss = TrainWinLoss(factor_names)
 
     if args.train == 'all':
-        train_pct.evaluate(train_pct.train(df_data))
-        train_winloss.evaluate(train_winloss.train(df_data))
+        train_pct.train(df_data)
+        train_winloss.train(df_data)
         return
     if args.train == 'pct':
-        train_pct.evaluate(train_pct.train(df_data))
+        train_pct.train(df_data)
         return
     if args.train == 'winloss':
-        train_winloss.evaluate(train_winloss.train(df_data))
+        train_winloss.train(df_data)
         return
 
 
