@@ -77,7 +77,7 @@ def plot(df):
     :param df:
     :return:
     """
-    plt.rcParams['font.sans-serif'] = 'Microsoft YaHei'  # 中文和负号的正常显示
+    plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
 
     x = df.trade_date.values
