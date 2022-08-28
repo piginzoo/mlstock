@@ -323,7 +323,7 @@ def clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_mar
         industry_market_neutral = IndustryMarketNeutral(factor_names,
                                                         market_value_name='total_mv_log',
                                                         industry_name='industry')
-        industry_market_neutral.fit()
+        industry_market_neutral.fit(df_weekly)
         df_weekly = industry_market_neutral.transform(df_weekly)
         time_elapse(start_time1, "行业中性化处理")
 
