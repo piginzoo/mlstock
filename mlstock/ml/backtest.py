@@ -55,7 +55,7 @@ def main(args):
 def calculate_pct_chg(df):
     # 先把所有预测为跌的全部过滤掉
     original_size = len(df)
-    df = df[df.y_pred == 1]
+    # df = df[df.y_pred == 1]
     logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
 
     # 先按照日期 + 预测的rank排序
@@ -83,7 +83,7 @@ def plot(df):
     x = df.trade_date.values
     y1 = df.next_pct_chg.values
     y2 = df.cumulative_pct_chg.values
-    y3 = df.cumulative_pct_chg_basline.values
+    y3 = df.cumulative_pct_chg_baseline.values
     color_y1 = '#2A9CAD'
     color_y2 = "#FAB03D"
     color_y3 = "#FAFF0D"
@@ -108,7 +108,7 @@ def plot(df):
     ax1.grid(False)
     ax2.grid(False)
     # 设置横轴显示,设置密度，比如横坐标9个，设置这个为3,到时候横坐标上就显示 9/3=3个横坐标，
-    ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing=6))
+    # ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing=6))
     # 添加标签
     ax1.legend(loc='upper left')
     ax2.legend(loc='upper right')
