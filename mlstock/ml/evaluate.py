@@ -13,11 +13,16 @@ from mlstock.utils import utils
 logger = logging.getLogger(__name__)
 
 
+def _extract_features(df):
+    return df[factor_service.get_factor_names()]
+
+
 def regression_metrics(df, model):
     """
     https://ningshixian.github.io/2020/08/24/sklearn%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/
     """
 
+    df = _extract_features(df)
     y_pred = df.apply(lambda x: model.predict(x), axis=1)
     y = df.target
 
@@ -37,6 +42,8 @@ def classification_metrics(df, model):
     """
     metrics = {}
 
+    df = _extract_features(df)
+    
     df['y_pred'] = df.apply(lambda x: model.predict(x), axis=1)
 
     metrics['corr'] = df[['y', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
@@ -84,6 +91,13 @@ def main(args):
         classification_metrics(df_data, model_pct)
 
 
+"""
+python -m mlstock.ml.evaluate \
+-s 20190101 -e 20220901 \
+-mp model/pct_ridge_20220828190251.model \
+-mw model/winloss_xgboost_20220828190259.model \
+-d data/processed_industry_neutral_20080101_20220901_20220828152110.csv
+"""
 if __name__ == '__main__':
     utils.init_logger(file=True)
     parser = argparse.ArgumentParser()

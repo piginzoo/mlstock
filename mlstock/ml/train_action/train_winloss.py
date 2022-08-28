@@ -41,7 +41,7 @@ class TrainWinLoss(TrainAction):
                                    param_grid=param_lst,
                                    cv=5,
                                    verbose=10,
-                                   scoring='f1_weighted',
+                                   scoring='f1_weighted',# TODO:f1???
                                    n_jobs=16)  # 最多16个进程同时跑
         # 基于flights数据集执行搜索
         grid_search.fit(X_train, y_train)
