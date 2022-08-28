@@ -8,13 +8,12 @@ from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, a
     recall_score, f1_score
 
 from mlstock.ml.data import factor_service, factor_conf
+from mlstock.ml.data.factor_service import extract_features
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
 
 
-def _extract_features(df):
-    return df[factor_conf.get_factor_names()]
 
 
 def classification_metrics(df, model):
@@ -22,7 +21,7 @@ def classification_metrics(df, model):
     https://ningshixian.github.io/2020/08/24/sklearn%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/
     """
 
-    X = _extract_features(df)
+    X = extract_features(df)
     y = df.target.apply(lambda x: 1 if x > 0 else 0)
 
     y_pred = model.predict(X)
@@ -44,7 +43,7 @@ def regression_metrics(df, model):
     metrics = {}
 
     df['y'] = df['target']
-    X = _extract_features(df)
+    X = extract_features(df)
 
     df['y_pred'] = model.predict(X)
 

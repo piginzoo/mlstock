@@ -119,6 +119,10 @@ def calculate_factors(data_source, stock_data, stocks_info):
     return df_weekly, factor_names
 
 
+def extract_features(df):
+    return df[factor_conf.get_factor_names()]
+
+
 def load_from_file(factors_file_path):
     """
     从文件中，直接加载因子数据

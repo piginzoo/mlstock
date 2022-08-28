@@ -3,12 +3,9 @@ import logging
 import time
 
 import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy import stats
 import matplotlib.ticker as ticker
 
-plt.rcParams['font.sans-serif'] = 'Microsoft YaHei'  # 中文和负号的正常显示
-plt.rcParams['axes.unicode_minus'] = False
+from mlstock.ml.data.factor_service import extract_features
 
 import joblib
 
@@ -41,12 +38,14 @@ def main(args):
 
     if model_pct:
         start_time = time.time()
-        df_data['pred_pct'] = df_data.apply(lambda x: model_pct.predict(x), axis=1)
+        X = extract_features(df_data)
+        df_data['y_pred'] = model_pct.predict(X)
         utils.time_elapse(start_time, f"预测下期收益: {len(df_data)}行 ")
 
     if model_pct:
         start_time = time.time()
-        df_data['pred_winloss'] = df_data.apply(lambda x: model_winloss.predict(x), axis=1)
+        X = extract_features(df_data)
+        df_data['y_pred'] = model_winloss.predict(X)
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
 
     df_pct = calculate_pct_chg(df_data)
@@ -78,6 +77,8 @@ def plot(df):
     :param df:
     :return:
     """
+    plt.rcParams['font.sans-serif'] = 'Microsoft YaHei'  # 中文和负号的正常显示
+    plt.rcParams['axes.unicode_minus'] = False
 
     x = df.trade_date.values
     y1 = df.next_pct_chg.values
@@ -120,6 +121,13 @@ def plot(df):
     plt.show()
 
 
+"""
+python -m mlstock.ml.backtest \
+-s 20190101 -e 20220901 \
+-mp model/pct_ridge_20220828190251.model \
+-mw model/winloss_xgboost_20220828190259.model \
+-d data/processed_industry_neutral_20080101_20220901_20220828152110.csv
+"""
 if __name__ == '__main__':
     utils.init_logger(file=True)
     parser = argparse.ArgumentParser()
