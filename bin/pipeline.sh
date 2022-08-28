@@ -1,5 +1,5 @@
 echo "准备开始生成因子数据..."
-python -m mlstock.ml.prepare_factor -in -s 20080101 -e 20220901 >./logs/console.data.log 2>&1
+python -m mlstock.ml.prepare_factor -in -s 20080101 -e 20220901 -n 100>./logs/console.data.log 2>&1
 
 DATA_FILE=data/`ls -1rt data/|grep .csv|tail -n 1`
 echo "生成因子数据结束：$DATA_FILE"
