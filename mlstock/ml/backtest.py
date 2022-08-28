@@ -62,8 +62,8 @@ def calculate_pct_chg(df):
     # 先按照日期 + 预测的rank排序
     df = df.sort_values(['trade_date', 'y_pred'])
     # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
-    # 注意！这里是下期收益"next_pct_change"的均值，实际上是提前了一期（这个细节可以留意一下）
-    df_pct = df.groupby('trade_date')['next_pct_change', 'pct_chg_baseline'].apply(
+    # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
+    df_pct = df.groupby('trade_date')['next_pct_chg', 'next_pct_chg_baseline'].apply(
         lambda df_group: df_group[:30].mean())
     df_pct[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = df_pct.apply(lambda x: (x + 1).cumprod() - 1)
     return df_pct
