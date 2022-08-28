@@ -23,7 +23,7 @@ def regression_metrics(df, model):
     """
 
     df = _extract_features(df)
-    y_pred = df.apply(lambda x: model.predict(x), axis=1)
+    y_pred = model.predict(df)
     y = df.target
 
     metrics = {}
@@ -44,7 +44,7 @@ def classification_metrics(df, model):
 
     df = _extract_features(df)
 
-    df['y_pred'] = df.apply(lambda x: model.predict(x), axis=1)
+    df['y_pred'] = model.predict(df)
 
     metrics['corr'] = df[['y', 'y_pred']].corr().iloc[0, 1]  # 测试标签y和预测y_pred相关性，到底准不准啊
 
