@@ -19,12 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 def main(args):
-    # 查看数据文件和模型文件路径是否正确
-    utils.check_file_path(args.data)
-    if args.model_pct: utils.check_file_path(args.model_pct)
-    if args.model_winloss: utils.check_file_path(args.model_winloss)
-
     # 加载数据
+    utils.check_file_path(args.data)
     df_data = factor_service.load_from_file(args.data)
     original_size = len(df_data)
     original_start_date = df_data.trade_date.min()
@@ -36,6 +32,9 @@ def main(args):
                  args.start_date, args.end_date, len(df_data))
 
     # 加载模型；如果参数未提供，为None
+    # 查看数据文件和模型文件路径是否正确
+    if args.model_pct: utils.check_file_path(args.model_pct)
+    if args.model_winloss: utils.check_file_path(args.model_winloss)
     model_pct = joblib.load(args.model_pct) if args.model_pct else None
     model_winloss = joblib.load(args.model_winloss) if args.model_winloss else None
 
@@ -72,7 +71,8 @@ def select_stocks_by_pred(df):
     df_pct = DataFrame()
     df_selected_stocks = DataFrame()
 
-    import pdb; pdb.set_trace()
+    import pdb;
+    pdb.set_trace()
 
     for date, df_group in df_groups:
         df_top30 = df_group.iloc[0:30, :]

@@ -10,9 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 def main(args):
+    # 加载数据
     utils.check_file_path(args.data)
-
     df_data = factor_service.load_from_file(args.data)
+    original_size = len(df_data)
+    original_start_date = df_data.trade_date.min()
+    original_end_date = df_data.trade_date.max()
+    df_data = df_data[df_data.trade_date >= args.start_date]
+    df_data = df_data[df_data.trade_date <= args.end_date]
+    logger.debug("数据%s~%s %d行，过滤后=> %s~%s %d行",
+                 original_start_date, original_end_date, original_size,
+                 args.start_date, args.end_date, len(df_data))
+
     df_data = factor_service.extract_train_data(df_data)
 
     factor_names = factor_conf.get_factor_names()
