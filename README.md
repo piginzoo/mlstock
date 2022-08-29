@@ -8,6 +8,79 @@
 
 这个项目计划会持续2~3个月，可以持续关注。
 
+# 运行这个程序
+
+## 1、安装各种包
+
+```
+brew install ta-lib
+pip install -r requirement.txt
+```
+如遇中断，需要手工逐个安装。
+
+## 2.准备数据
+
+这个需要大量的数据，可以参考之前 [tushare下载程序](https://github.com/piginzoo/mfm_learner/tree/main/mfm_learner/utils/tushare_download),
+从tushare下载所有的数据到本地数据库，
+
+```
+git clone https://github.com/piginzoo/mfm_learner.git
+cd mfm_learner
+python -m utils.tushare_download.updator
+```
+整个过程大约会持续3~4个小时，会拉去从2008.1.1~至今的数据，2008年之前的数据由于股改问题，参考价值不大，故未使用。
+
+## 3.一键式完成整个过程
+
+运行pipelne.sh，完成因子清洗、训练、指标、回测：
+
+```shell
+bin/pipline.sh
+```
+
+整个过程会持续40分钟~1小时。最终会生成 data/plot.jpg，来显示回测结果。
+
+## 4. 单独运行每个环节
+
+### 4.1 因子清洗
+
+参数细节参考：[prepare_factor.py](mlstock/ml/prepare_factor.py)
+
+```python
+python -m mlstock.ml.prepare_factor -in -s 20080101 -e 20220901
+```
+### 4.2 训练
+
+参数细节参考：[train.py](mlstock/ml/train.py)
+
+```python
+python -m mlstock.ml.train --train all --data data/processed_industry_neutral_20080101_20220901_20220828152110.csv
+```
+
+### 4.3 指标评价
+
+参数细节参考：[evaluate.py](mlstock/ml/evaluate.py)
+
+```python
+python -m mlstock.ml.backtest \
+-s 20190101 -e 20220901 \
+-mp pct_ridge_20220828224004.model \
+-mw winloss_xgboost_20220828224019.model \
+-d processed_industry_neutral_20080101_20220901_20220828152110.csv
+```
+
+### 4.4 回测
+
+参数细节参考：[backtest.py](mlstock/ml/backtest.py)
+
+```python
+python -m mlstock.ml.backtest \
+-s 20190101 -e 20220901 \
+-mp pct_ridge_20220828224004.model \
+-mw winloss_xgboost_20220828224019.model \
+-d processed_industry_neutral_20080101_20220901_20220828152110.csv
+```
+
 # 开发计划
 
 - [X] 实现一个简单的闭环，几个特征，线性回归

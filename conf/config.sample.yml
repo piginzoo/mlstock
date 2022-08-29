@@ -5,30 +5,3 @@ database:
     db:  'tushare'
     host: '127.0.0.1'
     port: 3306
-
-
-notification: # level: ERROR,INFO是分开的，而不是传统意义上包含的关系，这样做是为了方便分开通知和报警
-        - weixin:
-           -
-             name: '通知群'
-             url: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxx-xxx-xxx-xxx-xxxxxxxx'
-             level: 'INFO'
-           -
-             name: '警告群'
-             url: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxx-xxx-xxx-xxx-xxxxxxxx'
-             level: 'ERROR,WARN'
-           -
-             name: '信号群'
-             url: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxx-xxx-xxx-xxx-xxxxxxxx'
-             level: 'SIGNAL'
-        - email:
-           -
-             name: '我的邮箱'
-             url: 'xxxxxx@qq.com'
-             level: 'INFO,ERROR,WARN'
-
-email:
-    name: '我的qq邮箱'
-    host: 'smtp.qq.com'
-    uid: 'xxxxxx@qq.com'
-    pwd: 'xxxxxxxxx'
