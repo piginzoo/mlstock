@@ -9,7 +9,7 @@
 #
 # -----------------------------------------------------------------------------------------------
 
-. bin/prepare_data.sh $1
+. bin/prepare_factor.sh $1
 . bin/train.sh
 . bin/evaluate.sh
 . bin/backtest.sh

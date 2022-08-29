@@ -3,7 +3,7 @@ function elapse(){
   echo "耗时 $(($duration / 60)) 分 $(($duration % 60)) 秒."
 }
 
-if [ "$1" != "" ]
+if [ "$1" == "" ]
 then
   MODEL=all
 else
