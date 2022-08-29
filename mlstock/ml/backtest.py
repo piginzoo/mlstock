@@ -69,16 +69,19 @@ def select_stocks_by_pred(df):
     # df_pct = df.groupby('trade_date')['next_pct_chg', 'next_pct_chg_baseline'].apply(
     #     lambda df_group: df_group[0:30].mean())
     df_groups = df.groupby('trade_date')
-    df_pct = DataFrame(columns=['next_pct_chg', 'next_pct_chg_baseline'])
-    df_selected_stocks = DataFrame(columns=['trade_date', 'ts_code', 'next_pct_chg', 'next_pct_chg_baseline'])
+    df_pct = DataFrame()
+    df_selected_stocks = DataFrame()
     for date, df_group in df_groups:
-        import pdb;pdb.set_trace()
         df_top30 = df_group.iloc[0:30, :]
         next_pct_chg_mean = np.mean(df_top30.next_pct_chg.values)
         next_pct_chg_baseline_mean = np.mean(df_top30.next_pct_chg_baseline.values)
         df_pct.append([[next_pct_chg_mean, next_pct_chg_baseline_mean]])
         df_top30['trade_date'] = date
         df_selected_stocks.append(df_top30)
+    import pdb;pdb.set_trace()
+    df_pct.columns=['next_pct_chg', 'next_pct_chg_baseline']
+    df_selected_stocks.columns=['trade_date', 'ts_code', 'next_pct_chg', 'next_pct_chg_baseline']
+
     df_selected_stocks.to_csv("data/top30.csv", header=0)
     return df_pct
 
