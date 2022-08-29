@@ -75,17 +75,18 @@ def select_stocks_by_pred(df):
         df_top30 = df_group.iloc[0:30, :]
         next_pct_chg_mean = np.mean(df_top30.next_pct_chg.values)
         next_pct_chg_baseline_mean = np.mean(df_top30.next_pct_chg_baseline.values)
-        df_pct = df_pct.append([[next_pct_chg_mean, next_pct_chg_baseline_mean]])
+        df_pct = df_pct.append([[date, next_pct_chg_mean, next_pct_chg_baseline_mean]])
         df_top30['trade_date'] = date
         df_selected_stocks = df_selected_stocks.append(df_top30)
-    df_pct.columns = ['next_pct_chg', 'next_pct_chg_baseline']
+    df_pct.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
 
     df_selected_stocks = df_selected_stocks[['trade_date', 'ts_code', 'next_pct_chg', 'next_pct_chg_baseline']]
     df_selected_stocks.columns = ['trade_date', 'ts_code', 'next_pct_chg', 'next_pct_chg_baseline']
     df_selected_stocks.to_csv("data/top30.csv", header=0)
 
-    df_pct[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = df_pct.apply(lambda x: (x + 1).cumprod() - 1)
-    return df_pct
+    df_pct[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
+        df_pct[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
+    return df_pct.reset_index()
 
 
 def plot(df, start_date, end_date):
