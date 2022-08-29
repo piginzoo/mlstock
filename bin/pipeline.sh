@@ -3,6 +3,10 @@
 # 后来发现，这样会很不灵活，比如我想调试、或者重新生成模型，都变得困难，而且，当跑全数据的时候，整个过程极其漫长，
 # 所以，就拆成了目前的几段分别做的：prepare_data.py, train.py, evaluate.py, backtest.py,
 # 然后用这个批处理，来串起来，实现我之前想的一键式训练至回测过程。
+# 运行：
+#   bin/pipeline.sh
+#   调试模式：bin/pipeline.sh 50 # 仅仅使用50只股票的数据
+#
 # -----------------------------------------------------------------------------------------------
 
 function elapse(){
@@ -12,7 +16,13 @@ function elapse(){
 
 echo "准备开始因子生成..."
 SECONDS=0
-python -m mlstock.ml.prepare_factor -in -s 20080101 -e 20220901 -n 100 >./logs/console.data.log 2>&1
+if [ "$1" != "" ]
+then
+  echo "[ 调试模式 ]"
+  python -m mlstock.ml.prepare_factor -in -s 20080101 -e 20220901 -n $1 >./logs/console.data.log 2>&1
+else
+  python -m mlstock.ml.prepare_factor -in -s 20080101 -e 20220901 >./logs/console.data.log 2>&1
+fi
 DATA_FILE=data/`ls -1rt data/|grep .csv|tail -n 1`
 echo "因子生成结束，生成的因子文件为：$DATA_FILE"
 elapse

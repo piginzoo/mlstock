@@ -4,7 +4,7 @@ from mlstock.ml.data import factor_service
 from mlstock.utils import utils
 
 
-def load_data(args):
+def main(args):
     start_date = args.start_date
     end_date = args.end_date
     num = args.num
@@ -13,6 +13,7 @@ def load_data(args):
     # 那么就需要从新计算了
     df_weekly, factor_names = factor_service.calculate(start_date, end_date, num, is_industry_neutral)
     return df_weekly, factor_names
+
 """
 python -m mlstock.ml.prepare_factor -n 50 -in -s 20080101 -e 20220901
 """
@@ -30,4 +31,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    df_data, factor_names = load_data(args)
+    df_data, factor_names = main(args)

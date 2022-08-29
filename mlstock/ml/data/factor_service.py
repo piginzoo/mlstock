@@ -48,8 +48,16 @@ def calculate(start_date, end_date, num, is_industry_neutral):
     df_weekly = clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
 
     # 保存原始数据和处理后的数据
-    # save_csv("raw", df_weekly, start_date, end_date)
-    save_csv("processed" + ("_industry_neutral" if is_industry_neutral else ""), df_weekly, start_date, end_date)
+    # factor_开始日_结束日_股票数_总行数_时间戳.csv
+    # factor_20090101_20220901_s2109_l13940192l_20220826165226.csv
+    industry_neutral = "_industry_neutral" if is_industry_neutral else ""
+    csv_file_name = "data/factor_{}_{}_{}_{}_{}.csv".format(start_date,
+                                                            end_date,
+                                                            len(ts_codes),
+                                                            len(df_weekly),
+                                                            utils.now())
+    df_weekly.to_csv(csv_file_name, header=True, index=False)  # 保留列名
+    logger.info("保存 %d 行数据到文件：%s", len(df_weekly), csv_file_name)
 
     return df_weekly, factor_names
 
@@ -337,12 +345,6 @@ def clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_mar
 
     time_elapse(start_time, "⭐️ 全部因子预处理完成")
     return df_weekly
-
-
-def save_csv(name, df, start_date, end_date):
-    csv_file_name = "data/{}_{}_{}_{}.csv".format(name, start_date, end_date, utils.now())
-    df.to_csv(csv_file_name, header=True, index=False)  # 保留列名
-    logger.info("保存 %d 行数据到文件：%s", len(df), csv_file_name)
 
 
 def filter_invalid_data(df, factor_names):
