@@ -97,17 +97,16 @@ def plot(df):
     plt.xticks(rotation=60)
     # ax2.set_xticks(x[::2])
     # ax2.set_xticklabels(x[::2], rotation=60)
-    ax2 = ax1.twinx()  # 做镜像处理
+    # ax2 = ax1.twinx()  # 做镜像处理
 
     ax1.bar(x=x, height=y1, label=label_y1, color=color_y1, alpha=0.7)
-    ax2.plot(x, y2, color=color_y2, ms=10, label=label_y2)
-    ax2.plot(x, y3, color=color_y3, ms=10, label=label_y3)
+    ax1.plot(x, y2, color=color_y2, ms=10, label=label_y2)
+    ax1.plot(x, y3, color=color_y3, ms=10, label=label_y3)
 
     ax1.set_xlabel(label_x)  # 设置x轴标题
     ax1.set_ylabel(label_y1)  # 设置Y1轴标题
-    ax2.set_ylabel(label_y2 + "/" + label_y3)  # 设置Y2轴标题
+    ax1.set_ylabel(label_y2 + "/" + label_y3)  # 设置Y2轴标题
     ax1.grid(False)
-    ax2.grid(False)
     # 设置横轴显示,设置密度，比如横坐标9个，设置这个为3,到时候横坐标上就显示 9/3=3个横坐标，
     # ax1.xaxis.set_ticks(label_x,minor=True)
     # ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing=4))
@@ -115,7 +114,7 @@ def plot(df):
 
     # 添加标签
     ax1.legend(loc='upper left')
-    ax2.legend(loc='upper right')
+    # ax2.legend(loc='upper right')
     plt.title(title)  # 添加标题
     plt.grid(axis="y")  # 背景网格
 
