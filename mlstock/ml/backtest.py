@@ -78,12 +78,12 @@ def select_stocks_by_pred(df):
         df_pct= df_pct.append([[next_pct_chg_mean, next_pct_chg_baseline_mean]])
         df_top30['trade_date'] = date
         df_selected_stocks = df_selected_stocks.append(df_top30)
-    import pdb;pdb.set_trace()
     df_pct.columns=['next_pct_chg', 'next_pct_chg_baseline']
-    df_selected_stocks.columns=['trade_date', 'ts_code', 'next_pct_chg', 'next_pct_chg_baseline']
 
+    df_selected_stocks = df_selected_stocks[['trade_date', 'ts_code', 'next_pct_chg', 'next_pct_chg_baseline']]
+    df_selected_stocks.columns=['trade_date', 'ts_code', 'next_pct_chg', 'next_pct_chg_baseline']
     df_selected_stocks.to_csv("data/top30.csv", header=0)
-    return df_pct
+    return df_pct.reset_index(drop=True)
 
     df_pct[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = df_pct.apply(lambda x: (x + 1).cumprod() - 1)
     return df_pct.reset_index()
