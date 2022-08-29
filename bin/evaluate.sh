@@ -15,9 +15,18 @@ echo "  使用最新的涨跌模型：$WINLOSS_MODEL_FILE"
 
 SECONDS=0
 python -m mlstock.ml.evaluate \
+-s 20090101 -e 20190101 \
+-mp $PCT_MODEL_FILE \
+-mw $WINLOSS_MODEL_FILE \
+-d $DATA_FILE #>./logs/console.evaluate.log 2>&1
+echo "20090101~20190101，指标评测结束"
+elapse
+
+SECONDS=0
+python -m mlstock.ml.evaluate \
 -s 20190101 -e 20220901 \
 -mp $PCT_MODEL_FILE \
 -mw $WINLOSS_MODEL_FILE \
 -d $DATA_FILE #>./logs/console.evaluate.log 2>&1
-echo "指标评测结束"
+echo "20190101~20220901，指标评测结束"
 elapse

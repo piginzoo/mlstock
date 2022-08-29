@@ -171,14 +171,15 @@ def prepare_target(df_weekly, start_date, end_date, datasource):
     df_weekly = df_weekly.merge(df_baseline, on=['trade_date'], how='left')
     logger.info("合并基准[%s] %d=>%d", BASELINE_INDEX_CODE, len(df_weekly), len(df_weekly))
 
-    # 计算出和基准的超额收益率，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
+    # 计算出和基准的超额收益率  ，并且基于它，设置预测标签'target'（预测下一期，所以做shift）
     df_weekly['rm_rf'] = df_weekly.pct_chg - df_weekly.pct_chg_baseline
 
     # target即预测目标，是"下一期"的超额收益，训练主要靠这个，他就是训练的y
-    df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1)
+    df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1) # 别忘了把rm-rf做一个shift(-1),好变成下一期
 
     # 下一期的收益率，这个是为了将来做回测评价用，注意，是下一期，所以做了shift(-1)
     df_weekly['next_pct_chg'] = df_weekly.groupby('ts_code').pct_chg.shift(-1)
+    # 下一期的基准收益率
     df_weekly['next_pct_chg_baseline'] = df_weekly.groupby('ts_code').pct_chg_baseline.shift(-1)
 
     return df_weekly
