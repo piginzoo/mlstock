@@ -138,7 +138,6 @@ def load_from_file(factors_file_path):
         raise ValueError(f"因子数据文件不存在：{factors_file_path}")
     df_features = pd.read_csv(factors_file_path, header=0)
     df_features['trade_date'] = df_features['trade_date'].astype(str)
-    df_features['target'] = df_features['target'].astype(int)
     return df_features
 
 

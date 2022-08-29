@@ -1,7 +1,6 @@
 import logging
-import os.path
+import time
 
-import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.linear_model import Ridge
@@ -9,11 +8,9 @@ from sklearn.model_selection import cross_val_score
 
 from mlstock.ml.train_action.train_action import TrainAction
 from mlstock.utils import utils
+from mlstock.utils.utils import time_elapse
 
 logger = logging.getLogger(__name__)
-from sklearn.metrics import mean_squared_error  # 均方误差
-from sklearn.metrics import mean_absolute_error  # 平方绝对误差
-from sklearn.metrics import r2_score  # R square
 
 
 class TrainPct(TrainAction):
@@ -26,9 +23,7 @@ class TrainPct(TrainAction):
 
     def _train(self, X_train, y_train):
         """用岭回归预测下周收益"""
-
         best_hyperparam = self.search_best_hyperparams(X_train, y_train)
-
         ridge = Ridge(alpha=best_hyperparam)
         ridge.fit(X_train, y_train)
         return ridge

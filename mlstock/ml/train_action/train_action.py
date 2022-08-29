@@ -36,7 +36,7 @@ class TrainAction:
         start_time = time.time()
         model = self._train(X_train, y_train)
         self.save_model(model)
-        time_elapse(start_time, "⭐️ 岭回归训练完成")
+        time_elapse(start_time, "⭐️ 训练完成")
 
         return model, df_train, df_test
 
