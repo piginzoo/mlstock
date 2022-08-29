@@ -9,9 +9,9 @@ DATA_FILE=data/`ls -1rt data/|grep .csv|tail -n 1`
 PCT_MODEL_FILE=model/`ls -1rt model/|grep pct_ridge|tail -n 1`
 WINLOSS_MODEL_FILE=model/`ls -1rt model/|grep winloss|tail -n 1`
 
-echo "\t使用最新的数据文件：$DATA_FILE"
-echo "\t使用最新的收益模型：$PCT_MODEL_FILE"
-echo "\t使用最新的涨跌模型：$WINLOSS_MODEL_FILE"
+echo "  使用最新的数据文件：$DATA_FILE"
+echo "  使用最新的收益模型：$PCT_MODEL_FILE"
+echo "  使用最新的涨跌模型：$WINLOSS_MODEL_FILE"
 
 SECONDS=0
 python -m mlstock.ml.backtest \

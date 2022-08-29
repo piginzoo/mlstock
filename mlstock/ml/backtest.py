@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 from mlstock.ml.data.factor_service import extract_features
+import matplotlib.dates as mdates
 
 import joblib
 
@@ -108,7 +109,8 @@ def plot(df):
     ax1.grid(False)
     ax2.grid(False)
     # 设置横轴显示,设置密度，比如横坐标9个，设置这个为3,到时候横坐标上就显示 9/3=3个横坐标，
-    ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing=4))
+    ax1.xaxis.set_xticks(label_x,minor=True)
+    # ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing=4))
     # 添加标签
     ax1.legend(loc='upper left')
     ax2.legend(loc='upper right')
