@@ -75,7 +75,7 @@ def select_stocks_by_pred(df):
         df_top30 = df_group.iloc[0:30, :]
         next_pct_chg_mean = np.mean(df_top30.next_pct_chg.values)
         next_pct_chg_baseline_mean = np.mean(df_top30.next_pct_chg_baseline.values)
-        df_pct = df_pct.append([[date, next_pct_chg_mean, next_pct_chg_baseline_mean]])
+        df_pct = df_pct.append([[next_pct_chg_mean, next_pct_chg_baseline_mean]])
         df_top30['trade_date'] = date
         df_selected_stocks = df_selected_stocks.append(df_top30)
     df_pct.columns = ['next_pct_chg', 'next_pct_chg_baseline']
