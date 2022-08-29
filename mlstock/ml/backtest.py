@@ -51,7 +51,7 @@ def main(args):
         df_data['winloss_pred'] = model_winloss.predict(X)
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
 
-    df_pct = select_stocks(df_data)
+    df_pct = select_stocks_by_pred(df_data)
     plot(df_pct, args.start_date, args.end_date)
 
 
