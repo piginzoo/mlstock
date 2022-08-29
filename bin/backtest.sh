@@ -15,9 +15,18 @@ echo "  使用最新的涨跌模型：$WINLOSS_MODEL_FILE"
 
 SECONDS=0
 python -m mlstock.ml.backtest \
+-s 20090101 -e 20190101 \
+-mp $PCT_MODEL_FILE \
+-mw $WINLOSS_MODEL_FILE \
+-d $DATA_FILE #>./logs/console.backtest.log 2>&1
+echo "回测20090101~20190101结束"
+elapse
+
+SECONDS=0
+python -m mlstock.ml.backtest \
 -s 20190101 -e 20220901 \
 -mp $PCT_MODEL_FILE \
 -mw $WINLOSS_MODEL_FILE \
--d $DATA_FILE >./logs/console.backtest.log 2>&1
-echo "回测结束"
+-d $DATA_FILE #>./logs/console.backtest.log 2>&1
+echo "回测20190101~20220901结束"
 elapse

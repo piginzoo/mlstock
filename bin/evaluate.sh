@@ -18,6 +18,6 @@ python -m mlstock.ml.evaluate \
 -s 20190101 -e 20220901 \
 -mp $PCT_MODEL_FILE \
 -mw $WINLOSS_MODEL_FILE \
--d $DATA_FILE >./logs/console.evaluate.log 2>&1
+-d $DATA_FILE #>./logs/console.evaluate.log 2>&1
 echo "指标评测结束"
 elapse

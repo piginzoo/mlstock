@@ -49,27 +49,27 @@ def main(args):
         df_data['y_pred'] = model_winloss.predict(X)
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
 
-    df_pct = calculate_pct_chg(df_data)
-    plot(df_pct)
+    df_pct = select_stocks(df_data)
+    plot(df_pct, args.start_date, args.end_date)
 
 
-def calculate_pct_chg(df):
+def select_stocks(df):
     # 先把所有预测为跌的全部过滤掉
     original_size = len(df)
     # df = df[df.y_pred == 1]
     logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
 
-    # 先按照日期 + 预测的rank排序
-    df = df.sort_values(['trade_date', 'y_pred'])
+    # 先按照日期 + 下周预测收益，按照降序排
+    df = df.sort_values(['trade_date', 'y_pred'], ascending=False)
     # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
     # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
     df_pct = df.groupby('trade_date')['next_pct_chg', 'next_pct_chg_baseline'].apply(
-        lambda df_group: df_group[:30].mean())
+        lambda df_group: df_group[0:30].mean())
     df_pct[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = df_pct.apply(lambda x: (x + 1).cumprod() - 1)
     return df_pct.reset_index()
 
 
-def plot(df):
+def plot(df, start_date, end_date):
     """
     1. 每期实际收益
     2. 每期实际累计收益
@@ -118,7 +118,7 @@ def plot(df):
     plt.grid(axis="y")  # 背景网格
 
     # 保存图片
-    save_path = 'data/plot.jpg'
+    save_path = 'data/plot_{}_{}.jpg'.foramt(start_date, end_date)
     plt.savefig(save_path)
     plt.show()
 
