@@ -28,7 +28,7 @@ git clone https://github.com/piginzoo/mfm_learner.git
 cd mfm_learner
 python -m utils.tushare_download.updator
 ```
-整个过程大约会持续3~4个小时，会拉去从2008.1.1~至今的数据，2008年之前的数据由于股改问题，参考价值不大，故未使用。
+整个过程大约会持续3-4个小时，会拉去从2008.1.1-至今的数据，2008年之前的数据由于股改问题，参考价值不大，故未使用。
 
 ## 3.一键式完成整个过程
 
