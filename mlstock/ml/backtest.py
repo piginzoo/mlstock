@@ -118,7 +118,7 @@ def plot(df, start_date, end_date):
     plt.grid(axis="y")  # 背景网格
 
     # 保存图片
-    save_path = 'data/plot_{}_{}.jpg'.foramt(start_date, end_date)
+    save_path = 'data/plot_{}_{}.jpg'.format(start_date, end_date)
     plt.savefig(save_path)
     plt.show()
 
