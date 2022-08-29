@@ -33,8 +33,8 @@ class TrainWinLoss(TrainAction):
         # 创建xgb分类模型实例
         model = XGBClassifier(nthread=1)
         # 待搜索的参数列表空间
-        param_lst = {"max_depth": [3, 5, 7, 9],
-                     "n_estimators": [*range(10, 110, 20)]}  # [10, 30, 50, 70, 90]
+        param_lst = {"max_depth": [3, 6, 9],
+                     "n_estimators": [20,40,60,80]}
 
         # 创建网格搜索
         grid_search = GridSearchCV(model,
@@ -42,7 +42,7 @@ class TrainWinLoss(TrainAction):
                                    cv=5,
                                    verbose=10,
                                    scoring='f1_weighted',# TODO:f1???
-                                   n_jobs=16)  # 最多16个进程同时跑
+                                   n_jobs=15)  # 最多15个进程同时跑: 1个进程2G内存，15x2=30G内存使用，不能再多了
         # 基于flights数据集执行搜索
         grid_search.fit(X_train, y_train)
 

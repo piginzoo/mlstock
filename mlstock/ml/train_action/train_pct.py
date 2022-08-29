@@ -40,7 +40,7 @@ class TrainPct(TrainAction):
         # 做这个是为了人肉看一下最好的岭回归的超参alpha的最优值是啥
         # 是没必要的，因为后面还会用 gridsearch自动跑一下，做这个就是想直观的感受一下
         results = {}
-        alpha_scope = np.arange(start=0, stop=1000, step=100)
+        alpha_scope = np.arange(start=1, stop=200, step=10)
         for i in alpha_scope:
             # Ridge和Lasso回归分别代表L1和L2的正则化，L1会把系数压缩到0，而L2则不会，同时L1还有挑选特征的作用
             ridge = Ridge(alpha=i)

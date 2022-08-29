@@ -108,8 +108,8 @@ def plot(df):
     ax2.set_ylabel(label_y2 + "/" + label_y3)  # 设置Y2轴标题
     ax1.grid(False)
     ax2.grid(False)
-    # 设置横轴显示,设置密度，比如横坐标9个，设置这个为3,到时候横坐标上就显示 9/3=3个横坐标，
-    ax1.xaxis.set_major_locator(ticker.MultipleLocator(4))
+    # 12周间隔，3个月相当于
+    ax1.xaxis.set_major_locator(ticker.MultipleLocator(12))
 
     # 添加标签
     ax1.legend(loc='upper left')
