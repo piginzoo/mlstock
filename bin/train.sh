@@ -12,7 +12,7 @@ fi
 
 echo "准备开始训练..."
 
-DATA_FILE=data/`ls -1rt data/|grep .csv|tail -n 1`
+DATA_FILE=data/`ls -1rt data/|grep factor|tail -n 1`
 
 echo "  使用最新的数据文件：$DATA_FILE"
 

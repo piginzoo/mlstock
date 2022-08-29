@@ -5,7 +5,7 @@ function elapse(){
 
 echo "准备开始指标评测..."
 
-DATA_FILE=data/`ls -1rt data/|grep .csv|tail -n 1`
+DATA_FILE=data/`ls -1rt data/|grep factor|tail -n 1`
 PCT_MODEL_FILE=model/`ls -1rt model/|grep pct_ridge|tail -n 1`
 WINLOSS_MODEL_FILE=model/`ls -1rt model/|grep winloss|tail -n 1`
 
