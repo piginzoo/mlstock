@@ -71,9 +71,6 @@ def select_stocks_by_pred(df):
     df_pct = DataFrame()
     df_selected_stocks = DataFrame()
 
-    import pdb;
-    pdb.set_trace()
-
     for date, df_group in df_groups:
         df_top30 = df_group.iloc[0:30, :]
 

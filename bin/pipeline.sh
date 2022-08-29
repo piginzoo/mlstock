@@ -9,10 +9,10 @@
 #
 # -----------------------------------------------------------------------------------------------
 
-. prepare_data.sh $1
-. train.sh
-. evaluate.sh
-. backtest.sh
+. bin/prepare_data.sh $1
+. bin/train.sh
+. bin/evaluate.sh
+. bin/backtest.sh
 
 #function elapse(){
 #  duration=$SECONDS
