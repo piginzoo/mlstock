@@ -1,4 +1,4 @@
-
+# prepare_factor.sh 100  (调试模式，只加载100只股票)
 function elapse(){
   duration=$SECONDS
   echo "耗时 $(($duration / 60)) 分 $(($duration % 60)) 秒."

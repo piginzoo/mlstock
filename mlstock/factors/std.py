@@ -37,7 +37,8 @@ class Std(SimpleFactor):
         """
         results = []
         for m in mapping:
-            # x 5，是近似于周的频度（5个交易日是一个周）
+            # x 5，是近似于周的频度（5个交易日是一个周），
+            # rolling是截止到今天为止之前的做rolling，不会有未来函数的问题
             df_std = df_weekly.pct_chg.rolling(window=m['period']*5).std()
             results.append(df_std)
         df = pd.concat(results, axis=1)  # 按照列拼接（axis=1）

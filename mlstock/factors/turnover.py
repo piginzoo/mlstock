@@ -93,7 +93,8 @@ class Turnover(SimpleFactor):
         """
 
         # 24周内的均值和标准差值，这个不是指标，是用于计算指标用的中间值
-        df[f'turnover_24w'] = df.groupby('ts_code')['turnover_rate'].rolling(window=5 * 24, min_periods=1).mean().values
+        df[f'turnover_24w'] = df.groupby('ts_code')['turnover_rate'].rolling(window=5 * 24,
+                                                                             min_periods=1).mean().values
         df[f'turnover_std_24w'] = df.groupby('ts_code')['turnover_rate'].rolling(window=5 * 24,
                                                                                  min_periods=1).std().values
 
@@ -104,7 +105,8 @@ class Turnover(SimpleFactor):
         # 2.N周的日换手率 / 两年内日换手率 - 1，表示N周流动性的乖离率
         # import pdb; pdb.set_trace()
         for i in N:
-            df[f'turnover_bias_{i}w'] = df.groupby('ts_code').apply(lambda df_stock: df_stock[f'turnover_{i}w'] / df_stock.turnover_24w - 1).values
+            df[f'turnover_bias_{i}w'] = df.groupby('ts_code').apply(
+                lambda df_stock: df_stock[f'turnover_{i}w'] / df_stock.turnover_24w - 1).values
 
         # 3.N周的日均换手率的标准差
         for i in N:

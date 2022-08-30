@@ -179,6 +179,7 @@ def prepare_target(df_weekly, start_date, end_date, datasource):
 
     # 下一期的收益率，这个是为了将来做回测评价用，注意，是下一期，所以做了shift(-1)
     df_weekly['next_pct_chg'] = df_weekly.groupby('ts_code').pct_chg.shift(-1)
+
     # 下一期的基准收益率
     df_weekly['next_pct_chg_baseline'] = df_weekly.groupby('ts_code').pct_chg_baseline.shift(-1)
 

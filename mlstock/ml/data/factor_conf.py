@@ -18,21 +18,30 @@ from mlstock.factors.turnover_return import TurnoverReturn
 所有的因子配置，有的因子类只包含一个feature，有的因子类可能包含多个features。
 """
 
+# 测试用
 FACTORS = [TurnoverReturn,
            Return,
            Std,
            MACD,
            KDJ,
            PSY,
-           RSI,
-           BalanceSheet,
-           Income,
-           CashFlow,
-           FinanceIndicator,
-           DailyIndicator,
-           FF3ResidualStd,
-           AlphaBeta,
-           StakeHolder]
+           RSI]
+# 正式
+# FACTORS = [TurnoverReturn,
+#            Return,
+#            Std,
+#            MACD,
+#            KDJ,
+#            PSY,
+#            RSI,
+#            BalanceSheet,
+#            Income,
+#            CashFlow,
+#            FinanceIndicator,
+#            DailyIndicator,
+#            FF3ResidualStd,
+#            AlphaBeta,
+#            StakeHolder]
 
 
 def get_factor_names():
@@ -49,6 +58,3 @@ def get_factor_names():
         else:
             names += [_names]
     return names
-
-    # 测试用
-# FACTORS = [Income]

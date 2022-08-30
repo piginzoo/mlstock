@@ -60,7 +60,7 @@ class AlphaBeta(ComplexMergeFactor):
 
     def _handle_60_weeks_OLS(self, date, df_stock_weekly):
         """
-        用一只股票的60周收益，和，上证的60周收益，做回归，得到alpha、beta
+        用一只股票的前360周收益，和，上证的前60周收益，做回归，得到alpha、beta
         :param date:
         :param df_stock_weekly:
         :return:
@@ -68,6 +68,7 @@ class AlphaBeta(ComplexMergeFactor):
 
         # 取得当周的日期（周最后一天）
         date = date['trade_date']
+        # 从当前周向前回溯60周，
         df_recent_60 = df_stock_weekly[df_stock_weekly['trade_date'] <= date][-60:]
         # 太少的回归不出来
         if len(df_recent_60) < 2: return np.nan, np.nan
