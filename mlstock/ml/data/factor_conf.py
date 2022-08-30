@@ -19,29 +19,30 @@ from mlstock.factors.turnover_return import TurnoverReturn
 """
 
 # 测试用
-FACTORS = [TurnoverReturn,
-           Return,
-           Std,
-           MACD,
-           KDJ,
-           PSY,
-           RSI]
-# 正式
 # FACTORS = [TurnoverReturn,
 #            Return,
 #            Std,
 #            MACD,
 #            KDJ,
 #            PSY,
-#            RSI,
-#            BalanceSheet,
-#            Income,
-#            CashFlow,
-#            FinanceIndicator,
-#            DailyIndicator,
-#            FF3ResidualStd,
-#            AlphaBeta,
-#            StakeHolder]
+#            RSI]
+
+# 正式
+FACTORS = [TurnoverReturn,
+           Return,
+           Std,
+           MACD,
+           KDJ,
+           PSY,
+           RSI,
+           BalanceSheet,
+           Income,
+           CashFlow,
+           FinanceIndicator,
+           DailyIndicator,
+           # FF3ResidualStd,
+           AlphaBeta,
+           StakeHolder]
 
 
 def get_factor_names():

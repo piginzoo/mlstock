@@ -89,12 +89,12 @@ class FF3ResidualStd(ComplexMergeFactor):
         # 细节：1个时间截面上，的所有股票，共享fama的3因子数值
         df_one_stock_daily = df_one_stock_daily.merge(df_fama, on=['trade_date'], how='left')
 
-        def _calculate_residual_std(self, s):
+        def _calculate_residual_std(s):  # s是series，带着index，用index反向查找rolling记录
             """
             :param df: 一只股票的当日之前的N天的数据
             :return:
             """
-            df = df_one_stock_daily[s.index]
+            df = df_one_stock_daily.loc[s.index]
 
             # 细节：这个是这只股票的所有期（我们是N周）N*5天的数据进行回归
             ols_result = sm.ols(formula='pct_chg ~ R_M + SMB + HML', data=df).fit()
@@ -104,7 +104,8 @@ class FF3ResidualStd(ComplexMergeFactor):
 
             return std
 
-        df_one_stock_daily.pct_chg.rolling(window=period).apply(lambda x: _calculate_residual_std(x), raw=False)
+        # rolling不支持多列，raw=False是为了返回seies，以便获得index
+        df_one_stock_daily.rolling(window=period).apply(_calculate_residual_std, raw=False)
 
     def calculate(self, stock_data):
         """
