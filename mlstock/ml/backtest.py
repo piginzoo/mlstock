@@ -130,7 +130,7 @@ def plot(df, start_date, end_date, factor_names):
 
     # 保存图片
     factor = '' if len(factor_names) > 1 else factor_names[0]
-    save_path = 'data/plot_{}_{}_{}.jpg'.format(start_date, end_date, factor)
+    save_path = 'data/plot_{}_{}_{}.jpg'.format(factor, start_date, end_date)
     plt.savefig(save_path)
     plt.show()
 
