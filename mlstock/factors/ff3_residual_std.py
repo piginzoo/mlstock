@@ -89,21 +89,22 @@ class FF3ResidualStd(ComplexMergeFactor):
         # 细节：1个时间截面上，的所有股票，共享fama的3因子数值
         df_one_stock_daily = df_one_stock_daily.merge(df_fama, on=['trade_date'], how='left')
 
-        df_one_stock_daily.rolling(window=period).apply(lambda x: self._calculate_residual_std(x),raw=False)
+        def _calculate_residual_std(self, s):
+            """
+            :param df: 一只股票的当日之前的N天的数据
+            :return:
+            """
+            df = df_one_stock_daily[s.index]
 
-    def _calculate_residual_std(self, df):
-        """
-        :param df: 一只股票的当日之前的N天的数据
-        :return:
-        """
+            # 细节：这个是这只股票的所有期（我们是N周）N*5天的数据进行回归
+            ols_result = sm.ols(formula='pct_chg ~ R_M + SMB + HML', data=df).fit()
 
-        # 细节：这个是这只股票的所有期（我们是N周）N*5天的数据进行回归
-        ols_result = sm.ols(formula='pct_chg ~ R_M + SMB + HML', data=df).fit()
+            # 获得残差，注意，这个是每个股票都每周，都计算出来一个残差来
+            std = ols_result.resid.std()
 
-        # 获得残差，注意，这个是每个股票都每周，都计算出来一个残差来
-        std = ols_result.resid.std()
+            return std
 
-        return std
+        df_one_stock_daily.pct_chg.rolling(window=period).apply(lambda x: _calculate_residual_std(x), raw=False)
 
     def calculate(self, stock_data):
         """
@@ -135,7 +136,7 @@ class FF3ResidualStd(ComplexMergeFactor):
                        period=time_window)
             df_residual_stds.append(df.reset_index(drop=True))
             start_time = utils.time_elapse(start_time,
-                                           f"计算完时间窗口{i}周的所有股票Fama-French回归残差的标准差：{len(df_residuals[self.name[i]])}行",
+                                           f"计算完时间窗口{i}周的所有股票Fama-French回归残差的标准差：{len(df)}行",
                                            "debug")
 
         df_residuals = pd.concat(df_residual_stds, axis=1)
