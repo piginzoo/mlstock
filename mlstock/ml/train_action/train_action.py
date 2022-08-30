@@ -35,10 +35,10 @@ class TrainAction:
         # 训练
         start_time = time.time()
         model = self._train(X_train, y_train)
-        self.save_model(model)
+        model_path = self.save_model(model)
         time_elapse(start_time, "⭐️ 训练完成")
 
-        return model, df_train, df_test
+        return model_path
 
     def get_model_name(self):
         raise NotImplemented()
@@ -48,3 +48,4 @@ class TrainAction:
         model_file_path = f"./model/{self.get_model_name()}"
         joblib.dump(model, model_file_path)
         logger.info("训练结果保存到：%s", model_file_path)
+        return model_file_path

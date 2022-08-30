@@ -145,13 +145,13 @@ def extract_features(df):
     return df[factor_conf.get_factor_names()]
 
 
-def extract_train_data(df):
-    """
-    仅保留训练用的列
-    :param factors_file_path:
-    :return:
-    """
-    return df[CODE_DATE + factor_conf.get_factor_names() + TARGET]
+# def extract_train_data(df):
+#     """
+#     仅保留训练用的列
+#     :param factors_file_path:
+#     :return:
+#     """
+#     return df[CODE_DATE + factor_conf.get_factor_names() + TARGET]
 
 
 def prepare_target(df_weekly, start_date, end_date, datasource):

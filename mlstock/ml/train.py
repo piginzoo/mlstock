@@ -1,7 +1,8 @@
 import argparse
 import logging
 
-from mlstock.ml.data import factor_service, factor_conf
+from mlstock.ml import load_and_filter_data
+from mlstock.ml.data import factor_conf
 from mlstock.ml.train_action.train_pct import TrainPct
 from mlstock.ml.train_action.train_winloss import TrainWinLoss
 from mlstock.utils import utils
@@ -9,34 +10,22 @@ from mlstock.utils import utils
 logger = logging.getLogger(__name__)
 
 
-def main(args):
+def main(data_path, start_date, end_date, train_type, factor_names):
     # 加载数据
-    utils.check_file_path(args.data)
-    df_data = factor_service.load_from_file(args.data)
-    original_size = len(df_data)
-    original_start_date = df_data.trade_date.min()
-    original_end_date = df_data.trade_date.max()
-    df_data = df_data[df_data.trade_date >= args.start_date]
-    df_data = df_data[df_data.trade_date <= args.end_date]
-    logger.debug("数据%s~%s %d行，过滤后=> %s~%s %d行",
-                 original_start_date, original_end_date, original_size,
-                 args.start_date, args.end_date, len(df_data))
-
-    df_data = factor_service.extract_train_data(df_data)
-
-    factor_names = factor_conf.get_factor_names()
+    df_data = load_and_filter_data(data_path, start_date, end_date)
 
     train_pct = TrainPct(factor_names)
+
     train_winloss = TrainWinLoss(factor_names)
 
-    if args.train == 'all':
+    if train_type == 'all':
         train_pct.train(df_data)
         train_winloss.train(df_data)
         return
-    if args.train == 'pct':
+    if train_type == 'pct':
         train_pct.train(df_data)
         return
-    if args.train == 'winloss':
+    if train_type == 'winloss':
         train_winloss.train(df_data)
         return
 
@@ -59,5 +48,6 @@ if __name__ == '__main__':
     # 训练相关的
     parser.add_argument('-t', '--train', type=str, default="all", help="all|pct|winloss : 训练所有|仅训练收益|仅训练涨跌")
     args = parser.parse_args()
+    factor_names = factor_conf.get_factor_names()
 
-    main(args)
+    main(args.data, args.start_date, args.end_date, args.train, factor_names)

@@ -2,56 +2,43 @@ import argparse
 import logging
 import time
 
+import joblib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from pandas import DataFrame
 import numpy as np
+from pandas import DataFrame
 
-from mlstock.ml.data.factor_service import extract_features
-import matplotlib.dates as mdates
-
-import joblib
-
-from mlstock.ml.data import factor_service
+from mlstock.ml import load_and_filter_data
+from mlstock.ml.data import factor_conf
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
 
 
-def main(args):
-    # 加载数据
-    utils.check_file_path(args.data)
-    df_data = factor_service.load_from_file(args.data)
-    original_size = len(df_data)
-    original_start_date = df_data.trade_date.min()
-    original_end_date = df_data.trade_date.max()
-    df_data = df_data[df_data.trade_date >= args.start_date]
-    df_data = df_data[df_data.trade_date <= args.end_date]
-    logger.debug("数据%s~%s %d行，过滤后=> %s~%s %d行",
-                 original_start_date, original_end_date, original_size,
-                 args.start_date, args.end_date, len(df_data))
+def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
+    df_data = load_and_filter_data(data_path, start_date, end_date)
 
     # 加载模型；如果参数未提供，为None
     # 查看数据文件和模型文件路径是否正确
-    if args.model_pct: utils.check_file_path(args.model_pct)
-    if args.model_winloss: utils.check_file_path(args.model_winloss)
-    model_pct = joblib.load(args.model_pct) if args.model_pct else None
-    model_winloss = joblib.load(args.model_winloss) if args.model_winloss else None
+    if model_pct_path: utils.check_file_path(model_pct_path)
+    if model_winloss_path: utils.check_file_path(model_winloss_path)
+    model_pct = joblib.load(model_pct_path) if model_pct_path else None
+    model_winloss = joblib.load(model_winloss_path) if model_winloss_path else None
 
     if model_pct:
         start_time = time.time()
-        X = extract_features(df_data)
+        X = df_data[factor_names]
         df_data['pct_pred'] = model_pct.predict(X)
         utils.time_elapse(start_time, f"预测下期收益: {len(df_data)}行 ")
 
     if model_winloss:
         start_time = time.time()
-        X = extract_features(df_data)
+        X = df_data[factor_names]
         df_data['winloss_pred'] = model_winloss.predict(X)
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
 
     df_pct = select_stocks_by_pred(df_data)
-    plot(df_pct, args.start_date, args.end_date)
+    plot(df_pct, start_date, end_date, factor_names)
 
 
 def select_stocks_by_pred(df):
@@ -93,7 +80,7 @@ def select_stocks_by_pred(df):
     return df_pct.reset_index()
 
 
-def plot(df, start_date, end_date):
+def plot(df, start_date, end_date, factor_names):
     """
     1. 每期实际收益
     2. 每期实际累计收益
@@ -142,12 +129,19 @@ def plot(df, start_date, end_date):
     plt.grid(axis="y")  # 背景网格
 
     # 保存图片
-    save_path = 'data/plot_{}_{}.jpg'.format(start_date, end_date)
+    factor = '' if len(factor_names) > 1 else factor_names[0]
+    save_path = 'data/plot_{}_{}_{}.jpg'.format(start_date, end_date, factor)
     plt.savefig(save_path)
     plt.show()
 
 
 """
+python -m mlstock.ml.backtest \
+-s 20190101 -e 20220901 \
+-mp model/pct_ridge_20220828190251.model \
+-mw model/winloss_xgboost_20220828190259.model \
+-d data/processed_industry_neutral_20080101_20220901_20220828152110.csv
+
 python -m mlstock.ml.backtest \
 -s 20190101 -e 20220901 \
 -mp model/pct_ridge_20220828190251.model \
@@ -167,4 +161,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args)
+    factor_names = factor_conf.get_factor_names()
+
+    main(args.data,
+         args.start_date,
+         args.end_date,
+         args.model_pct,
+         args.model_winloss,
+         factor_names)
