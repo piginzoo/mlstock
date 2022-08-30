@@ -19,15 +19,13 @@ def main(data_path, start_date, end_date, train_type, factor_names):
     train_winloss = TrainWinLoss(factor_names)
 
     if train_type == 'all':
-        train_pct.train(df_data)
-        train_winloss.train(df_data)
-        return
+        return [train_pct.train(df_data), train_winloss.train(df_data)]
+
     if train_type == 'pct':
-        train_pct.train(df_data)
-        return
+        return train_pct.train(df_data)
+
     if train_type == 'winloss':
-        train_winloss.train(df_data)
-        return
+        return train_winloss.train(df_data)
 
 
 """
