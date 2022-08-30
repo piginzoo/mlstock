@@ -20,3 +20,4 @@ def load_and_filter_data(data_path, start_date, end_date):
     logger.debug("数据%s~%s %d行，过滤后=> %s~%s %d行",
                  original_start_date, original_end_date, original_size,
                  start_date, end_date, len(df_data))
+    return df_data

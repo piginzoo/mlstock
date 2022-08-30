@@ -15,7 +15,7 @@ def main(data_path):
         pct_model_path = train.main(data_path, start_date, split_date, 'pct', [factor_name])
         backtest.main(data_path, split_date, end_date, pct_model_path, None, [factor_name])
 
-# python -m mlstock.research.train_backtest_by_factor factor_20080101_20220901_2954_1322891_20220829120341.csv
+# python -m mlstock.research.train_backtest_by_factor -d data/factor_20080101_20220901_2954_1322891_20220829120341.csv
 if __name__ == '__main__':
     utils.init_logger(file=False)
     parser = argparse.ArgumentParser()
