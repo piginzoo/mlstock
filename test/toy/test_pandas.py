@@ -38,14 +38,17 @@ df = make_dummy_data()
 def roll_func(s):
     _df = df.loc[s.index][["a1","a2","a3"]]
     # import pdb;pdb.set_trace()
-    return _df.sum(axis=0).sum()/(_df.shape[0]*_df.shape[1])
+    # return _df.sum(axis=0).sum()/(_df.shape[0]*_df.shape[1])
+    return _df['a3'].iloc[0]
 
 
 df1 = df.groupby('ts_code').rolling(window=3).mean()
 print(df1)
-print("-"*80)
+print("="*80)
 
-df2 = df.groupby('ts_code').rolling(window=3).apply(roll_func, raw=False)
+df2 = df.groupby('ts_code').a1.rolling(window=3).apply(roll_func, raw=False)
+print(df)
+print("-"*40)
 print(df2)
 
 # python -m test.toy.test_pandas

@@ -118,10 +118,10 @@ class FF3ResidualStd(ComplexMergeFactor):
             return std
 
         # rolling不支持多列，raw=False是为了返回seies，以便获得index
-        df = df_one_stock_daily.rolling(window=period).apply(_calculate_residual_std, raw=False)
+        df = df_one_stock_daily.pct_chg.rolling(window=period).apply(_calculate_residual_std, raw=False)
         import pdb;pdb.set_trace()
 
-        df_one_stock_daily[[self.name]] = df
+        df_one_stock_daily[str(period)] = df
         utils.time_elapse(start_time,f"计算完股票[{stock_code}]的fama-french前 {period} 天的残差标准差")
         return df
 
