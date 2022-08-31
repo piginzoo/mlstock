@@ -1,6 +1,3 @@
-import numpy as np
-import pandas as pd
-
 from mlstock.factors.factor import SimpleFactor
 
 N = [1, 3, 6, 12]

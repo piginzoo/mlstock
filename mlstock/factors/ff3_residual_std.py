@@ -54,9 +54,22 @@ logger = logging.getLogger(__name__)
     就是计算你回测周期的内的标准差 * sqrt(T)，比如你回测周期是20天，那就是把招商银行这20天的特异残差求一个标准差，然后再乘以根号下20。
     这个值，是这20天共同拥有的一个"特异波动率"，对，这20天的因子暴露值，都一样，都是这个数！
     我是这么理解的，也不知道对不对，这些文章云山雾罩地不说人话都。
+    
+----
+2022.8.31
+    发现使用了未来函数，重新修改此代码，但是修改后，速度非常慢：
+    
+    计算完时间窗口0周的所有股票Fama-French回归残差的标准差：0行耗时: 0天0小时2分2秒354毫秒
+    50只，2017.1.1~2020.8.1，2分钟
+    2000只，2008.1.1~2020.8.1, 40x1.8x2 = 144分钟 = 2.5小时，
+    如果是1,3,6,12，需要2.5x4 = 10小时，
+    如果用多核，18核跑，也需要32分钟。
+    但是，没办法，之前的版本虽然快，但是是用来所有的时序数据做了ff3的回归，是存在外来函数的额，不能那样做
+    好吧，再说吧，先把代码跑通
+        
 """
 
-N = [1, 3, 6, 12]
+N = [1]#, 3, 6, 12]
 WEEK_TRADE_DAYS = 5
 
 
@@ -85,6 +98,7 @@ class FF3ResidualStd(ComplexMergeFactor):
         :param df_fama: 按照时间序列，所有股票共享的fama-french的三个因子，每周3个值，N期
         :return: 返回的一个每只股票的特异性收益率的时间序列
         """
+        start_time = time.time()
         stock_code = df_one_stock_daily.name  # 保留一下股票名称，因为下面的merge后，就会消失
         # 细节：1个时间截面上，的所有股票，共享fama的3因子数值
         df_one_stock_daily = df_one_stock_daily.merge(df_fama, on=['trade_date'], how='left')
@@ -105,7 +119,9 @@ class FF3ResidualStd(ComplexMergeFactor):
             return std
 
         # rolling不支持多列，raw=False是为了返回seies，以便获得index
-        df_one_stock_daily.rolling(window=period).apply(_calculate_residual_std, raw=False)
+        df = df_one_stock_daily.rolling(window=period).apply(_calculate_residual_std, raw=False)
+        utils.time_elapse(start_time,f"计算完股票[{stock_code}]的fama-french前 {period} 天的残差标准差")
+        return df
 
     def calculate(self, stock_data):
         """
@@ -203,7 +219,7 @@ if __name__ == '__main__':
 
     start_time = time.time()
 
-    start_date = "20180101"
+    start_date = "20200101"
     end_date = "20220801"
     df_stock_basic = data_filter.filter_stocks()
     df_stock_basic = df_stock_basic.iloc[:50]
