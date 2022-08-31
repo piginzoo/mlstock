@@ -115,7 +115,6 @@ class FF3ResidualStd(ComplexMergeFactor):
 
             # 获得残差，注意，这个是每个股票都每周，都计算出来一个残差来
             std = ols_result.resid.std()
-            import pdb;pdb.set_trace()
             return std
 
         # rolling不支持多列，raw=False是为了返回seies，以便获得index
