@@ -83,7 +83,7 @@ class FF3ResidualStd(ComplexMergeFactor):
     def cname(self):
         return [f'{i}周特异波动率' for i in N]
 
-    def _calculate_one_stock_ff3_residual(self, df_one_stock_daily, df_fama, period):
+    def _calculate_one_stock_ff3_residual_std(self, df_one_stock_daily, df_fama, period):
         """
         计算特异性：讲人话，就是用fama计算后它（这只股票）的理论价格，和它的实际价格的偏差，
         周频的每周，都可以依据当周的df_fama因子（市场、smb、hml）算出每一个股票的理论价格，这3个因子是所有的股票共享的哈，牢记，
@@ -115,12 +115,14 @@ class FF3ResidualStd(ComplexMergeFactor):
 
             # 获得残差，注意，这个是每个股票都每周，都计算出来一个残差来
             std = ols_result.resid.std()
-
+            import pdb;pdb.set_trace()
             return std
 
         # rolling不支持多列，raw=False是为了返回seies，以便获得index
         df = df_one_stock_daily.rolling(window=period).apply(_calculate_residual_std, raw=False)
+        df_one_stock_daily[[self.name]] = df
         utils.time_elapse(start_time,f"计算完股票[{stock_code}]的fama-french前 {period} 天的残差标准差")
+        import pdb;pdb.set_trace()
         return df
 
     def calculate(self, stock_data):
@@ -148,7 +150,7 @@ class FF3ResidualStd(ComplexMergeFactor):
             time_window = n * WEEK_TRADE_DAYS
             # 每只股票，针对"每周"数据，都要逐个计算其残差std
             df = df_weekly[['ts_code', 'trade_date', 'pct_chg']].groupby('ts_code') \
-                .apply(self._calculate_one_stock_ff3_residual,
+                .apply(self._calculate_one_stock_ff3_residual_std,
                        df_fama=df_fama,
                        period=time_window)
             df_residual_stds.append(df.reset_index(drop=True))
@@ -159,53 +161,6 @@ class FF3ResidualStd(ComplexMergeFactor):
         df_residuals = pd.concat(df_residual_stds, axis=1)
 
         return df_residuals[['ts_code', 'trade_date'] + self.name]
-
-    def _calculate_ff3_residual(self, stock_data):
-        """
-        获得各只股票的信息
-        """
-        df_daily = stock_data.df_daily
-        df_index_daily = stock_data.df_index_daily
-        df_daily_basic = stock_data.df_daily_basic
-
-        # df_fama['trade_date', 'R_M', 'SMB', 'HML']
-        # fama三因子，是 用每天的横截面'凑'出来的特征，用来后面回归单个股票的数据
-        start_time = time.time()
-        df_fama = fama_model.calculate_factors(df_stocks=df_daily, df_market=df_index_daily, df_basic=df_daily_basic)
-        start_time = utils.time_elapse(start_time, f"计算完所有股票的日频Fama-French因子：{len(df_fama)}行")
-
-        assert len(df_fama) > 0, "3因子数据行数应该大于0"
-
-        """
-        计算每只股票，和FF3的每天的残差
-        
-        先做Fmam-French的三因子回归：
-            r_i = α_i + b1 * r_m_i + b2 * smb_i + b3 * hml_i + e_i 
-            对每一只股票做回归，r_i,r_m_i，smb_i，hml_i 已知，这里的i表示的就是股票的序号，不是时间的序号哈，
-            这里的r_i可不是一天，是所有人的日期，比如 回归的数据，是，招商银行，从2008年到2021年
-            回归后，可以得到α_i、b1、b2、b3、e_i，我们这里只需要残差e_i，这里的残差也是多天的残差，这只股票的多天的残差。
-        参考：
-            - https://blog.csdn.net/CoderPai/article/details/82982146 
-            - https://zhuanlan.zhihu.com/p/261031713
-            使用statsmodels.formula中的ols，可以写一个表达式，来指定Y和X_i，即dataframe中的列名，很酷，喜欢        
-        数据：
-            合并后数据如下：
-            trade_date  R_M     SMB         HML         ts_code     pct_chg
-            2016-06-24	0.12321 0.165260	0.002198	0.085632    0.052
-            2016-06-27	0.2331  0.165537	0.003583	0.063299    0.01
-            2016-06-28	0.1234  0.135215	0.010403	0.059038    0.035
-            ...
-        做回归：
-            r_i = α_i + b1 * r_m_i + b2 * smb_i + b3 * hml_i + e_i 
-            某一只股票的所有的日子的数据做回归，r_i,r_m_i，smb_i，hml_i 已知，回归后，得到e_i(残差)
-        """
-        # as_index=True是为了保留ts_code，但是在ubuntu服务器上不行，排查后发现是pandas==1.4.3导致，应该是个bug
-        # 解决办法是降级pandas，2022.8.11
-        df_residuals = df_daily.groupby('ts_code', as_index=True).apply(self._calculate_one_stock_ff3_residual,
-                                                                        df_fama).reset_index()
-        utils.time_elapse(start_time, f"计算完所有股票的Fama-French回归残差：{len(df_residuals)}行")
-
-        return df_residuals[['ts_code', 'trade_date', 'ff3_residual']]
 
 
 # python -m mlstock.factors.ff3_residual_std
@@ -232,3 +187,27 @@ if __name__ == '__main__':
 
     print("因子结果\n", df)
     utils.time_elapse(start_time, "全部处理")
+
+"""
+计算每只股票，和FF3的每天的残差
+
+先做Fmam-French的三因子回归：
+    r_i = α_i + b1 * r_m_i + b2 * smb_i + b3 * hml_i + e_i 
+    对每一只股票做回归，r_i,r_m_i，smb_i，hml_i 已知，这里的i表示的就是股票的序号，不是时间的序号哈，
+    这里的r_i可不是一天，是所有人的日期，比如 回归的数据，是，招商银行，从2008年到2021年
+    回归后，可以得到α_i、b1、b2、b3、e_i，我们这里只需要残差e_i，这里的残差也是多天的残差，这只股票的多天的残差。
+参考：
+    - https://blog.csdn.net/CoderPai/article/details/82982146 
+    - https://zhuanlan.zhihu.com/p/261031713
+    使用statsmodels.formula中的ols，可以写一个表达式，来指定Y和X_i，即dataframe中的列名，很酷，喜欢        
+数据：
+    合并后数据如下：
+    trade_date  R_M     SMB         HML         ts_code     pct_chg
+    2016-06-24	0.12321 0.165260	0.002198	0.085632    0.052
+    2016-06-27	0.2331  0.165537	0.003583	0.063299    0.01
+    2016-06-28	0.1234  0.135215	0.010403	0.059038    0.035
+    ...
+做回归：
+    r_i = α_i + b1 * r_m_i + b2 * smb_i + b3 * hml_i + e_i 
+    某一只股票的所有的日子的数据做回归，r_i,r_m_i，smb_i，hml_i 已知，回归后，得到e_i(残差)
+"""
