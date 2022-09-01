@@ -24,7 +24,6 @@ class MACD(SimpleFactor):
 
     def calculate(self, stock_data):
         df_weekly = stock_data.df_weekly
-        import pdb;pdb.set_trace()
         return df_weekly.groupby('ts_code').close.apply(self.__macd)
 
     def __macd(self, x):

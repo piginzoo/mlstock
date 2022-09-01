@@ -14,7 +14,7 @@ def main(factor_name):
     _, _, csv_path = factor_service.calculate([factor_class],
                                               start_date,
                                               split_date,
-                                              num=1000000,
+                                              num=50,
                                               is_industry_neutral=True)
     train_backtest_for_each_factor.main(csv_path, factor_name)
 
