@@ -7,7 +7,7 @@ import time
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from mlstock.const import CODE_DATE, BASELINE_INDEX_CODE, TARGET
+from mlstock.const import CODE_DATE, BASELINE_INDEX_CODE
 from mlstock.data import data_filter, data_loader
 from mlstock.data.datasource import DataSource
 from mlstock.data.stock_info import StocksInfo
@@ -20,7 +20,7 @@ from mlstock.utils.utils import time_elapse
 logger = logging.getLogger(__name__)
 
 
-def calculate(start_date, end_date, num, is_industry_neutral):
+def calculate(factor_classes, start_date, end_date, num, is_industry_neutral):
     """
     从头开始计算因子
     :param start_date:
@@ -36,7 +36,7 @@ def calculate(start_date, end_date, num, is_industry_neutral):
     stock_data, ts_codes = load_stock_data(data_source, start_date, end_date, num)
 
     # 加载（计算）因子
-    df_weekly, factor_names = calculate_factors(data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
+    df_weekly, factor_names = calculate_factors(factor_classes, data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
 
     # 显存一份最原始的数据
     time_elapse(start_time, "⭐️ 全部因子加载完成")
@@ -48,18 +48,22 @@ def calculate(start_date, end_date, num, is_industry_neutral):
     df_weekly = clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
 
     # 保存原始数据和处理后的数据
-    # factor_开始日_结束日_股票数_总行数_时间戳.csv
+    # factor_因子类_开始日_结束日_股票数_总行数_行业中性_时间戳.csv
     # factor_20090101_20220901_s2109_l13940192l_20220826165226.csv
     industry_neutral = "_industry_neutral" if is_industry_neutral else ""
-    csv_file_name = "data/factor_{}_{}_{}_{}_{}.csv".format(start_date,
-                                                            end_date,
-                                                            len(ts_codes),
-                                                            len(df_weekly),
-                                                            utils.now())
+    factor_name = factor_classes[0].__name__ if len(factor_classes)==1 else ""
+    csv_file_name = "data/factor_{}_{}_{}_{}_{}_{}_{}.csv".format(
+        factor_name,
+        start_date,
+        end_date,
+        len(ts_codes),
+        len(df_weekly),
+        industry_neutral,
+        utils.now())
     df_weekly.to_csv(csv_file_name, header=True, index=False)  # 保留列名
-    logger.info("保存 %d 行数据到文件：%s", len(df_weekly), csv_file_name)
+    logger.info("保存因子 %s %d 行数据到文件：%s", len(df_weekly), csv_file_name)
 
-    return df_weekly, factor_names
+    return df_weekly, factor_names, csv_file_name
 
 
 def load_stock_data(data_source, start_date, end_date, num):
@@ -100,7 +104,7 @@ def load_stock_data(data_source, start_date, end_date, num):
     return stock_data, ts_codes
 
 
-def calculate_factors(data_source, stock_data, stocks_info):
+def calculate_factors(factor_classes, data_source, stock_data, stocks_info):
     """
     计算每一个因子，因子列表来自于factor_conf.py
 
@@ -116,7 +120,7 @@ def calculate_factors(data_source, stock_data, stocks_info):
     df_weekly = stock_data.df_weekly
 
     # 获取每一个因子（特征），并且，并入到股票数据中
-    for factor_class in FACTORS:
+    for factor_class in factor_classes:
         factor = factor_class(data_source, stocks_info)
         df_factor = factor.calculate(stock_data)
         df_weekly = factor.merge(df_weekly, df_factor)
@@ -425,4 +429,4 @@ if __name__ == '__main__':
     else:
         utils.init_logger(file=True, log_level=logging.INFO)
 
-    calculate(args.start_date, args.end_date, args.num, args.industry_neutral)
+    calculate(FACTORS, args.start_date, args.end_date, args.num, args.industry_neutral)

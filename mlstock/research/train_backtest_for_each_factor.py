@@ -4,7 +4,10 @@ from mlstock.ml import train, backtest
 from mlstock.ml.data import factor_conf
 from mlstock.utils import utils
 
-
+"""
+把因子逐个跑一遍，用其单独训练，单独跑回测，
+这样来对比不同因子的效果。
+"""
 def main(data_path, factor_name):
     start_date = '20090101'
     split_date = '20190101'

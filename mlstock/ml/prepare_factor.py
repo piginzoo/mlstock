@@ -1,6 +1,7 @@
 import argparse
 
 from mlstock.ml.data import factor_service
+from mlstock.ml.data.factor_conf import FACTORS
 from mlstock.utils import utils
 
 
@@ -11,7 +12,7 @@ def main(args):
     is_industry_neutral = args.industry_neutral
 
     # 那么就需要从新计算了
-    df_weekly, factor_names = factor_service.calculate(start_date, end_date, num, is_industry_neutral)
+    df_weekly, factor_names, csv_path = factor_service.calculate(FACTORS, start_date, end_date, num, is_industry_neutral)
     return df_weekly, factor_names
 
 """

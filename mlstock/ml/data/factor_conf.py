@@ -59,3 +59,14 @@ def get_factor_names():
         else:
             names += [_names]
     return names
+
+
+def get_factor_class_by_name(name):
+    """
+    根据名字获得Factor Class
+    :return:
+    """
+    for f in FACTORS:
+        _names = f(None, None).name
+        if name in _names: return f
+    return None
