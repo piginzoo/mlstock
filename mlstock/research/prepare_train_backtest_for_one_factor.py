@@ -15,7 +15,7 @@ def main(factor_name):
     _, _, csv_path = factor_service.calculate([factor_class,DailyIndicator],
                                               start_date,
                                               end_date,
-                                              num=50,
+                                              num=10000000,
                                               is_industry_neutral=True)
     train_backtest_for_each_factor.main(csv_path, factor_name)
 
