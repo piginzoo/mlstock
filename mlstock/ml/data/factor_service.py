@@ -61,7 +61,7 @@ def calculate(factor_classes, start_date, end_date, num, is_industry_neutral):
         industry_neutral,
         utils.now())
     df_weekly.to_csv(csv_file_name, header=True, index=False)  # 保留列名
-    logger.info("保存因子 %s %d 行数据到文件：%s", len(df_weekly), csv_file_name)
+    logger.info("保存因子 %s %d 行数据到文件：%s", factor_name, len(df_weekly), csv_file_name)
 
     return df_weekly, factor_names, csv_file_name
 
