@@ -83,7 +83,7 @@ class FF3ResidualStd(ComplexMergeFactor):
     def cname(self):
         return [f'{i}周特异波动率' for i in N]
 
-    def _calculate_one_stock_ff3_residual_std(self, df_one_stock_daily, df_fama, period, column_name):
+    def _calculate_one_stock_ff3_residual_std(self, df_one_stock_daily, df_fama, period):
         """
         计算特异性：讲人话，就是用fama计算后它（这只股票）的理论价格，和它的实际价格的偏差，
         周频的每周，都可以依据当周的df_fama因子（市场、smb、hml）算出每一个股票的理论价格，这3个因子是所有的股票共享的哈，牢记，
