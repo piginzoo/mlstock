@@ -1,6 +1,5 @@
 import logging
 
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
@@ -9,6 +8,8 @@ from mlstock.ml.train_action.train_action import TrainAction
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
+
+PARAMS_MODE = 'fix'  # fix | optimize
 
 
 class TrainWinLoss(TrainAction):
@@ -30,23 +31,31 @@ class TrainWinLoss(TrainAction):
         le = LabelEncoder()
         y_train = le.fit_transform(y_train)
 
-        # 创建xgb分类模型实例
-        model = XGBClassifier(nthread=1)
-        # 待搜索的参数列表空间
-        param_lst = {"max_depth": [3, 6, 9],
-                     "n_estimators": [20,40,60,80]}
+        if PARAMS_MODE == 'optimize':
+            # 创建xgb分类模型实例
+            model = XGBClassifier(nthread=1)
 
-        # 创建网格搜索
-        grid_search = GridSearchCV(model,
-                                   param_grid=param_lst,
-                                   cv=5,
-                                   verbose=10,
-                                   scoring='f1_weighted',# TODO:f1???
-                                   n_jobs=15)  # 最多15个进程同时跑: 1个进程2G内存，15x2=30G内存使用，不能再多了
-        # 基于flights数据集执行搜索
-        grid_search.fit(X_train, y_train)
+            # 待搜索的参数列表空间
+            param_list = {"max_depth": [3, 5, 7, 9],
+                          "n_estimators": [10, 30, 50, 70, 90]}
 
-        # 输出搜索结果
-        logger.debug("GridSearch出最优参数：%r", grid_search.best_estimator_)
+            # 创建网格搜索
+            grid_search = GridSearchCV(model,
+                                       param_grid=param_list,
+                                       cv=5,
+                                       verbose=10,
+                                       scoring='f1_weighted',  # TODO:f1???
+                                       n_jobs=15)  # 最多15个进程同时跑: 1个进程2G内存，15x2=30G内存使用，不能再多了
+            # 基于flights数据集执行搜索
+            grid_search.fit(X_train, y_train)
 
-        return grid_search.best_estimator_
+            # 输出搜索结果
+            logger.debug("GridSearch出最优参数：%r", grid_search.best_estimator_)
+
+            return grid_search.best_estimator_
+        else:
+            # 创建xgb分类模型实例
+            # 这个参数是由上面的优化结果得出的，上面的时不时跑一次，然后把最优结果抄到这里
+            model = XGBClassifier(nthread=1, max_depth=7, n_estimators=50)
+            model.fit(X_train, y_train)
+            return model
