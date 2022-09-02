@@ -4,6 +4,7 @@ import numpy as np
 from empyrical import max_drawdown
 
 from mlstock.const import RISK_FREE_ANNUALLY_RETRUN
+from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,13 @@ def metrics(df):
     :param df_base:
     :return:
     """
+    if df is not None:
+        df.to_csv("data/df_portfolio.csv")
+    else:
+        import pandas as pd
+        df = pd.read_csv("data/df_portfolio.csv")
+        df['trade_date'] = df['trade_date'].astype(str)
+
     # 每期超额收益率
     df['active_pct_chg'] = df['next_pct_chg'] - df['next_pct_chg_baseline']
     # 每期累计超额收益率
@@ -117,3 +125,9 @@ def metrics(df):
             v = "{:1f}%".format(v * 100)
         logger.debug("\t%s\t : %s", k, v)
     return result
+
+
+# python -m mlstock.ml.evaluate.metrics
+if __name__ == '__main__':
+    utils.init(file=False)
+    metrics(None)
