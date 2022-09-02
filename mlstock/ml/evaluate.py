@@ -3,7 +3,7 @@ import logging
 
 import joblib
 import numpy as np
-
+import pandas as pd
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, accuracy_score, precision_score, \
     recall_score, f1_score
 
@@ -13,8 +13,6 @@ from mlstock.ml.data.factor_service import extract_features
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def classification_metrics(df, model):
@@ -64,18 +62,27 @@ def regression_metrics(df, model):
     return metrics
 
 
+def factor_weights(model):
+    param_weights = model.coef_
+    param_names = factor_conf
+    df = pd.concat([param_weights, param_names], axis=1)
+    df = df.reindex(df.b.abs().sort_values().index)
+    logger.info("参数和权重排序：\n%r", df)
+
+
 def main(args):
     # 查看数据文件和模型文件路径是否正确
     if args.model_pct: utils.check_file_path(args.model_pct)
     if args.model_winloss: utils.check_file_path(args.model_winloss)
 
-    df_data = load_and_filter_data(args.data,args.start_date,args.end_date)
+    df_data = load_and_filter_data(args.data, args.start_date, args.end_date)
 
     # 加载模型；如果参数未提供，为None
     model_pct = joblib.load(args.model_pct) if args.model_pct else None
     model_winloss = joblib.load(args.model_winloss) if args.model_winloss else None
 
     if model_pct:
+        factor_weights(model_pct)
         regression_metrics(df_data, model_pct)
 
     if model_winloss:
