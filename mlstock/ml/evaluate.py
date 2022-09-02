@@ -73,7 +73,7 @@ def factor_weights(model):
     param_names = factor_conf.get_factor_names()
     df = pd.DataFrame({'names': param_names, 'weights': param_weights})
     df = df.reindex(df.weights.abs().sort_values().index)
-    logger.info("参数和权重排序：\n%r", df.to_string())
+    logger.info("参数和权重排序：\n%r", df.to_string().replace('\n', '\n\t'))
 
 
 def main(args):
