@@ -6,3 +6,4 @@ CODE_DATE = ['ts_code','trade_date'] # 定义一个最常用的取得数据集�
 TARGET = ['target']
 TRAIN_TEST_SPLIT_DATE = '20190101' # 用来分割Train和Test的日期
 BASELINE_INDEX_CODE = "000300.SH" # 用于计算对比用的基准指数代码，目前是沪深300
+TOP_30 = 30

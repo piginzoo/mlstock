@@ -69,4 +69,4 @@ def get_factor_class_by_name(name):
     for f in FACTORS:
         _names = f(None, None).name
         if name in _names: return f
-    return None
+    raise ValueError(f"通过因子名称[{name}]无法找到因子类Class")

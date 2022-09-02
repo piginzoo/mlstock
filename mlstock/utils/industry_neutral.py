@@ -66,6 +66,7 @@ class IndustryMarketNeutral(BaseEstimator, TransformerMixin):
 
     def fit(self, df):
         # 把行业从int变成one-hot，然后再合并上市值信息
+        assert self.market_value_name in df.columns,f"市值对数列[{self.market_value_name}]不在dataframe中"
         X = pd.concat(
             [df[self.market_value_name],
              self._to_one_hot(df[self.industry_name])],

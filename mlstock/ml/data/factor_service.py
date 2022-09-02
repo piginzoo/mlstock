@@ -36,7 +36,8 @@ def calculate(factor_classes, start_date, end_date, num, is_industry_neutral):
     stock_data, ts_codes = load_stock_data(data_source, start_date, end_date, num)
 
     # 加载（计算）因子
-    df_weekly, factor_names = calculate_factors(factor_classes, data_source, stock_data, StocksInfo(ts_codes, start_date, end_date))
+    df_weekly, factor_names = calculate_factors(factor_classes, data_source, stock_data,
+                                                StocksInfo(ts_codes, start_date, end_date))
 
     # 显存一份最原始的数据
     time_elapse(start_time, "⭐️ 全部因子加载完成")
@@ -51,9 +52,7 @@ def calculate(factor_classes, start_date, end_date, num, is_industry_neutral):
     # factor_因子类_开始日_结束日_股票数_总行数_行业中性_时间戳.csv
     # factor_20090101_20220901_s2109_l13940192l_20220826165226.csv
     industry_neutral = "_industry_neutral" if is_industry_neutral else ""
-    factor_name = factor_classes[0].__name__ if len(factor_classes)==1 else ""
-    csv_file_name = "data/factor_{}_{}_{}_{}_{}_{}_{}.csv".format(
-        factor_name,
+    csv_file_name = "data/factor_{}_{}_{}_{}_{}_{}.csv".format(
         start_date,
         end_date,
         len(ts_codes),
@@ -179,7 +178,7 @@ def prepare_target(df_weekly, start_date, end_date, datasource):
     df_weekly['rm_rf'] = df_weekly.pct_chg - df_weekly.pct_chg_baseline
 
     # target即预测目标，是"下一期"的超额收益，训练主要靠这个，他就是训练的y
-    df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1) # 别忘了把rm-rf做一个shift(-1),好变成下一期
+    df_weekly['target'] = df_weekly.groupby('ts_code').rm_rf.shift(-1)  # 别忘了把rm-rf做一个shift(-1),好变成下一期
 
     # 下一期的收益率，这个是为了将来做回测评价用，注意，是下一期，所以做了shift(-1)
     df_weekly['next_pct_chg'] = df_weekly.groupby('ts_code').pct_chg.shift(-1)
