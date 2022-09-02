@@ -63,11 +63,18 @@ def regression_metrics(df, model):
 
 
 def factor_weights(model):
+    """
+    显示权重的影响
+    :param model:
+    :return:
+    """
+
     param_weights = model.coef_
-    param_names = factor_conf
-    df = pd.concat([param_weights, param_names], axis=1)
-    df = df.reindex(df.b.abs().sort_values().index)
-    logger.info("参数和权重排序：\n%r", df)
+    param_names = factor_conf.get_factor_names()
+    df = pd.DataFrame({'names': param_names, 'weights': param_weights})
+    df = df.reindex(df.weights.abs().sort_values().index)
+    with pd.set_option('display.max_rows', 10000):
+        logger.info("参数和权重排序：\n%r", df)
 
 
 def main(args):
