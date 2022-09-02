@@ -9,7 +9,7 @@
 #
 # -----------------------------------------------------------------------------------------------
 
-. bin/prepare_factor.sh $1
-. bin/train.sh
+. bin/prepare_factor.sh $1 # $1 是训练数据的行数，调试时候使用，正式运行不用
+. bin/train.sh all
 . bin/evaluate.sh
 . bin/backtest.sh

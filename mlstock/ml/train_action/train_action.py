@@ -34,6 +34,7 @@ class TrainAction:
 
         # 训练
         start_time = time.time()
+        logger.debug("开始训练：数据行数和特征数：%r",X_train.shape)
         model = self._train(X_train, y_train)
         model_path = self.save_model(model)
         time_elapse(start_time, "⭐️ 训练完成")

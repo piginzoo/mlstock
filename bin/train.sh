@@ -20,6 +20,6 @@ SECONDS=0
 python -m mlstock.ml.train \
 -s 20090101 -e 20190101 \
 -t $MODEL \
--d $DATA_FILE >./logs/console.train.log 2>&1
+-d $DATA_FILE # >./logs/console.train.log 2>&1
 echo "训练结束"
 elapse

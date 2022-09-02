@@ -44,6 +44,7 @@ def main(data_path, start_date, end_date, train_type, factor_names):
 
     raise ValueError(f"无法识别训练类型:{train_type}")
 
+
 """
 python -m mlstock.ml.train --train all --data data/
 """
@@ -63,5 +64,6 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--train', type=str, default="all", help="all|pct|winloss : 训练所有|仅训练收益|仅训练涨跌")
     args = parser.parse_args()
     factor_names = factor_conf.get_factor_names()
+    logger.info("训练使用的特征 %d 个：%r", len(factor_names), factor_names)
 
     main(args.data, args.start_date, args.end_date, args.train, factor_names)
