@@ -14,9 +14,11 @@ import yaml
 from backtrader.plot import Plot_OldSync
 from backtrader_plotting.schemes import Tradimo
 from dateutil.relativedelta import relativedelta
+from empyrical import max_drawdown
 from pandas import Series
 import statsmodels.api as sm
 from mlstock import const
+
 
 logger = logging.getLogger(__name__)
 

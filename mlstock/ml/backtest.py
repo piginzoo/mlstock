@@ -11,6 +11,7 @@ from pandas import DataFrame
 from mlstock.const import TOP_30
 from mlstock.ml import load_and_filter_data
 from mlstock.ml.data import factor_conf
+from mlstock.ml.evaluate.metrics import metrics
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)
@@ -50,10 +51,13 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
 
     # 按照预测的结果，来选择股票
-    df_pct = select_stocks_by_pred_and_calcuate_portfolio(df_data)
+    df_portfolio = select_stocks_by_pred_and_calcuate_portfolio(df_data)
 
     # 画出回测图
-    plot(df_pct, start_date, end_date, factor_names)
+    plot(df_portfolio, start_date, end_date, factor_names)
+
+    # 计算各项指标
+    metrics(df_portfolio)
 
 
 def select_stocks_by_pred_and_calcuate_portfolio(df):

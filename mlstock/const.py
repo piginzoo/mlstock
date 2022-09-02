@@ -7,3 +7,4 @@ TARGET = ['target']
 TRAIN_TEST_SPLIT_DATE = '20190101' # 用来分割Train和Test的日期
 BASELINE_INDEX_CODE = "000300.SH" # 用于计算对比用的基准指数代码，目前是沪深300
 TOP_30 = 30
+RISK_FREE_ANNUALLY_RETRUN = 0.03 # 在我国无风险收益率一般取值十年期国债收益，我查了一下有波动，取个大致的均值3%
