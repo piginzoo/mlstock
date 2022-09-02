@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 def scope(df):
-    start_date = datetime.strftime(df.trade_date.min(), "YYYYMMDD")
-    end_date = datetime.strftime(df.trade_date.max(), "YYYYMMDD")
+    start_date = datetime.strptime(df.trade_date.min(), "%Y%m%d")
+    end_date = datetime.strptime(df.trade_date.max(), "%Y%m%d")
     years = end_date.year - start_date.year
     months = years * 12 + end_date.month - start_date.month
     weeks, _ = divmod((end_date - start_date).days, 7)
@@ -25,7 +25,7 @@ def annually_profit(df):
     年化收益率 =
     """
     # 累计收益
-    cumulative_return = df['cumulative_pct_chg'] + 1
+    cumulative_return = df['cumulative_pct_chg'].iloc[-1] + 1
     total_weeks = len(df)
     return np.power(cumulative_return, 50 / total_weeks) - 1
 
@@ -50,7 +50,7 @@ def max_drawback(df):
 
 def annually_active_return(df):
     """年化主动收益率"""
-    cumulative_active_return = df['cumulative_active_pct_chg'] + 1
+    cumulative_active_return = df['cumulative_active_pct_chg'].iloc[-1] + 1
     total_weeks = len(df)
     return np.power(cumulative_active_return, 50 / total_weeks) - 1
 
@@ -98,9 +98,8 @@ def metrics(df):
         df.to_csv("data/df_portfolio.csv")
     else:
         import pandas as pd
-        df = pd.read_csv("data/df_portfolio.csv")
+        df = pd.read_csv("data/df_portfolio.csv",header=0)
         df['trade_date'] = df['trade_date'].astype(str)
-
     # 每期超额收益率
     df['active_pct_chg'] = df['next_pct_chg'] - df['next_pct_chg_baseline']
     # 每期累计超额收益率
@@ -109,25 +108,25 @@ def metrics(df):
     result = {}
 
     result['投资时长'] = scope(df)
-    result['累计收益率'] = df['cumulative_pct_chg'][-1]
-    result['累计基准收益率'] = df['cumulative_pct_chg_baseline'][-1]
+    result['累计收益'] = df['cumulative_pct_chg'].iloc[-1]
+    result['累计基准收益'] = df['cumulative_pct_chg_baseline'].iloc[-1]
     result['年化收益率'] = annually_profit(df)
-    result['年化超额收益率'] = annually_active_return(df)
-    result['波动率'] = volatility(df)
+    result['年化超额收益'] = annually_active_return(df)
+    result['周波动率'] = volatility(df)
     result['夏普比率'] = sharp_ratio(df)
     result['最大回撤'] = max_drawback(df)
     result['信息比率'] = information_ratio(df)
-    result['胜率'] = win_rate(df)
+    result['PK基准胜率'] = win_rate(df)
 
     logger.info("投资详细指标：")
     for k, v in result.items():
-        if type(v) == float and v < 1:
-            v = "{:1f}%".format(v * 100)
+        if isinstance(v, np.floating) or isinstance(v, float):
+            v = "{:.1f}%".format(v * 100)
         logger.debug("\t%s\t : %s", k, v)
     return result
 
 
 # python -m mlstock.ml.evaluate.metrics
 if __name__ == '__main__':
-    utils.init(file=False)
+    utils.init_logger(file=False)
     metrics(None)
