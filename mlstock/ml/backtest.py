@@ -64,8 +64,9 @@ def select_stocks_by_pred_and_calcuate_portfolio(df):
     """
 
     # 先把所有预测为跌的全部过滤掉
-    # df = df[df.winloss_pred == 1]
-    # logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
+    original_size = len(df)
+    df = df[df.winloss_pred == 1]
+    logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
 
     # 先按照日期 + 下周预测收益，按照降序排
     df = df.sort_values(['trade_date', 'pct_pred'], ascending=False)
