@@ -40,7 +40,7 @@ FACTORS = [TurnoverReturn,
            CashFlow,
            FinanceIndicator,
            DailyIndicator,
-           # FF3ResidualStd,
+           # FF3ResidualStd, # 暂时不用，太慢了，单独跑效果也一般
            AlphaBeta,
            StakeHolder]
 

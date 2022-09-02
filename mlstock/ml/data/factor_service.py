@@ -49,7 +49,7 @@ def calculate(factor_classes, start_date, end_date, num, is_industry_neutral):
     df_weekly = clean_factors(df_weekly, factor_names, start_date, end_date, is_industry_neutral)
 
     # 保存原始数据和处理后的数据
-    # factor_因子类_开始日_结束日_股票数_总行数_行业中性_时间戳.csv
+    # factor_开始日_结束日_股票数_总行数_行业中性_时间戳.csv
     # factor_20090101_20220901_s2109_l13940192l_20220826165226.csv
     industry_neutral = "_industry_neutral" if is_industry_neutral else ""
     csv_file_name = "data/factor_{}_{}_{}_{}_{}_{}.csv".format(
@@ -60,7 +60,7 @@ def calculate(factor_classes, start_date, end_date, num, is_industry_neutral):
         industry_neutral,
         utils.now())
     df_weekly.to_csv(csv_file_name, header=True, index=False)  # 保留列名
-    logger.info("保存因子 %s %d 行数据到文件：%s", factor_name, len(df_weekly), csv_file_name)
+    logger.info("保存因子数据 %d 行，到文件：%s", len(df_weekly), csv_file_name)
 
     return df_weekly, factor_names, csv_file_name
 
