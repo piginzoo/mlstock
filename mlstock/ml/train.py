@@ -3,8 +3,8 @@ import logging
 
 from mlstock.ml import load_and_filter_data
 from mlstock.ml.data import factor_conf
-from mlstock.ml.train_action.train_pct import TrainPct
-from mlstock.ml.train_action.train_winloss import TrainWinLoss
+from mlstock.ml.trains.train_pct import TrainPct
+from mlstock.ml.trains.train_winloss import TrainWinLoss
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)

@@ -11,7 +11,7 @@ from pandas import DataFrame
 from mlstock.const import TOP_30
 from mlstock.ml import load_and_filter_data
 from mlstock.ml.data import factor_conf
-from mlstock.ml.evaluate.metrics import metrics
+from mlstock.ml.backtests.metrics import metrics
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)

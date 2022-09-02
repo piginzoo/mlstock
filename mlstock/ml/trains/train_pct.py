@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import cross_val_score
 
-from mlstock.ml.train_action.train_action import TrainAction
+from mlstock.ml.trains.train_action import TrainAction
 from mlstock.utils import utils
 from mlstock.utils.utils import time_elapse
 
