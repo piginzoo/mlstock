@@ -14,7 +14,7 @@ from mlstock.data.datasource import DataSource
 from mlstock.ml import load_and_filter_data
 from mlstock.ml.backtests.ml_strategy import MachineLearningStrategy
 from mlstock.ml.data import factor_conf
-from mlstock.utils import utils
+from mlstock.utils import utils, df_utils
 from mlstock.utils.utils import AStockPlotScheme
 
 logger = logging.getLogger(__name__)
@@ -67,16 +67,17 @@ def _select_top_n(df, df_limit):
 def load_data_to_cerebro(cerebro, start_date, end_date, df):
     df = df.rename(columns={'vol': 'volume', 'ts_code': 'name', 'trade_date': 'datetime'})  # 列名准从backtrader的命名规范
     df['openinterest'] = 0  # backtrader需要这列，所以给他补上
-    df = datasource_utils.reset_index(df, date_only=True, date_format="%Y%m%d")  # 只设置日期列为索引
+    df['datetime'] = df_utils.to_datetime(df['datetime'], date_format="%Y%m%d")
+    df = df.set_index('datetime')
     df = df.sort_index()
     d_start_date = utils.str2date(start_date)  # 开始日期
     d_end_date = utils.str2date(end_date)  # 结束日期
     data = PandasData(dataname=df, fromdate=d_start_date, todate=d_end_date, plot=True)
-    cerebro.adddata(data, name=stock_code)
+    cerebro.adddata(data)
     logger.debug("初始化股票%s~%s数据到脑波cerebro：%d 条", start_date, end_date, len(df))
 
 
-def main(data_path, start_date, end_date, model_pct_path, model_winloss_path):
+def main(data_path, start_date, end_date, model_pct_path, model_winloss_path,factor_names):
     """
     datetime    open    high    low     close   volume  openi..
     2016-06-24	0.16	0.002	0.085	0.078	0.173	0.214
@@ -93,7 +94,6 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path):
 
     # 加载模型；如果参数未提供，为None
     # 查看数据文件和模型文件路径是否正确
-    factor_names = factor_conf.get_factor_names()
     if model_pct_path: utils.check_file_path(model_pct_path)
     if model_winloss_path: utils.check_file_path(model_winloss_path)
     model_pct = joblib.load(model_pct_path) if model_pct_path else None
