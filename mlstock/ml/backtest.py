@@ -45,8 +45,8 @@ python -m mlstock.ml.backtest \
 
 python -m mlstock.ml.backtest \
 -s 20190101 -e 20220901 \
--mp model/pct_ridge_20220828190251.model \
--mw model/winloss_xgboost_20220828190259.model \
+-mp model/pct_ridge_20220902112320.model \
+-mw model/winloss_xgboost_20220902112813.model \
 -d data/factor__20080101_20220901_50_30679__industry_neutral_20220902095251.csv
 """
 if __name__ == '__main__':
