@@ -19,6 +19,18 @@ from mlstock.utils.utils import AStockPlotScheme
 
 logger = logging.getLogger(__name__)
 
+# TODO 2022.9.3 suspend backtrader backtest version
+"""
+backtrader版本的回测没有完成，也不打算继续下去了，代码仅作保留。
+原因是，
+1、数据初始化得一个股票一个股票的加载（for: cerebro.adddata(dataname=df_stock,name=ts_code) ），
+   我已经有整个的df_daily了，还要挨个循环，真烦。
+2、各项指标计算，我只能受限于backtrader analyzer，虽说也不错，但是总是不如自己写的顺手
+3、整个过程其实也不是特别复杂，自己实现一遍，以后也方便调整
+
+以后闲的没事的时候，可以把这个backtrader版本完成。 
+"""
+
 
 def _select_top_n(df, df_limit):
     # 先把所有预测为跌的全部过滤掉
@@ -77,7 +89,7 @@ def load_data_to_cerebro(cerebro, start_date, end_date, df):
     logger.debug("初始化股票%s~%s数据到脑波cerebro：%d 条", start_date, end_date, len(df))
 
 
-def main(data_path, start_date, end_date, model_pct_path, model_winloss_path,factor_names):
+def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
     """
     datetime    open    high    low     close   volume  openi..
     2016-06-24	0.16	0.002	0.085	0.078	0.173	0.214
