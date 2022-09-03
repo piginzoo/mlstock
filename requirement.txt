@@ -14,13 +14,3 @@ sqlalchemy==1.4.0
 empyrical
 chinese_calendar==1.7.2
 apscheduler==3.5.0
-
-baostock
-akshare
-quantstats
-
-IPython
-ipdb==0.13.9
-
-python-Levenshtein
-pycryptodome

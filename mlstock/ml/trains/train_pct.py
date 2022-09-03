@@ -28,8 +28,6 @@ class TrainPct(TrainAction):
         ridge.fit(X_train, y_train)
         return ridge
 
-
-
     def search_best_hyperparams(self, X_train, y_train):
         """
         超找最好的超参

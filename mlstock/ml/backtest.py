@@ -9,6 +9,7 @@ import numpy as np
 from pandas import DataFrame
 
 from mlstock.const import TOP_30
+from mlstock.data.datasource import DataSource
 from mlstock.ml import load_and_filter_data
 from mlstock.ml.data import factor_conf
 from mlstock.ml.backtests.metrics import metrics
@@ -30,6 +31,9 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     """
     # 从csv因子数据文件中加载数据
     df_data = load_and_filter_data(data_path, start_date, end_date)
+    datasource = DataSource()
+    df_limit = datasource.limit_list()
+    df_daily = datasource.daily()
 
     # 加载模型；如果参数未提供，为None
     # 查看数据文件和模型文件路径是否正确
@@ -51,7 +55,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
 
     # 按照预测的结果，来选择股票
-    df_portfolio = select_stocks_by_pred_and_calcuate_portfolio(df_data)
+    df_portfolio = select_stocks_by_pred_and_calcuate_portfolio(df_data,df_limit,df_daily)
 
     # 画出回测图
     plot(df_portfolio, start_date, end_date, factor_names)
@@ -60,7 +64,9 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     metrics(df_portfolio)
 
 
-def select_stocks_by_pred_and_calcuate_portfolio(df):
+
+
+def select_stocks_by_pred_and_calcuate_portfolio(df,df_limit,df_daily):
     """
     根据预测收益率，选择股票，并且计算top30的组合收益率
     :param df:
@@ -71,6 +77,12 @@ def select_stocks_by_pred_and_calcuate_portfolio(df):
     original_size = len(df)
     df = df[df.winloss_pred == 1]
     logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
+
+    df_limit = df_limit[['trade_date','ts_code','name']]
+    df = df.merge(df_limit,on=['ts_date','trade_date'],how='left')
+    original_size = len(df)
+    df = df[~df.name.isna()]
+    logger.debug("根据涨跌停信息，过滤数据 %d=>%d", original_size,len(df))
 
     # 先按照日期 + 下周预测收益，按照降序排
     df = df.sort_values(['trade_date', 'pct_pred'], ascending=False)

@@ -161,8 +161,9 @@ class DataSource:
 
     def stock_holder_number(self, ts_code, start_date, end_date):
         stock_codes = db_utils.list_to_sql_format(ts_code)
-        df = pd.read_sql(f'select * from stk_holdernumber where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
-                         self.db_engine)
+        df = pd.read_sql(
+            f'select * from stk_holdernumber where ts_code in ({stock_codes}) and ann_date>="{start_date}" and ann_date<="{end_date}"',
+            self.db_engine)
         return df
 
     def index_classify(self, level='', src='SW2014'):
@@ -183,3 +184,6 @@ class DataSource:
         """
         df = pd.read_sql(sql, self.db_engine)
         return df
+
+    def limit_list(self):
+        return pd.read_sql(f'select * from limit_list', self.db_engine)
