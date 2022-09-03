@@ -31,9 +31,9 @@ def main(type, data_path, start_date, end_date, model_pct_path, model_winloss_pa
     :return:
     """
     if type == 'simple':
-        backtest_backtrader.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
-    else:
         backtest_simple.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
+    else:
+        backtest_backtrader.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
 
 
 """
