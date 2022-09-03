@@ -33,7 +33,6 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_data = load_and_filter_data(data_path, start_date, end_date)
     datasource = DataSource()
     df_limit = datasource.limit_list()
-    df_daily = datasource.daily()
 
     # 加载模型；如果参数未提供，为None
     # 查看数据文件和模型文件路径是否正确
@@ -55,7 +54,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
 
     # 按照预测的结果，来选择股票
-    df_portfolio = select_stocks_by_pred_and_calcuate_portfolio(df_data,df_limit,df_daily)
+    df_portfolio = select_stocks_by_pred_and_calcuate_portfolio(df_data,df_limit)
 
     # 画出回测图
     plot(df_portfolio, start_date, end_date, factor_names)
@@ -66,7 +65,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
 
 
 
-def select_stocks_by_pred_and_calcuate_portfolio(df,df_limit,df_daily):
+def select_stocks_by_pred_and_calcuate_portfolio(df,df_limit):
     """
     根据预测收益率，选择股票，并且计算top30的组合收益率
     :param df:
