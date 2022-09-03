@@ -19,7 +19,7 @@ from mlstock.utils import utils
 logger = logging.getLogger(__name__)
 
 
-def main(type,data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
+def main(type, data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
     """
     回测
     :param data_path: 因子数据文件的路径
@@ -30,7 +30,7 @@ def main(type,data_path, start_date, end_date, model_pct_path, model_winloss_pat
     :param factor_names: 因子们的名称，用于过滤预测的X
     :return:
     """
-    if type=='simple':
+    if type == 'simple':
         backtest_backtrader.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
     else:
         backtest_simple.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
@@ -54,6 +54,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # 数据相关的
+    parser.add_argument('-t', '--type', type=str, default="simple")
     parser.add_argument('-s', '--start_date', type=str, default="20190101", help="开始日期")
     parser.add_argument('-e', '--end_date', type=str, default="20220901", help="结束日期")
     parser.add_argument('-d', '--data', type=str, default=None, help="数据文件")
@@ -64,9 +65,11 @@ if __name__ == '__main__':
 
     factor_names = factor_conf.get_factor_names()
 
-    main(args.data,
-         args.start_date,
-         args.end_date,
-         args.model_pct,
-         args.model_winloss,
-         factor_names)
+    main(
+        args.type,
+        args.data,
+        args.start_date,
+        args.end_date,
+        args.model_pct,
+        args.model_winloss,
+        factor_names)
