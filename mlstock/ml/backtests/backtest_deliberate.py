@@ -5,6 +5,7 @@ from pandas import DataFrame
 
 from mlstock.data.datasource import DataSource
 from mlstock.ml.backtests import predict, select_top_n, plot
+from mlstock.ml.backtests.metrics import metrics
 
 logger = logging.getLogger(__name__)
 
@@ -126,25 +127,25 @@ class Broker:
             if self.is_in_position(stock): continue
             self.trades.add(Trade(stock.ts_code, day_date, 'buy'))
 
-    def record_value(self,trade_date):
+    def record_value(self, trade_date):
         """
         # 日子，总市值，现金，市值
         市值 = sum(position_i * price_i)
         """
         total_position_value = 0
-        for ts_code,position in self.positions:
-            df_stock = self.df_daily[self.df_daily.ts_code==ts_code]
+        for ts_code, position in self.positions:
+            df_stock = self.df_daily[self.df_daily.ts_code == ts_code]
             # TODO:如果停牌
-            if len(df_stock)==0:
+            if len(df_stock) == 0:
                 pass
             else:
                 market_value = df_stock.close * position
-                total_position_value+= market_value
+                total_position_value += market_value
         total_value = total_position_value + self.cash
-        self.df_values.appand({'trade_date':trade_date,
-                               'total_value':total_value,
-                               'total_position_value':total_position_value,
-                               'cash':self.cash})
+        self.df_values.appand({'trade_date': trade_date,
+                               'total_value': total_value,
+                               'total_position_value': total_position_value,
+                               'cash': self.cash})
 
     def execute(self):
         daily_trade_dates = self.df_daily.trade_dates
@@ -162,13 +163,21 @@ class Broker:
 
             self.record_value(day_date)
 
+
 def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
+    """
+    先预测出所有的下周收益率、下周涨跌 => df_data，
+    然后选出每周的top30 => df_selected_stocks，
+    然后使用Broker，来遍历每天的交易，每周进行调仓，并，记录下每周的股票+现价合计价值 => df_portfolio
+    最后计算出next_pct_chg、cumulative_pct_chg，并画出plot，计算metrics
+    """
+
     datasource = DataSource()
     df_limit = datasource.limit_list()
     df_daily = datasource.daily()
 
-    df_data  = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
-    df_selected_stocks = select_top_n(df_data,df_limit)
+    df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
+    df_selected_stocks = select_top_n(df_data, df_limit)
 
     broker = Broker(cash, df_selected_stocks, df_daily)
     broker.execute()
@@ -180,4 +189,5 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
         df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
 
     plot(df_portfolio, start_date, end_date, factor_names)
-
+    # 计算各项指标
+    metrics(df_portfolio)
