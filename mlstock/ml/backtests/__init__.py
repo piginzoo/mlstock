@@ -14,7 +14,7 @@ from mlstock.utils import utils
 logger = logging.getLogger(__name__)
 
 
-def select_top_n(df,df_limit):
+def select_top_n(df, df_limit):
     """
     :param df:
     :param df_limit:
@@ -35,31 +35,25 @@ def select_top_n(df,df_limit):
     # 先按照日期 + 下周预测收益，按照降序排
     df = df.sort_values(['trade_date', 'pct_pred'], ascending=False)
 
-    # 用于保存选择后的股票，特别是他们的下期的实际收益率
-    df_selected_stocks = DataFrame()
-
     # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
     # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
-    df_groups = df.groupby('trade_date')
-    for date, df_group in df_groups:
-        # 根据 "预测收益率" 选出收益率top30
-        df_top30 = df_group.iloc[0:TOP_30, :]
+    df_selected_stocks = df.groupby('trade_date').apply(lambda grp: grp.nlargest(TOP_30, 'pct_pred'))
 
-        # 根据 "实际收益率" 对这些选中股票求平均收益率（作为资产组合的收益率）
-        next_pct_chg_mean = np.mean(df_top30.next_pct_chg.values)
+    # 用于保存选择后的股票，特别是他们的下期的实际收益率
+    # df_selected_stocks = DataFrame()
+    # df_groups = df.groupby('trade_date')
+    # for date, df_group in df_groups:
+    #     # 根据 "预测收益率" 选出收益率top30
+    #     df_top30 = df_group.iloc[0:TOP_30, :]
+    #     df_top30['trade_date'] = date
+    #     df_selected_stocks = df_selected_stocks.append(df_top30)
+    #
+    # # 处理选中的股票的信息，保存下来，其实没啥用，就是存一下，方便细排查
+    # df_selected_stocks = df_selected_stocks[
+    #     ['trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']]
+    # df_selected_stocks.columns = [
+    #     'trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']
 
-        # 对基准的实际收益率也求一个平均（其实她们每个股票的这个值都是一样的，相加再去平均数，其实还是原来的数）
-        next_pct_chg_baseline_mean = np.mean(df_top30.next_pct_chg_baseline.values)
-
-        df_portfolio_pct = df_portfolio_pct.append([[date, next_pct_chg_mean, next_pct_chg_baseline_mean]])
-        df_top30['trade_date'] = date
-        df_selected_stocks = df_selected_stocks.append(df_top30)
-
-    # 处理选中的股票的信息，保存下来，其实没啥用，就是存一下，方便细排查
-    df_selected_stocks = df_selected_stocks[
-        ['trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']]
-    df_selected_stocks.columns = [
-        'trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']
     df_selected_stocks.to_csv("data/top30.csv", header=0)
     return df_selected_stocks
 
@@ -97,6 +91,7 @@ def predict(data_path, start_date, end_date, model_pct_path, model_winloss_path,
         df_data['winloss_pred'] = model_winloss.predict(X)
         utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
     return df_data
+
 
 def plot(df, start_date, end_date, factor_names):
     """
