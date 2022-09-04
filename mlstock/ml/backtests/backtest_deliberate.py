@@ -189,5 +189,6 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
         df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
 
     plot(df_portfolio, start_date, end_date, factor_names)
+
     # 计算各项指标
     metrics(df_portfolio)
