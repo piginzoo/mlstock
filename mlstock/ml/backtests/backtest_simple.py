@@ -3,14 +3,13 @@ import logging
 import time
 
 import joblib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 from pandas import DataFrame
 
 from mlstock.const import TOP_30
 from mlstock.data.datasource import DataSource
 from mlstock.ml import load_and_filter_data
+from mlstock.ml.backtests import plot
 from mlstock.ml.data import factor_conf
 from mlstock.ml.backtests.metrics import metrics
 from mlstock.utils import utils
@@ -128,58 +127,6 @@ def select_stocks_by_pred_and_calcuate_portfolio(df,df_limit):
     return df_portfolio_pct.reset_index()
 
 
-def plot(df, start_date, end_date, factor_names):
-    """
-    1. 每期实际收益
-    2. 每期实际累计收益
-    3. 基准累计收益率
-    4. 上证指数
-    :param df:
-    :return:
-    """
-    plt.rcParams['font.sans-serif'] = ['SimHei']
-    plt.rcParams['axes.unicode_minus'] = False
-
-    x = df.trade_date.values
-    y1 = df.next_pct_chg.values
-    y2 = df.cumulative_pct_chg.values
-    y3 = df.cumulative_pct_chg_baseline.values
-    color_y1 = '#2A9CAD'
-    color_y2 = "#FAB03D"
-    color_y3 = "#FAFF0D"
-    title = '资产组合收益率及累积收益率'
-    label_x = '周'
-    label_y1 = '资产组合周收益率'
-    label_y2 = '资产组合累积收益率'
-    label_y3 = '基准累积收益率'
-    fig, ax1 = plt.subplots(figsize=(10, 6), dpi=300)
-    plt.xticks(rotation=60)
-    ax2 = ax1.twinx()  # 做镜像处理
-
-    ax1.bar(x=x, height=y1, label=label_y1, color=color_y1, alpha=0.7)
-    ax2.plot(x, y2, color=color_y2, ms=10, label=label_y2)
-    ax2.plot(x, y3, color=color_y3, ms=10, label=label_y3)
-
-    ax1.set_xlabel(label_x)  # 设置x轴标题
-    ax1.set_ylabel(label_y1)  # 设置Y1轴标题
-    ax2.set_ylabel(label_y2 + "/" + label_y3)  # 设置Y2轴标题
-    ax1.grid(False)
-    ax2.grid(False)
-
-    # 12周间隔，3个月相当于，为了让X轴稀疏一些，太密了，如果不做的话
-    ax1.xaxis.set_major_locator(ticker.MultipleLocator(12))
-
-    # 添加标签
-    ax1.legend(loc='upper left')
-    ax2.legend(loc='upper right')
-    plt.title(title)  # 添加标题
-    plt.grid(axis="y")  # 背景网格
-
-    # 保存图片
-    factor = '' if len(factor_names) > 1 else factor_names[0]
-    save_path = 'data/plot_{}_{}_{}.jpg'.format(factor, start_date, end_date)
-    plt.savefig(save_path)
-    plt.show()
 
 
 """

@@ -11,7 +11,7 @@ from pandas import DataFrame
 from mlstock.const import TOP_30
 from mlstock.data.datasource import DataSource
 from mlstock.ml import load_and_filter_data
-from mlstock.ml.backtests import backtest_simple, backtest_backtrader
+from mlstock.ml.backtests import backtest_simple, backtest_backtrader, backtest_deliberate
 from mlstock.ml.data import factor_conf
 from mlstock.ml.backtests.metrics import metrics
 from mlstock.utils import utils
@@ -31,9 +31,17 @@ def main(type, data_path, start_date, end_date, model_pct_path, model_winloss_pa
     :return:
     """
     if type == 'simple':
-        backtest_simple.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
-    else:
-        backtest_backtrader.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
+        return backtest_simple.main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
+
+    if type == 'deliberate':
+        return backtest_deliberate.main(data_path, start_date, end_date, model_pct_path, model_winloss_path,
+                                        factor_names)
+
+    if type == 'deliberate':
+        return backtest_backtrader.main(data_path, start_date, end_date, model_pct_path, model_winloss_path,
+                                        factor_names)
+
+    raise ValueError(f"无效的backtest类型：{type}")
 
 
 """

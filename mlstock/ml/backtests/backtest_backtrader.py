@@ -7,11 +7,13 @@ import backtrader as bt  # 引入backtrader框架
 import backtrader.analyzers as bta  # 添加分析函数
 import joblib
 from backtrader.feeds import PandasData
+from backtrader_plotting import Bokeh
 from pandas import DataFrame
 import numpy as np
 from mlstock.const import TOP_30
 from mlstock.data.datasource import DataSource
 from mlstock.ml import load_and_filter_data
+from mlstock.ml.backtests import select_top_n, predict
 from mlstock.ml.backtests.ml_strategy import MachineLearningStrategy
 from mlstock.ml.data import factor_conf
 from mlstock.utils import utils, df_utils
@@ -30,50 +32,6 @@ backtrader版本的回测没有完成，也不打算继续下去了，代码仅�
 
 以后闲的没事的时候，可以把这个backtrader版本完成。 
 """
-
-
-def _select_top_n(df, df_limit):
-    # 先把所有预测为跌的全部过滤掉
-    original_size = len(df)
-    df = df[df.winloss_pred == 1]
-    logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
-
-    df_limit = df_limit[['trade_date', 'ts_code', 'name']]
-    df = df.merge(df_limit, on=['ts_date', 'trade_date'], how='left')
-    original_size = len(df)
-    df = df[~df.name.isna()]
-    logger.debug("根据涨跌停信息，过滤数据 %d=>%d", original_size, len(df))
-
-    # 先按照日期 + 下周预测收益，按照降序排
-    df = df.sort_values(['trade_date', 'pct_pred'], ascending=False)
-
-    # 用于保存选择后的股票，特别是他们的下期的实际收益率
-    df_selected_stocks = DataFrame()
-
-    # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
-    # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
-    df_groups = df.groupby('trade_date')
-    for date, df_group in df_groups:
-        # 根据 "预测收益率" 选出收益率top30
-        df_top30 = df_group.iloc[0:TOP_30, :]
-
-        # 根据 "实际收益率" 对这些选中股票求平均收益率（作为资产组合的收益率）
-        next_pct_chg_mean = np.mean(df_top30.next_pct_chg.values)
-
-        # 对基准的实际收益率也求一个平均（其实她们每个股票的这个值都是一样的，相加再去平均数，其实还是原来的数）
-        next_pct_chg_baseline_mean = np.mean(df_top30.next_pct_chg_baseline.values)
-
-        df_portfolio_pct = df_portfolio_pct.append([[date, next_pct_chg_mean, next_pct_chg_baseline_mean]])
-        df_top30['trade_date'] = date
-        df_selected_stocks = df_selected_stocks.append(df_top30)
-
-    # 处理选中的股票的信息，保存下来，其实没啥用，就是存一下，方便细排查
-    df_selected_stocks = df_selected_stocks[
-        ['trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']]
-    df_selected_stocks.columns = [
-        'trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']
-    df_selected_stocks.to_csv("data/top30.csv", header=0)
-    return df_selected_stocks
 
 
 def load_data_to_cerebro(cerebro, start_date, end_date, df):
@@ -98,29 +56,10 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     cerebro = bt.Cerebro()  # 初始化cerebro
     datasource = DataSource()
 
-    # 从csv因子数据文件中加载数据
-    df_data = load_and_filter_data(data_path, start_date, end_date)
+    df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
     df_daily = datasource.daily(df_data.ts_codes)
     df_limit = datasource.limit_list()
-    df_index = datasource.index_weight('00001.SH', start_date, end_date)
-
-    # 加载模型；如果参数未提供，为None
-    # 查看数据文件和模型文件路径是否正确
-    if model_pct_path: utils.check_file_path(model_pct_path)
-    if model_winloss_path: utils.check_file_path(model_winloss_path)
-    model_pct = joblib.load(model_pct_path) if model_pct_path else None
-    model_winloss = joblib.load(model_winloss_path) if model_winloss_path else None
-    if model_pct:
-        start_time = time.time()
-        X = df_data[factor_names]
-        df_data['pct_pred'] = model_pct.predict(X)
-        utils.time_elapse(start_time, f"预测下期收益: {len(df_data)}行 ")
-    if model_winloss:
-        start_time = time.time()
-        X = df_data[factor_names]
-        df_data['winloss_pred'] = model_winloss.predict(X)
-        utils.time_elapse(start_time, f"预测下期涨跌: {len(df_data)}行 ")
-    df_selected_stocks = _select_top_n(df_data, df_limit)
+    df_selected_stocks = select_top_n(df_data, df_limit)
 
     # 加载股票数据到脑波
     load_data_to_cerebro(cerebro, start_date, end_date, df_daily)
