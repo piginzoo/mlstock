@@ -258,6 +258,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_limit = datasource.limit_list()
     ts_codes = df_data.ts_code.unique().tolist()
     df_daily = datasource.daily(ts_codes, start_date, end_date, adjust='')
+    df_daily = df_daily.sort_values(['trade_date','ts_code'])
 
     df_selected_stocks = select_top_n(df_data, df_limit)
     df_calendar = datasource.trade_cal(start_date, end_date)
