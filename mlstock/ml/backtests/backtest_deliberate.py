@@ -63,7 +63,7 @@ class Broker:
         # 更新头寸
         self.cashin(amount - commission)
         # 更新仓位
-        self.positions.pop(trade.ts_code, None) # None可以防止pop异常
+        self.positions.pop(trade.ts_code, None)  # None可以防止pop异常
         # 保留交易历史
         trade.trade_date = trade_date
         self.trade_history.append(trade)
@@ -148,7 +148,7 @@ class Broker:
         市值 = sum(position_i * price_i)
         """
         total_position_value = 0
-        for ts_code, position in self.positions:
+        for ts_code, position in self.positions.items():
 
             df_stock = self.df_daily[self.df_daily.ts_code == ts_code]
 
@@ -191,7 +191,7 @@ class Broker:
             # 保留那些失败的交易，等待明天重试
             original_position_size = len(self.positions)
             self.trades = [self.trades[i] for i, b in enumerate(remove_flags) if not b]
-            logger.debug("%s 日后，仓位从%d=>%d只",original_position_size,len(self.positions))
+            logger.debug("%s 日后，仓位从%d=>%d只", day_date, original_position_size, len(self.positions))
 
             self.record_value(day_date)
 
