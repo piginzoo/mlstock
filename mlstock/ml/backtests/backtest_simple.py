@@ -35,9 +35,10 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_limit = datasource.limit_list()
 
     df_selected_stocks = select_top_n(df_data, df_limit)
+    df_selected_stocks = df_selected_stocks.reset_index(drop=True)
 
     # 组合的收益率情况
-    df_portfolio = df_selected_stocks.groupby('trade_date')[['next_pct_chg', 'next_pct_chg_baseline']].mean()
+    df_portfolio = df_selected_stocks.groupby('trade_date')[['next_pct_chg', 'next_pct_chg_baseline']].mean().reset_index()
 
     df_portfolio.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
     df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
