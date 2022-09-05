@@ -150,15 +150,15 @@ class Broker:
         total_position_value = 0
         for ts_code, position in self.positions.items():
 
-            df_stock = self.df_daily[self.df_daily.ts_code == ts_code]
+            df_the_stock = self.df_daily[(self.df_daily.ts_code == ts_code) & (self.df_daily.trade_date ==trade_date) ]
 
             # TODO:如果停牌
-            if len(df_stock) == 0:
+            if len(df_the_stock) == 0:
                 logger.warning(" %s 日没有股票 %s 的数据，当天它的市值计作 0 ", trade_date, ts_code)
                 market_value = 0
             else:
-                assert len(df_stock) == 1
-                market_value = df_stock.iloc[0].close * position
+                assert len(df_the_stock) == 1
+                market_value = df_the_stock.iloc[0].close * position
 
             total_position_value += market_value
 
