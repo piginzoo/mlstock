@@ -56,7 +56,7 @@ class Broker:
             logger.warning("股票[%s]没有在[%s]无数据，无法卖出，只能延后", trade.ts_code, trade_date)
             return False
         price = df_stock.low
-        position = self.position[trade.ts_code]
+        position = self.positions[trade.ts_code]
         amount = price * position
         commission = amount * sell_commission_rate
 
@@ -157,7 +157,8 @@ class Broker:
                 logger.warning(" %s 日没有股票 %s 的数据，当天它的市值计作 0 ", trade_date, ts_code)
                 market_value = 0
             else:
-                market_value = df_stock.close * position
+                assert len(df_stock) == 1
+                market_value = df_stock.iloc[0].close * position
 
             total_position_value += market_value
 
