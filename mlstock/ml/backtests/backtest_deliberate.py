@@ -193,7 +193,7 @@ class Broker:
             total_position_value += market_value
 
         total_value = total_position_value + self.cash
-        self.df_values.append({'trade_date': trade_date,
+        self.df_values = self.df_values.append({'trade_date': trade_date,
                                'total_value': total_value,
                                'total_position_value': total_position_value,
                                'cash': self.cash}, ignore_index=True)
