@@ -185,6 +185,11 @@ class Broker:
                     remove_flags.append(self.sell(trade, day_date))
                 raise ValueError(f"无效的交易类型：{trade.action}")
 
+            # 保留那些交易失败的仓位
+            original_position_size = len(self.positions)
+            self.positions = [self.positions[i] for i, b in enumerate(remove_flags) if not b]
+            logger.debug("%s 日后，仓位从%d=>%d只",original_position_size,len(self.positions))
+
             self.record_value(day_date)
 
 
