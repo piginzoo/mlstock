@@ -35,7 +35,7 @@ class Broker:
 
     def __init__(self, cash, df_selected_stocks, df_daily, df_calendar, conservative=False):
         self.cash = cash
-        self.df_daily = df_daily
+        self.df_daily = df_daily.set_index(['trade_date','ts_code'])# 设索引是为了加速，太慢了否则
         self.df_selected_stocks = df_selected_stocks
         self.weekly_trade_dates = df_selected_stocks.trade_date.unique()
         self.df_calendar = df_calendar
@@ -54,8 +54,8 @@ class Broker:
         return cash4stock
 
     def sell(self, trade, trade_date):
-        df_stock = self.df_daily[(self.df_daily.trade_date == trade_date) &
-                                 (self.df_daily.ts_code == trade.ts_code)]
+        df_stock = self.df_daily.loc[self.df_daily.index.intersection((trade_date,trade.ts_code))]
+
         if len(df_stock) == 0:
             logger.warning("股票[%s]没有在[%s]无数据，无法卖出，只能延后", trade.ts_code, trade_date)
             return False
@@ -82,8 +82,7 @@ class Broker:
         return True
 
     def buy(self, trade, trade_date):
-        df_stock = self.df_daily[(self.df_daily.trade_date == trade_date) &
-                                 (self.df_daily.ts_code == trade.ts_code)]
+        df_stock = self.df_daily.loc[self.df_daily.index.intersection((trade_date, trade.ts_code))]
         if len(df_stock) == 0:
             logger.warning("股票[%s]没有在[%s]无数据，无法买入，只能延后", trade.ts_code, trade_date)
             return False
