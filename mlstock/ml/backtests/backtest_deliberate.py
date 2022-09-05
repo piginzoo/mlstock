@@ -182,8 +182,10 @@ class Broker:
             for trade in self.trades:
                 if trade.action == "buy":
                     remove_flags.append(self.buy(trade, day_date))
+                    continue
                 elif trade.action == "sell":
                     remove_flags.append(self.sell(trade, day_date))
+                    continue
                 raise ValueError(f"无效的交易类型：{trade.action}")
 
             # 保留那些失败的交易，等待明天重试
