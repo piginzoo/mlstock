@@ -44,9 +44,11 @@ class Broker:
         self.df_values = DataFrame()
 
     def distribute_cash(self):
-        current_positions = 3
+        if self.cash<=0:
+            return None
+        current_positions = len(self.positions)
         available_positions = stock_num - current_positions
-        cash4stock = math.ceil(cash / available_positions)
+        cash4stock = math.floor(self.cash / available_positions)
         return cash4stock
 
     def sell(self, trade, trade_date):
@@ -86,8 +88,16 @@ class Broker:
         price = df_stock.iloc[0].high
         # 看看能分到多少钱
         cash4stock = self.distribute_cash()
+        if cash4stock is None:
+            logger.warning("现金[%.2f]为0，无法为股票[%s]分配资金了",self.cash,trade.ts_code)
+            return False
+
         # 看看实际能卖多少手
         position = 100 * ((cash4stock / price) // 100)  # 最小单位是1手=100股
+        if position==0:
+            logger.warning("现金[%.2f]已经不够为股票[%s]分配资金了", self.cash, trade.ts_code)
+            return False
+
         # 计算实际费用
         actual_cost = position * price
         # 计算佣金
