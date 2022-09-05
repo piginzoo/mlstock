@@ -220,14 +220,12 @@ class Broker:
 
             buy_trades = [x for x in self.trades if x.action == 'buy']
             for trade in buy_trades:
-                self.buy(trade,day_date)
+                self.buy(trade, day_date)
 
             sell_trades = [x for x in self.trades if x.action == 'sell']
             for trade in sell_trades:
-                self.sell(trade,day_date)
+                self.sell(trade, day_date)
 
-            # 保留那些失败的交易，等待明天重试
-            self.trades = [self.trades[i] for i, b in enumerate(is_transaction_succeeded) if not b]
             if original_position_size != len(self.positions):
                 logger.debug("%s 日后，仓位变化，从%d=>%d 只", day_date, original_position_size, len(self.positions))
 
