@@ -247,6 +247,12 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     broker.execute()
     df_portfolio = broker.df_values
     df_portfolio.sort_values('trade_date')
+
+    # 把基准收益品尚
+    df_baseline = df_data[['ts_code','trade_date','next_pct_chg_baseline']]
+    df_portfolio = df_portfolio.merge(df_baseline,how='left',on=['ts_code','trade_date'])
+
+    # 准备pct、next_pct_chg、和cumulative_xxxx
     df_portfolio['pct_chg'] = df_portfolio.total_value.pct_change()
     df_portfolio['next_pct_chg'] = df_portfolio.pct_chg.shift(-1)
     df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
