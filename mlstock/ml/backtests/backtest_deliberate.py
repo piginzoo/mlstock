@@ -129,7 +129,7 @@ class Broker:
 
         # 如果在
         for positon in self.positions:
-            if positon.ts_code in df_buy_stocks.ts_code:
+            if positon.ts_code in df_buy_stocks:
                 logger.info("待买股票[%s]已经在仓位中，无需卖出", positon.ts_code)
                 continue
             self.trades.append(Trade(positon.ts_code, day_date, 'sell'))
@@ -167,7 +167,7 @@ class Broker:
                                'total_position_value': total_position_value,
                                'cash': self.cash}, ignore_index=True)
         logger.debug("更新 %s 日的市值 %.2f = %d只股票市值 %.2f + 持有的现金 %.2f",
-                     trade_date, total_position_value, len(self.positions), total_position_value, self.cash)
+                     trade_date, total_value, len(self.positions), total_position_value, self.cash)
 
     def execute(self):
         daily_trade_dates = self.df_daily.trade_date.unique()
