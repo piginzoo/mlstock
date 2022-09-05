@@ -16,35 +16,41 @@ class DataSource:
     def __init__(self):
         self.db_engine = db_utils.connect_db()
 
-    # 返回每日行情数据，不限字段
-    def __daliy_one(self, stock_code, start_date, end_date, adjust):
+    def daily(self, stock_code, start_date=None, end_date=None, adjust='hfq'):
+        if not start_date: start_date = const.EALIEST_DATE
+        if not end_date: end_date = utils.today()
+
         if adjust == None or adjust == '':
             table_name = "daily"
         else:
             table_name = f"daily_{adjust}"
 
-        df = pd.read_sql(
-            f'select * from {table_name} where ts_code="{stock_code}" and trade_date>="{start_date}" and trade_date<="{end_date}"',
-            self.db_engine)
-        return df
-
-    def daily(self, stock_code, start_date=None, end_date=None, adjust='hfq'):
-        if not start_date: start_date = const.EALIEST_DATE
-        if not end_date: end_date = utils.today()
         if type(stock_code) == list:
-            df_all = None
+            stock_codes = db_utils.list_to_sql_format(stock_code)
             start_time = time.time()
-            for i, stock in enumerate(stock_code):
-                df_daily = self.__daliy_one(stock, start_date, end_date, adjust)
-                if df_all is None:
-                    df_all = df_daily
-                else:
-                    df_all = df_all.append(df_daily)
+
+            df_all = pd.read_sql(
+                f'select * from {table_name} where ts_code in ({stock_codes}) and trade_date>="{start_date}" and trade_date<="{end_date}"',
+                self.db_engine)
+
+            # df_all = None
+            # start_time = time.time()
+            # for i, stock in enumerate(stock_code):
+            #     df_daily = self.__daliy_one(stock, start_date, end_date, adjust)
+            #     if df_all is None:
+            #         df_all = df_daily
+            #     else:
+            #         df_all = df_all.append(df_daily)
+
             logger.debug("获取 %s ~ %s %d 只股票的交易日数据：%d 条, 耗时 %.2f 秒",
                          start_date, end_date, len(stock_code), len(df_all), time.time() - start_time)
             return df_all
         else:
-            df_one = self.__daliy_one(stock_code, start_date, end_date, adjust)
+            # df_one = self.__daliy_one(stock_code, start_date, end_date, adjust)
+            df_one = pd.read_sql(
+                f'select * from {table_name} where ts_code="{stock_code}" and trade_date>="{start_date}" and trade_date<="{end_date}"',
+                self.db_engine)
+
             logger.debug("获取 %s ~ %s 股票[%s]的交易数据：%d 条", start_date, end_date, stock_code, len(df_one))
             return df_one
 
