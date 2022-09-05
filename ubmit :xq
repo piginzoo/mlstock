@@ -1,0 +1,56 @@
+[1mdiff --git a/mlstock/ml/backtests/backtest_deliberate.py b/mlstock/ml/backtests/backtest_deliberate.py[m
+[1mindex e35ac29..ad7ef1b 100644[m
+[1m--- a/mlstock/ml/backtests/backtest_deliberate.py[m
+[1m+++ b/mlstock/ml/backtests/backtest_deliberate.py[m
+[36m@@ -35,7 +35,7 @@[m [mclass Broker:[m
+         self.cash = cash[m
+         self.df_daily = df_daily[m
+         self.df_weekly = df_weekly[m
+[31m-        self.weekly_trade_dates = df_daily.trade_date[m
+[32m+[m[32m        self.weekly_trade_dates = df_daily.trade_date.unique()[m
+ [m
+         # 存储数据的结构[m
+         self.positions = {}[m
+[36m@@ -65,7 +65,7 @@[m [mclass Broker:[m
+         self.trades.pop(trade)[m
+         # 保留交易历史[m
+         trade.trade_date = trade_date[m
+[31m-        self.trade_history.add(trade)[m
+[32m+[m[32m        self.trade_history.append(trade)[m
+ [m
+     def buy(self, trade, trade_date):[m
+         df_stock = self.df_daily[(self.df_daily.trade_date == trade_date) &[m
+[36m@@ -93,7 +93,7 @@[m [mclass Broker:[m
+         self.trades.pop(trade)[m
+         # 保留交易历史[m
+         trade.trade_date = trade_date[m
+[31m-        self.trade_history.add(trade)[m
+[32m+[m[32m        self.trade_history.append(trade)[m
+ [m
+     def cashin(self, amount):[m
+         self.cash += amount[m
+[36m@@ -119,13 +119,13 @@[m [mclass Broker:[m
+         self.clear_buy_trades()[m
+ [m
+         # 如果在[m
+[31m-        for positon in self.position:[m
+[32m+[m[32m        for positon in self.positions:[m
+             if positon.ts_code in df_buy_stocks.ts_code: continue[m
+[31m-            self.trades.add(Trade(positon.ts_code, day_date, 'sell'))[m
+[32m+[m[32m            self.trades.append(Trade(positon.ts_code, day_date, 'sell'))[m
+ [m
+         for stock in df_buy_stocks:[m
+             if self.is_in_position(stock): continue[m
+[31m-            self.trades.add(Trade(stock.ts_code, day_date, 'buy'))[m
+[32m+[m[32m            self.trades.append(Trade(stock, day_date, 'buy'))[m
+ [m
+     def record_value(self, trade_date):[m
+         """[m
+[36m@@ -156,6 +156,7 @@[m [mclass Broker:[m
+     def execute(self):[m
+         daily_trade_dates = self.df_daily.trade_date.unique()[m
+         for day_date in daily_trade_dates:[m
+[32m+[m[32m            # import pdb;pdb.set_trace()[m
+ [m
+             if day_date in self.weekly_trade_dates:[m
+                 logger.debug("今日是调仓日：%s", day_date)[m

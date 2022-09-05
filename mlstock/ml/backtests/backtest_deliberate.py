@@ -35,7 +35,7 @@ class Broker:
         self.cash = cash
         self.df_daily = df_daily
         self.df_weekly = df_weekly
-        self.weekly_trade_dates = df_daily.trade_date
+        self.weekly_trade_dates = df_daily.trade_date.unique()
 
         # 存储数据的结构
         self.positions = {}
@@ -65,7 +65,7 @@ class Broker:
         self.trades.pop(trade)
         # 保留交易历史
         trade.trade_date = trade_date
-        self.trade_history.add(trade)
+        self.trade_history.append(trade)
 
     def buy(self, trade, trade_date):
         df_stock = self.df_daily[(self.df_daily.trade_date == trade_date) &
@@ -93,7 +93,7 @@ class Broker:
         self.trades.pop(trade)
         # 保留交易历史
         trade.trade_date = trade_date
-        self.trade_history.add(trade)
+        self.trade_history.append(trade)
 
     def cashin(self, amount):
         self.cash += amount
@@ -119,13 +119,13 @@ class Broker:
         self.clear_buy_trades()
 
         # 如果在
-        for positon in self.position:
+        for positon in self.positions:
             if positon.ts_code in df_buy_stocks.ts_code: continue
-            self.trades.add(Trade(positon.ts_code, day_date, 'sell'))
+            self.trades.append(Trade(positon.ts_code, day_date, 'sell'))
 
         for stock in df_buy_stocks:
             if self.is_in_position(stock): continue
-            self.trades.add(Trade(stock.ts_code, day_date, 'buy'))
+            self.trades.append(Trade(stock, day_date, 'buy'))
 
     def record_value(self, trade_date):
         """
@@ -156,6 +156,7 @@ class Broker:
     def execute(self):
         daily_trade_dates = self.df_daily.trade_date.unique()
         for day_date in daily_trade_dates:
+            # import pdb;pdb.set_trace()
 
             if day_date in self.weekly_trade_dates:
                 logger.debug("今日是调仓日：%s", day_date)
