@@ -44,7 +44,7 @@ class Broker:
         self.df_values = DataFrame()
 
     def distribute_cash(self):
-        if self.cash<=0:
+        if self.cash <= 0:
             return None
         current_positions = len(self.positions)
         available_positions = stock_num - current_positions
@@ -89,12 +89,12 @@ class Broker:
         # 看看能分到多少钱
         cash4stock = self.distribute_cash()
         if cash4stock is None:
-            logger.warning("现金[%.2f]为0，无法为股票[%s]分配资金了",self.cash,trade.ts_code)
+            logger.warning("现金[%.2f]为0，无法为股票[%s]分配资金了", self.cash, trade.ts_code)
             return False
 
         # 看看实际能卖多少手
         position = 100 * ((cash4stock / price) // 100)  # 最小单位是1手=100股
-        if position==0:
+        if position == 0:
             logger.warning("现金[%.2f]已经不够为股票[%s]分配资金了", self.cash, trade.ts_code)
             return False
 
@@ -118,13 +118,17 @@ class Broker:
         return True
 
     def cashin(self, amount):
+        old = self.cash
         self.cash += amount
+        logger.debug("现金增加：%2.f=>%.2f", old, self.cash)
 
     def cashout(self, amount):
+        old = self.cash
         self.cash -= amount
+        logger.debug("现金减少：%2.f=>%.2f", old, self.cash)
 
     def is_in_position(self, ts_code):
-        for position_ts_code,_ in self.positions.items():
+        for position_ts_code, _ in self.positions.items():
             if position_ts_code == ts_code: return True
         return False
 
@@ -141,6 +145,8 @@ class Broker:
         self.clear_buy_trades()
 
         # 如果在
+        if len(self.positions) > 0:
+            logger.debug("仓位中有%d只股票，需要清仓", len(self.positions))
         for ts_code, position in self.positions.items():
             if ts_code in df_buy_stocks:
                 logger.info("待买股票[%s]已经在仓位中，无需卖出", ts_code)
@@ -148,6 +154,8 @@ class Broker:
             self.trades.append(Trade(ts_code, day_date, 'sell'))
             logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, ts_code)
 
+        if len(df_buy_stocks) > 0:
+            logger.debug("模型预测的有%d只股票，需要买入", len(df_buy_stocks))
         for stock in df_buy_stocks:
             if self.is_in_position(stock):
                 logger.info("待买股票[%s]已经在仓位中，无需买入", stock)
@@ -163,7 +171,7 @@ class Broker:
         total_position_value = 0
         for ts_code, position in self.positions.items():
 
-            df_the_stock = self.df_daily[(self.df_daily.ts_code == ts_code) & (self.df_daily.trade_date ==trade_date) ]
+            df_the_stock = self.df_daily[(self.df_daily.ts_code == ts_code) & (self.df_daily.trade_date == trade_date)]
 
             # TODO:如果停牌
             if len(df_the_stock) == 0:
@@ -186,26 +194,26 @@ class Broker:
     def execute(self):
         daily_trade_dates = self.df_daily.trade_date.unique()
         for day_date in daily_trade_dates:
-            # import pdb;pdb.set_trace()
+            original_position_size = len(self.positions)
 
             if day_date in self.weekly_trade_dates:
                 logger.debug("今日是调仓日：%s", day_date)
                 self.handle_adjust_day(day_date)
 
-            remove_flags = []
+            is_transaction_succeeded = []
             for trade in self.trades:
                 if trade.action == "buy":
-                    remove_flags.append(self.buy(trade, day_date))
+                    is_transaction_succeeded.append(self.buy(trade, day_date))
                     continue
                 elif trade.action == "sell":
-                    remove_flags.append(self.sell(trade, day_date))
+                    is_transaction_succeeded.append(self.sell(trade, day_date))
                     continue
                 raise ValueError(f"无效的交易类型：{trade.action}")
 
             # 保留那些失败的交易，等待明天重试
-            original_position_size = len(self.positions)
-            self.trades = [self.trades[i] for i, b in enumerate(remove_flags) if not b]
-            logger.debug("%s 日后，仓位从%d=>%d只", day_date, original_position_size, len(self.positions))
+            self.trades = [self.trades[i] for i, b in enumerate(is_transaction_succeeded) if not b]
+            if original_position_size != len(self.positions):
+                logger.debug("%s 日后，仓位变化，从%d=>%d 只", day_date, original_position_size, len(self.positions))
 
             self.record_value(day_date)
 
