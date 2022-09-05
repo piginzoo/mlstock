@@ -53,7 +53,7 @@ def select_top_n(df, df_limit):
     #     ['trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']]
     # df_selected_stocks.columns = [
     #     'trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']
-    
+
     df_selected_stocks.to_csv("data/top30.csv", header=0)
     return df_selected_stocks
 

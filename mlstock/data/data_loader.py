@@ -73,7 +73,7 @@ def load(datasource, stock_codes, start_date, end_date):
                 len(df_weekly),
                 time.time() - start_time)
 
-    # 加日周频数据，虽然我们算的周频，但是有些地方需要日频数据
+    # 加日频数据，虽然我们算的周频，但是有些地方需要日频数据
     start_time = time.time()
     df_daily = __load(stock_codes, start_date, end_date, func=datasource.daily)
     logger.info("加载[%d]只股票 %s~%s 的日频数据 %d 行，耗时%.0f秒",

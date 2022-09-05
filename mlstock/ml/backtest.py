@@ -52,6 +52,7 @@ python -m mlstock.ml.backtest \
 -d data/processed_industry_neutral_20080101_20220901_20220828152110.csv
 
 python -m mlstock.ml.backtest \
+-t deliberate \
 -s 20190101 -e 20220901 \
 -mp model/pct_ridge_20220902112320.model \
 -mw model/winloss_xgboost_20220902112813.model \
@@ -62,7 +63,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # 数据相关的
-    parser.add_argument('-t', '--type', type=str, default="simple")
+    parser.add_argument('-t', '--type', type=str, default="simple|backtrader|deliberate")
     parser.add_argument('-s', '--start_date', type=str, default="20190101", help="开始日期")
     parser.add_argument('-e', '--end_date', type=str, default="20220901", help="结束日期")
     parser.add_argument('-d', '--data', type=str, default=None, help="数据文件")

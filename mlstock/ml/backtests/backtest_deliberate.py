@@ -171,12 +171,12 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     然后使用Broker，来遍历每天的交易，每周进行调仓，并，记录下每周的股票+现价合计价值 => df_portfolio
     最后计算出next_pct_chg、cumulative_pct_chg，并画出plot，计算metrics
     """
-
     datasource = DataSource()
-    df_limit = datasource.limit_list()
-    df_daily = datasource.daily()
 
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
+    df_limit = datasource.limit_list()
+    df_daily = datasource.daily(df_data.ts_code, start_date, end_date)
+
     df_selected_stocks = select_top_n(df_data, df_limit)
 
     broker = Broker(cash, df_selected_stocks, df_daily)
