@@ -154,7 +154,7 @@ class Broker:
         logger.debug("更新 %s 日的市值 %.2f", trade_date, total_position_value)
 
     def execute(self):
-        daily_trade_dates = self.df_daily.trade_dates
+        daily_trade_dates = self.df_daily.trade_date.unique()
         for day_date in daily_trade_dates:
 
             if day_date in self.weekly_trade_dates:

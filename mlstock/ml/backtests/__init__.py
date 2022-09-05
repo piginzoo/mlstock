@@ -26,10 +26,11 @@ def select_top_n(df, df_limit):
     df = df[df.winloss_pred == 1]
     logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
 
+    # 剔除那些涨停的股票,参考：https://stackoverflow.com/questions/32652718/pandas-find-rows-which-dont-exist-in-another-dataframe-by-multiple-columns
     df_limit = df_limit[['trade_date', 'ts_code', 'limit']]
-    df = df.merge(df_limit, on=['ts_code', 'trade_date'], how='left')
     original_size = len(df)
-    df = df[~df.limit.isna()]
+    df = df.merge(df_limit, on=['ts_code', 'trade_date'], how='left', indicator=True)
+    df = df[df._merge == 'left_only']
     logger.debug("根据涨跌停信息，过滤数据 %d=>%d", original_size, len(df))
 
     # 先按照日期 + 下周预测收益，按照降序排
@@ -38,6 +39,7 @@ def select_top_n(df, df_limit):
     # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
     # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
     df_selected_stocks = df.groupby('trade_date').apply(lambda grp: grp.nlargest(TOP_30, 'pct_pred'))
+    logger.debug("按照预测收益率挑选出%d条股票信息",len(df_selected_stocks))
 
     # 用于保存选择后的股票，特别是他们的下期的实际收益率
     # df_selected_stocks = DataFrame()
