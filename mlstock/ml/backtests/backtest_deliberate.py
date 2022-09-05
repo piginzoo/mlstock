@@ -151,10 +151,7 @@ class Broker:
         if len(self.positions) > 0:
             logger.debug("仓位中有%d只股票，需要清仓", len(self.positions))
         for ts_code, position in self.positions.items():
-            import pdb;
-            pdb.set_trace()
-
-            if ts_code in df_buy_stocks:
+            if ts_code in df_buy_stocks.unique():
                 logger.info("待清仓股票[%s]在本周购买列表中，无需卖出", ts_code)
                 continue
             if self.is_in_sell_trades(ts_code):
@@ -165,7 +162,7 @@ class Broker:
 
         if len(df_buy_stocks) > 0:
             logger.debug("模型预测的有%d只股票，需要买入", len(df_buy_stocks))
-        for stock in df_buy_stocks:
+        for stock in df_buy_stocks.unique():
             if self.is_in_position(stock):
                 logger.info("待买股票[%s]已经在仓位中，无需买入", stock)
                 continue
