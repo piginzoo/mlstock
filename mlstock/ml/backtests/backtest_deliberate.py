@@ -250,7 +250,8 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
 
     # 把基准收益拼接进去
     df_baseline = df_data[['trade_date','next_pct_chg_baseline']].drop_duplicates()
-    df_portfolio = df_portfolio.merge(df_baseline,how='left',on='trade_date')
+    # 只筛出来周频的市值来
+    df_portfolio = df_baseline.merge(df_portfolio,how='left',on='trade_date')
 
     # 准备pct、next_pct_chg、和cumulative_xxxx
     df_portfolio['pct_chg'] = df_portfolio.total_value.pct_change()
