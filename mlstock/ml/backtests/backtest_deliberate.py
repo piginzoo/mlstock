@@ -52,6 +52,9 @@ class Broker:
     def sell(self, trade, trade_date):
         df_stock = self.df_daily[(self.df_daily.trade_date == trade_date) &
                                  (self.df_daily.ts_code == trade.ts_code)]
+        if len(df_stock) == 0:
+            logger.warning("股票[%s]没有在[%s]无数据，无法卖出，只能延后", trade.ts_code, trade_date)
+            return False
         price = df_stock.low
         position = self.position[trade.ts_code]
         amount = price * position
@@ -61,18 +64,20 @@ class Broker:
         self.cashin(amount - commission)
         # 更新仓位
         self.positions.pop(trade.ts_code, None)
-        # 删除交易
-        self.trades.pop(trade)
         # 保留交易历史
         trade.trade_date = trade_date
         self.trade_history.append(trade)
+
+        logger.debug("股票[%s]已于[%s]日按照最低价[%.2f]被卖出,卖出金额[%.2f],佣金[%.2f]",
+                     trade.ts_code, trade_date, price, amount, commission)
+        return True
 
     def buy(self, trade, trade_date):
         df_stock = self.df_daily[(self.df_daily.trade_date == trade_date) &
                                  (self.df_daily.ts_code == trade.ts_code)]
         if len(df_stock) == 0:
-            logger.warning("股票[%s]没有在[%s]无法交易，只能延后", trade.ts_code, trade_date)
-            return
+            logger.warning("股票[%s]没有在[%s]无数据，无法买入，只能延后", trade.ts_code, trade_date)
+            return False
 
         # 保守取最高价
         price = df_stock.high
@@ -89,11 +94,14 @@ class Broker:
         self.positions[trade.ts_code] = position
         # 更新头寸
         self.cashout(actual_cost + commission)
-        # 删除交易
-        self.trades.pop(trade)
+
         # 保留交易历史
         trade.trade_date = trade_date
         self.trade_history.append(trade)
+
+        logger.debug("股票[%s]已于[%s]日按照最高价[%.2f]买入%d股,买入金额[%.2f],佣金[%.2f]",
+                     trade.ts_code, trade_date, price, position, actual_cost, commission)
+        return True
 
     def cashin(self, amount):
         self.cash += amount
@@ -133,7 +141,6 @@ class Broker:
             self.trades.append(Trade(stock, day_date, 'buy'))
             logger.debug("%s ，创建买单，买入股票 [%s]", day_date, stock)
 
-
     def record_value(self, trade_date):
         """
         # 日子，总市值，现金，市值
@@ -159,7 +166,7 @@ class Broker:
                                'total_position_value': total_position_value,
                                'cash': self.cash}, ignore_index=True)
         logger.debug("更新 %s 日的市值 %.2f = %d只股票市值 %.2f + 持有的现金 %.2f",
-                     trade_date, total_position_value,len(self.positions),total_position_value,self.cash)
+                     trade_date, total_position_value, len(self.positions), total_position_value, self.cash)
 
     def execute(self):
         daily_trade_dates = self.df_daily.trade_date.unique()
@@ -170,11 +177,13 @@ class Broker:
                 logger.debug("今日是调仓日：%s", day_date)
                 self.handle_adjust_day(day_date)
 
+            remove_flags = []
             for trade in self.trades:
                 if trade.action == "buy":
-                    self.buy(trade, day_date)
-                if trade.action == "sell":
-                    self.sell(trade, day_date)
+                    remove_flags.append(self.buy(trade, day_date))
+                elif trade.action == "sell":
+                    remove_flags.append(self.sell(trade, day_date))
+                raise ValueError(f"无效的交易类型：{trade.action}")
 
             self.record_value(day_date)
 
