@@ -35,7 +35,7 @@ class Broker:
         self.cash = cash
         self.df_daily = df_daily
         self.df_weekly = df_weekly
-        self.weekly_trade_dates = df_daily.trade_dates
+        self.weekly_trade_dates = df_daily.trade_date
 
         # 存储数据的结构
         self.positions = {}
@@ -147,10 +147,10 @@ class Broker:
             total_position_value += market_value
 
         total_value = total_position_value + self.cash
-        self.df_values.appand({'trade_date': trade_date,
+        self.df_values.append({'trade_date': trade_date,
                                'total_value': total_value,
                                'total_position_value': total_position_value,
-                               'cash': self.cash})
+                               'cash': self.cash},ignore_index=True)
         logger.debug("更新 %s 日的市值 %.2f", trade_date, total_position_value)
 
     def execute(self):
