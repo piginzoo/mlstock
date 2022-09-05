@@ -63,7 +63,7 @@ class Broker:
         # 更新头寸
         self.cashin(amount - commission)
         # 更新仓位
-        self.positions.pop(trade.ts_code, None)
+        self.positions.pop(trade.ts_code, None) # None可以防止pop异常
         # 保留交易历史
         trade.trade_date = trade_date
         self.trade_history.append(trade)
@@ -92,6 +92,7 @@ class Broker:
 
         # 更新仓位
         self.positions[trade.ts_code] = position
+
         # 更新头寸
         self.cashout(actual_cost + commission)
 
@@ -185,9 +186,9 @@ class Broker:
                     remove_flags.append(self.sell(trade, day_date))
                 raise ValueError(f"无效的交易类型：{trade.action}")
 
-            # 保留那些交易失败的仓位
+            # 保留那些失败的交易，等待明天重试
             original_position_size = len(self.positions)
-            self.positions = [self.positions[i] for i, b in enumerate(remove_flags) if not b]
+            self.trades = [self.trades[i] for i, b in enumerate(remove_flags) if not b]
             logger.debug("%s 日后，仓位从%d=>%d只",original_position_size,len(self.positions))
 
             self.record_value(day_date)
