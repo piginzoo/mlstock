@@ -187,10 +187,9 @@ class Broker:
         市值 = sum(position_i * price_i)
         """
         total_position_value = 0
-        df_daily = self.df_daily[self.df_daily.trade_date == trade_date]
         for ts_code, position in self.positions.items():
-            # logger.debug("查找股票[%s] %s数据", ts_code, trade_date)
-            df_the_stock = df_daily[self.df_daily.ts_code == ts_code]
+            logger.debug("查找股票[%s] %s数据", ts_code, trade_date)
+            df_the_stock = self.df_daily.loc[self.df_daily.index.intersection((trade_date, ts_code))]
 
             # TODO:如果停牌
             if len(df_the_stock) == 0:
