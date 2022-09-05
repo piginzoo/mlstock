@@ -33,12 +33,13 @@ class Position:
 
 class Broker:
 
-    def __init__(self, cash, df_selected_stocks, df_daily, df_calendar):
+    def __init__(self, cash, df_selected_stocks, df_daily, df_calendar,conservative=False):
         self.cash = cash
         self.df_daily = df_daily
         self.df_selected_stocks = df_selected_stocks
         self.weekly_trade_dates = df_selected_stocks.trade_date.unique()
         self.df_calendar = df_calendar
+        self.conservative = conservative
 
         # 存储数据的结构
         self.positions = {}
@@ -60,7 +61,10 @@ class Broker:
             return False
 
         assert len(df_stock) == 1
-        price = df_stock.iloc[0].low
+        if self.conservative:
+            price = df_stock.iloc[0].low
+        else:
+            price = df_stock.iloc[0].open
         position = self.positions[trade.ts_code]
         amount = price * position.position
         commission = amount * sell_commission_rate
@@ -86,7 +90,10 @@ class Broker:
 
         # 保守取最高价
         assert len(df_stock) == 1
-        price = df_stock.iloc[0].high
+        if self.conservative:
+            price = df_stock.iloc[0].high
+        else:
+            price = df_stock.iloc[0].open
         # 看看能分到多少钱
         cash4stock = self.distribute_cash()
         if cash4stock is None:
@@ -155,9 +162,8 @@ class Broker:
             logger.warning("无法获得[%s]的下一个交易日,不做任何调仓", day_date)
             return
 
-        # 如果在
-        if len(self.positions) > 0:
-            logger.debug("仓位中有%d只股票，需要清仓", len(self.positions))
+        logger.debug("调仓日[%s]模型建议买入%d只股票，清仓%d只股票", len(df_buy_stocks),len(self.positions))
+
         for ts_code, position in self.positions.items():
             if ts_code in df_buy_stocks.unique():
                 logger.info("待清仓股票[%s]在本周购买列表中，无需卖出", ts_code)
@@ -168,8 +174,6 @@ class Broker:
             self.trades.append(Trade(ts_code, next_trade_date, 'sell'))
             logger.debug("%s ，创建下个交易日[%s]卖单，卖出持仓股票 [%s]", day_date, next_trade_date, ts_code)
 
-        if len(df_buy_stocks) > 0:
-            logger.debug("模型预测的有%d只股票，需要买入", len(df_buy_stocks))
         for stock in df_buy_stocks.unique():
             if self.is_in_position(stock):
                 logger.info("待买股票[%s]已经在仓位中，无需买入", stock)
@@ -184,6 +188,7 @@ class Broker:
         """
         total_position_value = 0
         for ts_code, position in self.positions.items():
+            logger.debug("查找股票[%s] %s数据",ts_code,trade_date)
             df_the_stock = self.df_daily[(self.df_daily.ts_code == ts_code) & (self.df_daily.trade_date == trade_date)]
 
             # TODO:如果停牌
@@ -210,7 +215,7 @@ class Broker:
             original_position_size = len(self.positions)
 
             if day_date in self.weekly_trade_dates:
-                logger.debug(" ======== 调仓日：%s ========", day_date)
+                logger.debug(" ================ 调仓日：%s ================", day_date)
                 self.handle_adjust_day(day_date)
 
             is_transaction_succeeded = []
