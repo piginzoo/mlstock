@@ -55,7 +55,7 @@ class Broker:
         return cash4stock
 
     def sell(self, trade, trade_date):
-        df_stock = self.df_daily.loc[self.df_daily.index.intersection((trade_date,trade.ts_code))]
+        df_stock = self.df_daily.loc[self.df_daily.index.intersection([(trade_date,trade.ts_code)])]
 
         if len(df_stock) == 0:
             logger.warning("股票[%s]没有在[%s]无数据，无法卖出，只能延后", trade.ts_code, trade_date)
@@ -83,7 +83,7 @@ class Broker:
         return True
 
     def buy(self, trade, trade_date):
-        df_stock = self.df_daily.loc[self.df_daily.index.intersection((trade_date, trade.ts_code))]
+        df_stock = self.df_daily.loc[self.df_daily.index.intersection([(trade_date, trade.ts_code)])]
         if len(df_stock) == 0:
             logger.warning("股票[%s]没有在[%s]无数据，无法买入，只能延后", trade.ts_code, trade_date)
             return False
@@ -189,7 +189,7 @@ class Broker:
         total_position_value = 0
         for ts_code, position in self.positions.items():
             logger.debug("查找股票[%s] %s数据", ts_code, trade_date)
-            df_the_stock = self.df_daily.loc[self.df_daily.index.intersection((trade_date, ts_code))]
+            df_the_stock = self.df_daily.loc[self.df_daily.index.intersection([(trade_date, ts_code)])]
 
             # TODO:如果停牌
             if len(df_the_stock) == 0:
