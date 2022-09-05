@@ -35,7 +35,7 @@ class Broker:
         self.cash = cash
         self.df_daily = df_daily
         self.df_selected_stocks = df_selected_stocks
-        self.weekly_trade_dates = df_daily.trade_date.unique()
+        self.weekly_trade_dates = df_selected_stocks.trade_date.unique()
 
         # 存储数据的结构
         self.positions = {}

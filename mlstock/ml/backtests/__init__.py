@@ -38,6 +38,7 @@ def select_top_n(df, df_limit):
 
     # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
     # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
+    # .reset_index(level=0, drop=True)
     df_selected_stocks = df.groupby('trade_date').apply(lambda grp: grp.nlargest(TOP_30, 'pct_pred'))
     logger.debug("按照预测收益率挑选出%d条股票信息",len(df_selected_stocks))
 
