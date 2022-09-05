@@ -24,8 +24,9 @@ class Trade:
 
 
 class Position:
-    def __init__(self, ts_code, create_date, initial_value):
+    def __init__(self, ts_code, position, create_date, initial_value):
         self.ts_code = ts_code
+        self.position = position
         self.create_date = create_date
         self.initial_value = initial_value
 
@@ -106,7 +107,7 @@ class Broker:
 
         # 更新仓位,头寸,交易历史
         self.trades.remove(trade)
-        self.positions[trade.ts_code] = Position(position, trade_date, actual_cost)
+        self.positions[trade.ts_code] = Position(trade.ts_code, position, trade_date, actual_cost)
         self.cashout(actual_cost + commission)
 
         logger.debug("股票[%s]已于[%s]日按照最高价[%.2f]买入%d股,买入金额[%.2f],佣金[%.2f]",
