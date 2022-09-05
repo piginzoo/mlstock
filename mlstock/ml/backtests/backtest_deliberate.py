@@ -134,18 +134,24 @@ class Broker:
         """
         total_position_value = 0
         for ts_code, position in self.positions:
+
             df_stock = self.df_daily[self.df_daily.ts_code == ts_code]
+
             # TODO:如果停牌
             if len(df_stock) == 0:
-                pass
+                logger.warning(" %s 日没有股票 %s 的数据，当天它的市值计作 0 ", trade_date, ts_code)
+                market_value = 0
             else:
                 market_value = df_stock.close * position
-                total_position_value += market_value
+
+            total_position_value += market_value
+
         total_value = total_position_value + self.cash
         self.df_values.append({'trade_date': trade_date,
                                'total_value': total_value,
                                'total_position_value': total_position_value,
                                'cash': self.cash},ignore_index=True)
+        logger.debug("更新 %s 日的市值 %.2f", trade_date, total_position_value)
 
     def execute(self):
         daily_trade_dates = self.df_daily.trade_date
