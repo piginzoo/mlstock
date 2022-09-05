@@ -55,7 +55,9 @@ class Broker:
         if len(df_stock) == 0:
             logger.warning("股票[%s]没有在[%s]无数据，无法卖出，只能延后", trade.ts_code, trade_date)
             return False
-        price = df_stock.low
+
+        assert len(df_stock) == 1
+        price = df_stock.iloc[0].low
         position = self.positions[trade.ts_code]
         amount = price * position
         commission = amount * sell_commission_rate
@@ -80,7 +82,8 @@ class Broker:
             return False
 
         # 保守取最高价
-        price = df_stock.high
+        assert len(df_stock) == 1
+        price = df_stock.iloc[0].high
         # 看看能分到多少钱
         cash4stock = self.distribute_cash()
         # 看看实际能卖多少手
