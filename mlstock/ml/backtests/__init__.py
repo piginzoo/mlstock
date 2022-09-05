@@ -26,10 +26,10 @@ def select_top_n(df, df_limit):
     df = df[df.winloss_pred == 1]
     logger.debug("根据涨跌模型结果，过滤数据 %d=>%d", original_size, len(df))
 
-    df_limit = df_limit[['trade_date', 'ts_code', 'name']]
+    df_limit = df_limit[['trade_date', 'ts_code', 'limit']]
     df = df.merge(df_limit, on=['ts_code', 'trade_date'], how='left')
     original_size = len(df)
-    df = df[~df.name.isna()]
+    df = df[~df.limit.isna()]
     logger.debug("根据涨跌停信息，过滤数据 %d=>%d", original_size, len(df))
 
     # 先按照日期 + 下周预测收益，按照降序排
