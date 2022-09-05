@@ -111,8 +111,8 @@ class Broker:
         self.cash -= amount
 
     def is_in_position(self, ts_code):
-        for position in self.positions:
-            if position.ts_code == ts_code: return True
+        for position_ts_code,_ in self.positions.items():
+            if position_ts_code == ts_code: return True
         return False
 
     def clear_buy_trades(self):
