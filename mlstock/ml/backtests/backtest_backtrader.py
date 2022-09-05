@@ -57,7 +57,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     datasource = DataSource()
 
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
-    df_daily = datasource.daily(df_data.ts_codes)
+    df_daily = datasource.daily(df_data.ts_codes,start_date, end_date)
     df_limit = datasource.limit_list()
     df_selected_stocks = select_top_n(df_data, df_limit)
 
