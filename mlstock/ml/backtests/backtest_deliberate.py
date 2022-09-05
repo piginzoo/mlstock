@@ -31,11 +31,11 @@ class Position:
 
 class Broker:
 
-    def __init__(self, cash, df_weekly, df_daily):
+    def __init__(self, cash, df_selected_stocks, df_daily):
         self.cash = cash
         self.df_daily = df_daily
-        self.df_weekly = df_weekly
-        self.weekly_trade_dates = df_daily.trade_date
+        self.df_selected_stocks = df_selected_stocks
+        self.weekly_trade_dates = df_daily.trade_date.unique()
 
         # 存储数据的结构
         self.positions = {}
@@ -113,19 +113,25 @@ class Broker:
         """
         处理调仓日
         """
-        df_buy_stocks = self.df_weekly[self.df_weekly.trade_date == day_date]
+        df_buy_stocks = self.df_selected_stocks[self.df_selected_stocks.trade_date == day_date].ts_code
 
         # 到调仓日，所有的买交易都取消了，但保留卖交易(没有卖出的要持续尝试卖出)
         self.clear_buy_trades()
 
         # 如果在
         for positon in self.position:
-            if positon.ts_code in df_buy_stocks.ts_code: continue
+            if positon.ts_code in df_buy_stocks.ts_code:
+                logger.info("待买股票[%s]已经在仓位中，无需卖出", positon.ts_code)
+                continue
             self.trades.add(Trade(positon.ts_code, day_date, 'sell'))
+            logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, positon.ts_code)
 
         for stock in df_buy_stocks:
-            if self.is_in_position(stock): continue
+            if self.is_in_position(stock):
+                logger.info("待买股票[%s]已经在仓位中，无需买入", stock)
+                continue
             self.trades.add(Trade(stock.ts_code, day_date, 'buy'))
+            logger.debug("%s ，创建买单，买入股票 [%s]", day_date, stock)
 
     def record_value(self, trade_date):
         """
@@ -150,8 +156,9 @@ class Broker:
         self.df_values.append({'trade_date': trade_date,
                                'total_value': total_value,
                                'total_position_value': total_position_value,
-                               'cash': self.cash},ignore_index=True)
-        logger.debug("更新 %s 日的市值 %.2f", trade_date, total_position_value)
+                               'cash': self.cash}, ignore_index=True)
+        logger.debug("更新 %s 日的市值 %.2f = %d只股票市值 %.2f + 持有的现金 %.2f",
+                     trade_date, total_position_value,len(self.positions),total_position_value,self.cash)
 
     def execute(self):
         daily_trade_dates = self.df_daily.trade_date.unique()
