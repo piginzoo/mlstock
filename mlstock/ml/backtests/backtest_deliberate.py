@@ -33,7 +33,7 @@ class Position:
 
 class Broker:
 
-    def __init__(self, cash, df_selected_stocks, df_daily, df_calendar,conservative=False):
+    def __init__(self, cash, df_selected_stocks, df_daily, df_calendar, conservative=False):
         self.cash = cash
         self.df_daily = df_daily
         self.df_selected_stocks = df_selected_stocks
@@ -162,7 +162,7 @@ class Broker:
             logger.warning("无法获得[%s]的下一个交易日,不做任何调仓", day_date)
             return
 
-        logger.debug("调仓日[%s]模型建议买入%d只股票，清仓%d只股票", len(df_buy_stocks),len(self.positions))
+        logger.debug("调仓日[%s]模型建议买入%d只股票，清仓%d只股票", day_date, len(df_buy_stocks), len(self.positions))
 
         for ts_code, position in self.positions.items():
             if ts_code in df_buy_stocks.unique():
@@ -187,9 +187,10 @@ class Broker:
         市值 = sum(position_i * price_i)
         """
         total_position_value = 0
+        df_daily = self.df_daily[self.df_daily.trade_date == trade_date]
         for ts_code, position in self.positions.items():
-            logger.debug("查找股票[%s] %s数据",ts_code,trade_date)
-            df_the_stock = self.df_daily[(self.df_daily.ts_code == ts_code) & (self.df_daily.trade_date == trade_date)]
+            # logger.debug("查找股票[%s] %s数据", ts_code, trade_date)
+            df_the_stock = df_daily[self.df_daily.ts_code == ts_code]
 
             # TODO:如果停牌
             if len(df_the_stock) == 0:
