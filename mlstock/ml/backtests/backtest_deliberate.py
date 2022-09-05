@@ -217,13 +217,15 @@ class Broker:
                     continue
                 raise ValueError(f"无效的交易类型：{trade.action}")
 
-            buy_trades = [x for x in self.trades if x.action == 'buy']
-            for trade in buy_trades:
-                self.buy(trade, day_date)
-
+            # 先卖
             sell_trades = [x for x in self.trades if x.action == 'sell']
             for trade in sell_trades:
                 self.sell(trade, day_date)
+
+            # 后买
+            buy_trades = [x for x in self.trades if x.action == 'buy']
+            for trade in buy_trades:
+                self.buy(trade, day_date)
 
             if original_position_size != len(self.positions):
                 logger.debug("%s 日后，仓位变化，从%d=>%d 只", day_date, original_position_size, len(self.positions))
@@ -243,7 +245,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
     df_limit = datasource.limit_list()
     ts_codes = df_data.ts_code.unique().tolist()
-    df_daily = datasource.daily(ts_codes, start_date, end_date,adjust='')
+    df_daily = datasource.daily(ts_codes, start_date, end_date, adjust='')
 
     df_selected_stocks = select_top_n(df_data, df_limit)
 
