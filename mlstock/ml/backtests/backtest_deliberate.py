@@ -9,7 +9,6 @@ from mlstock.ml.backtests.metrics import metrics
 
 logger = logging.getLogger(__name__)
 
-stock_num = 30
 cash = 500000
 buy_commission_rate = 0.00025 + 0.0002  # 券商佣金、过户费
 sell_commission_rate = 0.00025 + 0.0002 + 0.001  # 券商佣金、过户费、印花税
@@ -244,7 +243,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
     df_limit = datasource.limit_list()
     ts_codes = df_data.ts_code.unique().tolist()
-    df_daily = datasource.daily(ts_codes, start_date, end_date)
+    df_daily = datasource.daily(ts_codes, start_date, end_date,adjust='')
 
     df_selected_stocks = select_top_n(df_data, df_limit)
 
