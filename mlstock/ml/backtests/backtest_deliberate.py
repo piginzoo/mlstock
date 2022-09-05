@@ -64,7 +64,7 @@ class Broker:
         commission = amount * sell_commission_rate
 
         # 更新头寸,仓位,交易历史
-        self.trades.pop(trade)
+        self.trades.remove(trade)
         self.cashin(amount - commission)
         self.positions.pop(trade.ts_code, None)  # None可以防止pop异常
         trade.trade_date = trade_date
@@ -103,7 +103,7 @@ class Broker:
         commission = buy_commission_rate * actual_cost
 
         # 更新仓位,头寸,交易历史
-        self.trades.pop(trade)
+        self.trades.remove(trade)
         self.positions[trade.ts_code] = position
         self.cashout(actual_cost + commission)
         trade.trade_date = trade_date
