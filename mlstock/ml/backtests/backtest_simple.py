@@ -30,29 +30,24 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     """
 
     datasource = DataSource()
-    df_limit = datasource.limit_list()
-    df_daily = datasource.daily()
 
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
+    df_limit = datasource.limit_list()
+
     df_selected_stocks = select_top_n(df_data, df_limit)
 
-
     # 组合的收益率情况
-    df_portfolio_pct = df_selected_stocks.groupby('trade_date')[['next_pct_chg', 'next_pct_chg_baseline']].mean()
+    df_portfolio = df_selected_stocks.groupby('trade_date')[['next_pct_chg', 'next_pct_chg_baseline']].mean()
 
-    df_portfolio_pct.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
-    df_portfolio_pct[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
-        df_portfolio_pct[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
-
-    return df_portfolio_pct.reset_index()
-
+    df_portfolio.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
+    df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
+        df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
 
     # 画出回测图
     plot(df_portfolio, start_date, end_date, factor_names)
 
     # 计算各项指标
     metrics(df_portfolio)
-
 
 
 """
