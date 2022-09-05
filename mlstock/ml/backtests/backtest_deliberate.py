@@ -35,6 +35,7 @@ class Broker:
 
     def __init__(self, cash, df_selected_stocks, df_daily, df_calendar, conservative=False):
         self.cash = cash
+        self.daily_trade_dates = df_daily.trade_date.unique()
         self.df_daily = df_daily.set_index(['trade_date','ts_code'])# 设索引是为了加速，太慢了否则
         self.df_selected_stocks = df_selected_stocks
         self.weekly_trade_dates = df_selected_stocks.trade_date.unique()
@@ -210,8 +211,7 @@ class Broker:
                      trade_date, total_value, len(self.positions), total_position_value, self.cash)
 
     def execute(self):
-        daily_trade_dates = self.df_daily.trade_date.unique()
-        for day_date in daily_trade_dates:
+        for day_date in self.daily_trade_dates:
             original_position_size = len(self.positions)
 
             if day_date in self.weekly_trade_dates:
