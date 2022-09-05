@@ -6,6 +6,7 @@ from pandas import DataFrame
 from mlstock.data.datasource import DataSource
 from mlstock.ml.backtests import predict, select_top_n, plot
 from mlstock.ml.backtests.metrics import metrics
+from mlstock.utils.data_utils import next_trade_day
 
 logger = logging.getLogger(__name__)
 
@@ -15,30 +16,32 @@ sell_commission_rate = 0.00025 + 0.0002 + 0.001  # 券商佣金、过户费、�
 
 
 class Trade:
-    def __init__(self, ts_code, create_date, action):
+    def __init__(self, ts_code, target_date, action):
         self.ts_code = ts_code
-        self.create_date = create_date
+        self.target_date = target_date
         self.action = action
-        self.trade_date = None
+        self.actual_date = None
+
 
 class Position:
-    def __init__(self, ts_code, trade_date):
+    def __init__(self, ts_code, create_date, initial_value):
         self.ts_code = ts_code
-        self.trade_date = trade_date
+        self.create_date = create_date
+        self.initial_value = initial_value
 
 
 class Broker:
 
-    def __init__(self, cash, df_selected_stocks, df_daily):
+    def __init__(self, cash, df_selected_stocks, df_daily, df_calendar):
         self.cash = cash
         self.df_daily = df_daily
         self.df_selected_stocks = df_selected_stocks
         self.weekly_trade_dates = df_selected_stocks.trade_date.unique()
+        self.df_calendar = df_calendar
 
         # 存储数据的结构
         self.positions = {}
         self.trades = []
-        self.trade_history = []
         self.df_values = DataFrame()
 
     def distribute_cash(self):
@@ -58,18 +61,19 @@ class Broker:
         assert len(df_stock) == 1
         price = df_stock.iloc[0].low
         position = self.positions[trade.ts_code]
-        amount = price * position
+        amount = price * position.position
         commission = amount * sell_commission_rate
 
         # 更新头寸,仓位,交易历史
         self.trades.remove(trade)
         self.cashin(amount - commission)
         self.positions.pop(trade.ts_code, None)  # None可以防止pop异常
-        trade.trade_date = trade_date
-        self.trade_history.append(trade)
+        _return = (amount - position.initial_value) / position.initial_value
 
-        logger.debug("股票[%s]已于[%s]日按照最低价[%.2f]被卖出,卖出金额[%.2f],佣金[%.2f]",
-                     trade.ts_code, trade_date, price, amount, commission)
+        trade.trade_date = trade_date
+
+        logger.debug("股票[%s]在[%s]按最低价[%.2f]卖出,卖出金额[%.2f],佣金[%.2f],买入时价值[%.2f],收益[%.1f%%]",
+                     trade.ts_code, trade_date, price, amount, commission, position.initial_value, _return * 100)
         return True
 
     def buy(self, trade, trade_date):
@@ -102,10 +106,8 @@ class Broker:
 
         # 更新仓位,头寸,交易历史
         self.trades.remove(trade)
-        self.positions[trade.ts_code] = position
+        self.positions[trade.ts_code] = Position(position, trade_date, actual_cost)
         self.cashout(actual_cost + commission)
-        trade.trade_date = trade_date
-        self.trade_history.append(trade)
 
         logger.debug("股票[%s]已于[%s]日按照最高价[%.2f]买入%d股,买入金额[%.2f],佣金[%.2f]",
                      trade.ts_code, trade_date, price, position, actual_cost, commission)
@@ -147,6 +149,11 @@ class Broker:
         # 到调仓日，所有的买交易都取消了，但保留卖交易(没有卖出的要持续尝试卖出)
         self.clear_buy_trades()
 
+        next_trade_date = next_trade_day(day_date, self.df_calendar)
+        if next_trade_date is None:
+            logger.warning("无法获得[%s]的下一个交易日,不做任何调仓", day_date)
+            return
+
         # 如果在
         if len(self.positions) > 0:
             logger.debug("仓位中有%d只股票，需要清仓", len(self.positions))
@@ -157,8 +164,8 @@ class Broker:
             if self.is_in_sell_trades(ts_code):
                 logger.warning("股票[%s]已经在卖单中，可能是还未卖出，无需再创建卖单了", ts_code)
                 continue
-            self.trades.append(Trade(ts_code, day_date, 'sell'))
-            logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, ts_code)
+            self.trades.append(Trade(ts_code, next_trade_date, 'sell'))
+            logger.debug("%s ，创建下个交易日[%s]卖单，卖出持仓股票 [%s]", day_date, next_trade_date, ts_code)
 
         if len(df_buy_stocks) > 0:
             logger.debug("模型预测的有%d只股票，需要买入", len(df_buy_stocks))
@@ -166,17 +173,18 @@ class Broker:
             if self.is_in_position(stock):
                 logger.info("待买股票[%s]已经在仓位中，无需买入", stock)
                 continue
-            self.trades.append(Trade(stock, day_date, 'buy'))
-            logger.debug("%s ，创建买单，买入股票 [%s]", day_date, stock)
+            self.trades.append(Trade(stock, next_trade_date, 'buy'))
+            logger.debug("%s ，创建下个交易日[%s]买单，买入股票 [%s]", day_date, next_trade_date, stock)
 
-    def record_value(self, trade_date):
+    def update_market_value(self, trade_date):
         """
         # 日子，总市值，现金，市值
         市值 = sum(position_i * price_i)
         """
         total_position_value = 0
         for ts_code, position in self.positions.items():
-
+            import pdb;
+            pdb.set_trace()
             df_the_stock = self.df_daily[(self.df_daily.ts_code == ts_code) & (self.df_daily.trade_date == trade_date)]
 
             # TODO:如果停牌
@@ -194,7 +202,7 @@ class Broker:
                                                 'total_value': total_value,
                                                 'total_position_value': total_position_value,
                                                 'cash': self.cash}, ignore_index=True)
-        logger.debug("更新 %s 日的市值 %.2f = %d只股票市值 %.2f + 持有的现金 %.2f",
+        logger.debug("%s 市值 %.2f = %d只股票市值 %.2f + 持有现金 %.2f",
                      trade_date, total_value, len(self.positions), total_position_value, self.cash)
 
     def execute(self):
@@ -203,11 +211,13 @@ class Broker:
             original_position_size = len(self.positions)
 
             if day_date in self.weekly_trade_dates:
-                logger.debug("今日是调仓日：%s", day_date)
+                logger.debug(" ======== 调仓日：%s ========", day_date)
                 self.handle_adjust_day(day_date)
 
             is_transaction_succeeded = []
             for trade in self.trades:
+                # 只有大于和等于交易的目标日才交易（下单是在第二天才执行）
+                if trade.target_date < day_date: continue
                 if trade.action == "buy":
                     is_transaction_succeeded.append(self.buy(trade, day_date))
                     continue
@@ -229,7 +239,7 @@ class Broker:
             if original_position_size != len(self.positions):
                 logger.debug("%s 日后，仓位变化，从%d=>%d 只", day_date, original_position_size, len(self.positions))
 
-            self.record_value(day_date)
+            self.update_market_value(day_date)
 
 
 def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
@@ -247,8 +257,9 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_daily = datasource.daily(ts_codes, start_date, end_date, adjust='')
 
     df_selected_stocks = select_top_n(df_data, df_limit)
+    df_calendar = datasource.trade_cal(start_date, end_date)
 
-    broker = Broker(cash, df_selected_stocks, df_daily)
+    broker = Broker(cash, df_selected_stocks, df_daily, df_calendar)
     broker.execute()
     df_portfolio = broker.df_values
     df_portfolio.sort_values('trade_date')
