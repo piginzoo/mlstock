@@ -135,6 +135,12 @@ class Broker:
     def clear_buy_trades(self):
         self.trades = [t for t in self.trades if t.action == 'sell']
 
+    def is_in_sell_trades(self,ts_code):
+        for t in self.trades:
+            if t.action != 'sell':continue
+            if t.ts_code == ts_code: return True
+        return False
+
     def handle_adjust_day(self, day_date):
         """
         处理调仓日
@@ -151,8 +157,11 @@ class Broker:
             if ts_code in df_buy_stocks:
                 logger.info("待买股票[%s]已经在仓位中，无需卖出", ts_code)
                 continue
-            self.trades.append(Trade(ts_code, day_date, 'sell'))
-            logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, ts_code)
+            if self.is_in_sell_trades(ts_code):
+                logger.warning("股票[%s]已经在卖单中，可能是还未卖出，无需再创建卖单了",ts_code)
+            else:
+                self.trades.append(Trade(ts_code, day_date, 'sell'))
+                logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, ts_code)
 
         if len(df_buy_stocks) > 0:
             logger.debug("模型预测的有%d只股票，需要买入", len(df_buy_stocks))
