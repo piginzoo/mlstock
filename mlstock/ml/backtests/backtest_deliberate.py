@@ -184,8 +184,6 @@ class Broker:
         """
         total_position_value = 0
         for ts_code, position in self.positions.items():
-            import pdb;
-            pdb.set_trace()
             df_the_stock = self.df_daily[(self.df_daily.ts_code == ts_code) & (self.df_daily.trade_date == trade_date)]
 
             # TODO:如果停牌
@@ -194,7 +192,7 @@ class Broker:
                 market_value = 0
             else:
                 assert len(df_the_stock) == 1
-                market_value = df_the_stock.iloc[0].close * position
+                market_value = df_the_stock.iloc[0].close * position.position
 
             total_position_value += market_value
 
