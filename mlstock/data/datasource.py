@@ -40,7 +40,7 @@ class DataSource:
                     df_all = df_daily
                 else:
                     df_all = df_all.append(df_daily)
-            logger.debug("获取 %s ~ %s %d 只股票的交易数据：%d 条, 耗时 %.2f 秒",
+            logger.debug("获取 %s ~ %s %d 只股票的交易日数据：%d 条, 耗时 %.2f 秒",
                          start_date, end_date, len(stock_code), len(df_all), time.time() - start_time)
             return df_all
         else:

@@ -21,7 +21,6 @@ class Trade:
         self.action = action
         self.trade_date = None
 
-
 class Position:
     def __init__(self, ts_code, trade_date):
         self.ts_code = ts_code
@@ -153,13 +152,14 @@ class Broker:
             logger.debug("仓位中有%d只股票，需要清仓", len(self.positions))
         for ts_code, position in self.positions.items():
             if ts_code in df_buy_stocks:
-                logger.info("待买股票[%s]已经在仓位中，无需卖出", ts_code)
+                import pdb;pdb.set_trace()
+                logger.info("待清仓股票[%s]在本周购买列表中，无需卖出", ts_code)
                 continue
             if self.is_in_sell_trades(ts_code):
                 logger.warning("股票[%s]已经在卖单中，可能是还未卖出，无需再创建卖单了", ts_code)
-            else:
-                self.trades.append(Trade(ts_code, day_date, 'sell'))
-                logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, ts_code)
+                continue
+            self.trades.append(Trade(ts_code, day_date, 'sell'))
+            logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, ts_code)
 
         if len(df_buy_stocks) > 0:
             logger.debug("模型预测的有%d只股票，需要买入", len(df_buy_stocks))

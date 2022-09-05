@@ -42,21 +42,6 @@ def select_top_n(df, df_limit):
     df_selected_stocks = df.groupby('trade_date').apply(lambda grp: grp.nlargest(TOP_30, 'pct_pred'))
     logger.debug("按照预测收益率挑选出%d条股票信息",len(df_selected_stocks))
 
-    # 用于保存选择后的股票，特别是他们的下期的实际收益率
-    # df_selected_stocks = DataFrame()
-    # df_groups = df.groupby('trade_date')
-    # for date, df_group in df_groups:
-    #     # 根据 "预测收益率" 选出收益率top30
-    #     df_top30 = df_group.iloc[0:TOP_30, :]
-    #     df_top30['trade_date'] = date
-    #     df_selected_stocks = df_selected_stocks.append(df_top30)
-    #
-    # # 处理选中的股票的信息，保存下来，其实没啥用，就是存一下，方便细排查
-    # df_selected_stocks = df_selected_stocks[
-    #     ['trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']]
-    # df_selected_stocks.columns = [
-    #     'trade_date', 'ts_code', 'target', 'pct_pred', 'next_pct_chg', 'next_pct_chg_baseline']
-
     df_selected_stocks.to_csv("data/top30.csv", header=0)
     return df_selected_stocks
 
