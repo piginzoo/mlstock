@@ -123,14 +123,14 @@ class Broker:
             if positon.ts_code in df_buy_stocks.ts_code:
                 logger.info("待买股票[%s]已经在仓位中，无需卖出", positon.ts_code)
                 continue
-            self.trades.add(Trade(positon.ts_code, day_date, 'sell'))
+            self.trades.append(Trade(positon.ts_code, day_date, 'sell'))
             logger.debug("%s ，创建卖单，卖出持仓股票 [%s]", day_date, positon.ts_code)
 
         for stock in df_buy_stocks:
             if self.is_in_position(stock):
                 logger.info("待买股票[%s]已经在仓位中，无需买入", stock)
                 continue
-            self.trades.add(Trade(stock, day_date, 'buy'))
+            self.trades.append(Trade(stock, day_date, 'buy'))
             logger.debug("%s ，创建买单，买入股票 [%s]", day_date, stock)
 
 
