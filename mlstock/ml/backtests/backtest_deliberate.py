@@ -119,8 +119,7 @@ class Broker:
         self.clear_buy_trades()
 
         # 如果在
-<<<<<<< HEAD
-        for positon in self.position:
+        for positon in self.positions:
             if positon.ts_code in df_buy_stocks.ts_code:
                 logger.info("待买股票[%s]已经在仓位中，无需卖出", positon.ts_code)
                 continue
@@ -131,17 +130,9 @@ class Broker:
             if self.is_in_position(stock):
                 logger.info("待买股票[%s]已经在仓位中，无需买入", stock)
                 continue
-            self.trades.add(Trade(stock.ts_code, day_date, 'buy'))
+            self.trades.add(Trade(stock, day_date, 'buy'))
             logger.debug("%s ，创建买单，买入股票 [%s]", day_date, stock)
-=======
-        for positon in self.positions:
-            if positon.ts_code in df_buy_stocks.ts_code: continue
-            self.trades.append(Trade(positon.ts_code, day_date, 'sell'))
 
-        for stock in df_buy_stocks:
-            if self.is_in_position(stock): continue
-            self.trades.append(Trade(stock, day_date, 'buy'))
->>>>>>> 5e7b397fb75aac2d40f6ae7d10902b00926ae69a
 
     def record_value(self, trade_date):
         """
