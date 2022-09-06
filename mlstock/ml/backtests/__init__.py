@@ -14,7 +14,7 @@ from mlstock.utils import utils
 logger = logging.getLogger(__name__)
 
 
-def select_top_n(df, df_limit):
+def select_top_n(df, df_limit, top_n):
     """
     :param df:
     :param df_limit:
@@ -39,7 +39,7 @@ def select_top_n(df, df_limit):
     # 按照日期分组，每组里面取前30，然后算收益率，作为组合资产的收益率
     # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
     # .reset_index(level=0, drop=True)
-    df_selected_stocks = df.groupby('trade_date').apply(lambda grp: grp.nlargest(TOP_30, 'pct_pred'))
+    df_selected_stocks = df.groupby('trade_date').apply(lambda grp: grp.nlargest(top_n, 'pct_pred'))
     logger.debug("按照预测收益率挑选出%d条股票信息", len(df_selected_stocks))
 
     return df_selected_stocks.reset_index(drop=True)
@@ -89,7 +89,7 @@ def make_patch_spines_invisible(ax):
         sp.set_visible(False)
 
 
-def plot(df, start_date, end_date, factor_names):
+def plot(df,save_path):
     """
     1. 每期实际收益
     2. 每期实际累计收益
@@ -155,8 +155,5 @@ def plot(df, start_date, end_date, factor_names):
     plt.title(title)  # 添加标题
     plt.grid(axis="y")  # 背景网格
 
-    # 保存图片
-    factor = '' if len(factor_names) > 1 else factor_names[0]
-    save_path = 'data/plot_{}_{}_{}.jpg'.format(factor, start_date, end_date)
     plt.savefig(save_path)
     plt.show()

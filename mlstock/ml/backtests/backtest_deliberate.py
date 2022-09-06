@@ -3,6 +3,7 @@ import logging
 
 from pandas import DataFrame
 
+from mlstock.const import TOP_30
 from mlstock.data.datasource import DataSource
 from mlstock.ml.backtests import predict, select_top_n, plot
 from mlstock.ml.backtests.metrics import metrics
@@ -253,13 +254,7 @@ class Broker:
             self.update_market_value(day_date)
 
 
-def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
-    """
-    先预测出所有的下周收益率、下周涨跌 => df_data，
-    然后选出每周的top30 => df_selected_stocks，
-    然后使用Broker，来遍历每天的交易，每周进行调仓，并，记录下每周的股票+现价合计价值 => df_portfolio
-    最后计算出next_pct_chg、cumulative_pct_chg，并画出plot，计算metrics
-    """
+def load_datas(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
     datasource = DataSource()
 
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
@@ -268,17 +263,21 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     ts_codes = df_data.ts_code.unique().tolist()
     df_daily = datasource.daily(ts_codes, start_date, end_date, adjust='')
     df_daily = df_daily.sort_values(['trade_date', 'ts_code'])
-
-    df_selected_stocks = select_top_n(df_data, df_limit)
     df_calendar = datasource.trade_cal(start_date, end_date)
+    df_baseline = df_data[['trade_date', 'next_pct_chg_baseline']].drop_duplicates()
+    return df_data, df_daily, df_index, df_baseline, df_limit, df_calendar
+
+
+def run_broker(df_data, df_daily, df_index, df_baseline, df_limit, df_calendar,
+               start_date, end_date, factor_names,
+               top_n):
+    df_selected_stocks = select_top_n(df_data, df_limit, top_n)
 
     broker = Broker(cash, df_selected_stocks, df_daily, df_calendar, conservative=False)
     broker.execute()
     df_portfolio = broker.df_values
     df_portfolio.sort_values('trade_date')
 
-    # 把基准收益拼接进去
-    df_baseline = df_data[['trade_date', 'next_pct_chg_baseline']].drop_duplicates()
     # 只筛出来周频的市值来
     df_portfolio = df_baseline.merge(df_portfolio, how='left', on='trade_date')
     # 拼接上指数
@@ -294,8 +293,23 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
 
     df_portfolio = df_portfolio[~df_portfolio.cumulative_pct_chg.isna()]
 
-    plot(df_portfolio, start_date, end_date, factor_names)
+    save_path = 'data/plot_{}_{}_top{}.jpg'.format(start_date, end_date, top_n)
+    plot(df_portfolio, start_date, end_date, factor_names, save_path)
 
     # 计算各项指标
     logger.info("佣金总额：%.2f", broker.total_commission)
     metrics(df_portfolio)
+
+
+def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
+    """
+    先预测出所有的下周收益率、下周涨跌 => df_data，
+    然后选出每周的top30 => df_selected_stocks，
+    然后使用Broker，来遍历每天的交易，每周进行调仓，并，记录下每周的股票+现价合计价值 => df_portfolio
+    最后计算出next_pct_chg、cumulative_pct_chg，并画出plot，计算metrics
+    """
+    df_data, df_daily, df_index, df_baseline, df_limit, df_calendar = \
+        load_datas(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
+
+    run_broker(df_data, df_daily, df_index, df_baseline, df_limit, df_calendar, start_date, end_date, factor_names,
+               TOP_30)
