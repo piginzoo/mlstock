@@ -36,7 +36,7 @@ class Broker:
     def __init__(self, cash, df_selected_stocks, df_daily, df_calendar, conservative=False):
         self.cash = cash
         self.daily_trade_dates = df_daily.trade_date.unique()
-        self.df_daily = df_daily.set_index(['trade_date','ts_code'])# 设索引是为了加速，太慢了否则
+        self.df_daily = df_daily.set_index(['trade_date', 'ts_code'])  # 设索引是为了加速，太慢了否则
         self.df_selected_stocks = df_selected_stocks
         self.weekly_trade_dates = df_selected_stocks.trade_date.unique()
         self.df_calendar = df_calendar
@@ -55,9 +55,9 @@ class Broker:
         return cash4stock
 
     def sell(self, trade, trade_date):
-        df_stock = self.df_daily.loc[self.df_daily.index.intersection([(trade_date,trade.ts_code)])]
-
-        if len(df_stock) == 0:
+        try:
+            df_stock = self.df_daily.loc[(trade_date, trade.ts_code)]
+        except KeyError:
             logger.warning("股票[%s]没有在[%s]无数据，无法卖出，只能延后", trade.ts_code, trade_date)
             return False
 
@@ -83,8 +83,12 @@ class Broker:
         return True
 
     def buy(self, trade, trade_date):
-        df_stock = self.df_daily.loc[self.df_daily.index.intersection([(trade_date, trade.ts_code)])]
-        if len(df_stock) == 0:
+        # 使用try/exception + 索引loc是为了提速，直接用列，或者防止KeyError的intersection，都非常慢， 60ms vs 3ms，20倍关系
+        # 另外，trade_date列是否是str还是date/int对速度影响不大
+        # df_stock = self.df_daily.loc[self.df_daily.index.intersection([(trade_date, trade.ts_code)])]
+        try:
+            df_stock = self.df_daily.loc[(trade_date, trade.ts_code)]
+        except KeyError:
             logger.warning("股票[%s]没有在[%s]无数据，无法买入，只能延后", trade.ts_code, trade_date)
             return False
 
@@ -189,15 +193,14 @@ class Broker:
         total_position_value = 0
         for ts_code, position in self.positions.items():
             logger.debug("查找股票[%s] %s数据", ts_code, trade_date)
-            df_the_stock = self.df_daily.loc[self.df_daily.index.intersection([(trade_date, ts_code)])]
 
-            # TODO:如果停牌
-            if len(df_the_stock) == 0:
-                logger.warning(" %s 日没有股票 %s 的数据，当天它的市值计作 0 ", trade_date, ts_code)
-                market_value = 0
-            else:
+            try:
+                df_the_stock = self.df_daily.loc[(trade_date, ts_code)]
                 assert len(df_the_stock) == 1
                 market_value = df_the_stock.iloc[0].close * position.position
+            except KeyError:
+                logger.warning(" %s 日没有股票 %s 的数据，当天它的市值计作 0 ", trade_date, ts_code)
+                market_value = 0
 
             total_position_value += market_value
 
@@ -258,7 +261,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_limit = datasource.limit_list()
     ts_codes = df_data.ts_code.unique().tolist()
     df_daily = datasource.daily(ts_codes, start_date, end_date, adjust='')
-    df_daily = df_daily.sort_values(['trade_date','ts_code'])
+    df_daily = df_daily.sort_values(['trade_date', 'ts_code'])
 
     df_selected_stocks = select_top_n(df_data, df_limit)
     df_calendar = datasource.trade_cal(start_date, end_date)
