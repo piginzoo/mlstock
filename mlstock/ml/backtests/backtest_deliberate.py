@@ -82,8 +82,8 @@ class Broker:
 
         trade.trade_date = trade_date
 
-        logger.debug("股票[%s]在[%s]按最低价[%.2f]卖出,卖出金额[%.2f],佣金[%.2f],买入时价值[%.2f],收益[%.1f%%]",
-                     trade.ts_code, trade_date, price, amount, commission, position.initial_value, _return * 100)
+        logger.debug("[%s]于[%s]以[%.2f]卖出,买入=>卖出[%.2f=>%.2f],佣金[%.2f],收益[%.1f%%]",
+                     trade.ts_code, trade_date, price, position.initial_value, amount, commission, _return * 100)
         return True
 
     def buy(self, trade, trade_date):
