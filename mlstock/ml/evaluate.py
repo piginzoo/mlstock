@@ -4,6 +4,7 @@ import logging
 import joblib
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, accuracy_score, precision_score, \
     recall_score, f1_score
 
@@ -84,6 +85,13 @@ def main(args):
 
     df_data = load_and_filter_data(args.data, args.start_date, args.end_date)
 
+    logger.info("周收益平均值：%.2f%%", df_data.target.mean() * 100)
+    logger.info("周收益标准差：%.2f%%", df_data.target.std() * 100)
+    logger.info("周收益中位数：%.2f%%", df_data.target.median() * 100)
+    logger.info("绝对值平均值：%.2f%%", df_data.target.abs().mean() * 100)
+    logger.info("绝对值标准差：%.2f%%", df_data.target.abs().std() * 100)
+    logger.info("绝对值中位数：%.2f%%", df_data.target.abs().median() * 100)
+
     # 加载模型；如果参数未提供，为None
     model_pct = joblib.load(args.model_pct) if args.model_pct else None
     model_winloss = joblib.load(args.model_winloss) if args.model_winloss else None
@@ -99,9 +107,9 @@ def main(args):
 """
 python -m mlstock.ml.evaluate \
 -s 20190101 -e 20220901 \
--mp model/pct_ridge_20220828190251.model \
--mw model/winloss_xgboost_20220828190259.model \
--d data/processed_industry_neutral_20080101_20220901_20220828152110.csv
+-mp model/pct_ridge_20220902112320.model \
+-mw model/winloss_xgboost_20220902112813.model \
+-d data/factor_20080101_20220901_2954_1299032__industry_neutral_20220902112049.csv
 """
 if __name__ == '__main__':
     utils.init_logger(file=True)
