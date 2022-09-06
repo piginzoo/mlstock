@@ -280,9 +280,8 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_portfolio = df_baseline.merge(df_portfolio, how='left', on='trade_date')
     # 拼接上指数
     df_index = df_index[['trade_date','close']]
-    df_index = df_index.rename({'close':'index_close'})
+    df_index = df_index.rename(columns={'close':'index_close'})
     df_portfolio = df_portfolio.merge(df_index, how='left', on='trade_date')
-    import pdb;pdb.set_trace()
     # 准备pct、next_pct_chg、和cumulative_xxxx
     df_portfolio = df_portfolio.sort_values('trade_date')
     df_portfolio['pct_chg'] = df_portfolio.total_value.pct_change()
