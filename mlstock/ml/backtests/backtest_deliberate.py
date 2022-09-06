@@ -290,14 +290,6 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
         df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
 
-
-    # 组合的收益率情况
-    df_portfolio = df_selected_stocks.groupby('trade_date')[['next_pct_chg', 'next_pct_chg_baseline']].mean().reset_index()
-    df_portfolio.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
-    df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
-        df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
-
-
     df_portfolio = df_portfolio[~df_portfolio.cumulative_pct_chg.isna()]
 
     plot(df_portfolio, start_date, end_date, factor_names)
