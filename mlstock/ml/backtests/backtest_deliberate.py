@@ -61,7 +61,7 @@ class Broker:
             logger.warning("股票[%s]没有在[%s]无数据，无法卖出，只能延后", trade.ts_code, trade_date)
             return False
 
-        assert len(df_stock) == 1, f"根据{trade_date}和{trade.ts_code}筛选出多于1行的数据：{len(df_stock)}行"
+        # assert len(df_stock) == 1, f"根据{trade_date}和{trade.ts_code}筛选出多于1行的数据：{len(df_stock)}行"
 
         if self.conservative:
             price = df_stock.iloc[0].low
@@ -93,7 +93,8 @@ class Broker:
             logger.warning("股票[%s]没有在[%s]无数据，无法买入，只能延后", trade.ts_code, trade_date)
             return False
 
-        assert len(df_stock) == 1, f"根据{trade_date}和{trade.ts_code}筛选出多于1行的数据：{len(df_stock)}行"
+        # assert len(df_stock) == 1, f"根据{trade_date}和{trade.ts_code}筛选出多于1行的数据：{len(df_stock)}行"
+        
         # 保守取最高价
         if self.conservative:
             price = df_stock.iloc[0].high
@@ -197,7 +198,7 @@ class Broker:
 
             try:
                 df_the_stock = self.df_daily.loc[(trade_date, ts_code)]
-                assert len(df_the_stock) == 1, f"根据{trade_date}和{ts_code}筛选出多于1行的数据：{len(df_the_stock)}行"
+                # assert len(df_the_stock) == 1, f"根据{trade_date}和{ts_code}筛选出多于1行的数据：{len(df_the_stock)}行"
                 market_value = df_the_stock.iloc[0].close * position.position
             except KeyError:
                 logger.warning(" %s 日没有股票 %s 的数据，当天它的市值计作 0 ", trade_date, ts_code)
