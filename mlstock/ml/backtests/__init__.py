@@ -97,6 +97,7 @@ def plot(df, start_date, end_date, factor_names):
     y1 = df.next_pct_chg.values
     y2 = df.cumulative_pct_chg.values
     y3 = df.cumulative_pct_chg_baseline.values
+    y4 = df.index.values
     color_y1 = '#2A9CAD'
     color_y2 = "#FAB03D"
     color_y3 = "#FAFF0D"
@@ -127,6 +128,23 @@ def plot(df, start_date, end_date, factor_names):
     ax2.legend(loc='upper right')
     plt.title(title)  # 添加标题
     plt.grid(axis="y")  # 背景网格
+
+
+    # 画A股,参考：https://deepinout.com/matplotlib/matplotlib-axis/matplotlib-the-hidden-scale-mode-shows-the-three-y-axes.html
+    # 创建第三条Y轴，把第三条Y轴的其它三边隐藏起来，只留下右边显示
+    def make_patch_spines_invisible(ax):
+        ax.set_frame_on(True)
+        ax.patch.set_visible(False)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+    par2 = ax1.twinx()
+    par2.spines["right"].set_position(("axes", 1.2))
+    make_patch_spines_invisible(par2)
+    par2.spines["right"].set_visible(True)
+    p3, = par2.plot(x, y4, "g-", label="上证指数")
+    par2.set_ylabel("上证指数")
+    par2.legend(loc='upper right')
+    par2.yaxis.label.set_color(p3.get_color())
 
     # 保存图片
     factor = '' if len(factor_names) > 1 else factor_names[0]

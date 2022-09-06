@@ -100,6 +100,12 @@ def metrics(df):
         import pandas as pd
         df = pd.read_csv("data/df_portfolio.csv",header=0)
         df['trade_date'] = df['trade_date'].astype(str)
+
+    assert 'next_pct_chg' in df.columns, "缺少列：next_pct_chg"
+    assert 'next_pct_chg_baseline' in df.columns, '缺少列：next_pct_chg_baseline'
+    assert 'cumulative_pct_chg' in df.columns, '缺少列：cumulative_pct_chg'
+    assert 'cumulative_pct_chg_baseline' in df.columns, '缺少列：cumulative_pct_chg_baseline'
+
     # 每期超额收益率
     df['active_pct_chg'] = df['next_pct_chg'] - df['next_pct_chg_baseline']
     # 每期累计超额收益率

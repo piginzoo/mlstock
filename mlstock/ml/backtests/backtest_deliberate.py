@@ -94,7 +94,7 @@ class Broker:
             return False
 
         # assert len(df_stock) == 1, f"根据{trade_date}和{trade.ts_code}筛选出多于1行的数据：{len(df_stock)}行"
-        
+
         # 保守取最高价
         if self.conservative:
             price = df_stock.high
@@ -261,6 +261,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
 
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
     df_limit = datasource.limit_list()
+    df_index = datasource.index_weekly('000001.SH',start_date,end_date)
     ts_codes = df_data.ts_code.unique().tolist()
     df_daily = datasource.daily(ts_codes, start_date, end_date, adjust='')
     df_daily = df_daily.sort_values(['trade_date', 'ts_code'])
@@ -277,6 +278,10 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_baseline = df_data[['trade_date', 'next_pct_chg_baseline']].drop_duplicates()
     # 只筛出来周频的市值来
     df_portfolio = df_baseline.merge(df_portfolio, how='left', on='trade_date')
+    # 拼接上指数
+    df_index = df_index['trade_date','close']
+    df_index.columns = ['trade_date','index']
+    df_portfolio = df_portfolio.merge(df_index, how='left', on='trade_date')
 
     # 准备pct、next_pct_chg、和cumulative_xxxx
     df_portfolio = df_portfolio.sort_values('trade_date')
@@ -284,6 +289,14 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_portfolio['next_pct_chg'] = df_portfolio.pct_chg.shift(-1)
     df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
         df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
+
+
+    # 组合的收益率情况
+    df_portfolio = df_selected_stocks.groupby('trade_date')[['next_pct_chg', 'next_pct_chg_baseline']].mean().reset_index()
+    df_portfolio.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
+    df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
+        df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
+
 
     df_portfolio = df_portfolio[~df_portfolio.cumulative_pct_chg.isna()]
 
