@@ -96,7 +96,7 @@ def plot(df, start_date, end_date, factor_names):
     y1 = df.next_pct_chg.values
     y2 = df.cumulative_pct_chg.values
     y3 = df.cumulative_pct_chg_baseline.values
-    y4 = df.index.values
+    y4 = df.index_close.values
     color_y1 = '#2A9CAD'
     color_y2 = "#FAB03D"
     color_y3 = "#FAFF0D"
