@@ -1,17 +1,10 @@
 import argparse
 import logging
-import time
 
-import joblib
-import numpy as np
-from pandas import DataFrame
-
-from mlstock.const import TOP_30
 from mlstock.data.datasource import DataSource
-from mlstock.ml import load_and_filter_data
 from mlstock.ml.backtests import plot, predict, select_top_n
-from mlstock.ml.data import factor_conf
 from mlstock.ml.backtests.metrics import metrics
+from mlstock.ml.data import factor_conf
 from mlstock.utils import utils
 
 logger = logging.getLogger(__name__)

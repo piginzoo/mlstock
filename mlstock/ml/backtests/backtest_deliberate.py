@@ -21,6 +21,7 @@ class Trade:
         self.target_date = target_date
         self.action = action
         self.actual_date = None
+        self.total_commission = 0
 
 
 class Position:
@@ -70,6 +71,7 @@ class Broker:
         position = self.positions[trade.ts_code]
         amount = price * position.position
         commission = amount * sell_commission_rate
+        self.total_commission += commission
 
         # 更新头寸,仓位,交易历史
         self.trades.remove(trade)
@@ -117,6 +119,7 @@ class Broker:
         actual_cost = position * price
         # 计算佣金
         commission = buy_commission_rate * actual_cost
+        self.total_commission += commission
 
         # 更新仓位,头寸,交易历史
         self.trades.remove(trade)
@@ -261,7 +264,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
 
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
     df_limit = datasource.limit_list()
-    df_index = datasource.index_weekly('000001.SH',start_date,end_date)
+    df_index = datasource.index_weekly('000001.SH', start_date, end_date)
     ts_codes = df_data.ts_code.unique().tolist()
     df_daily = datasource.daily(ts_codes, start_date, end_date, adjust='')
     df_daily = df_daily.sort_values(['trade_date', 'ts_code'])
@@ -269,7 +272,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_selected_stocks = select_top_n(df_data, df_limit)
     df_calendar = datasource.trade_cal(start_date, end_date)
 
-    broker = Broker(cash, df_selected_stocks, df_daily, df_calendar)
+    broker = Broker(cash, df_selected_stocks, df_daily, df_calendar, conservative=True)
     broker.execute()
     df_portfolio = broker.df_values
     df_portfolio.sort_values('trade_date')
@@ -279,8 +282,8 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     # 只筛出来周频的市值来
     df_portfolio = df_baseline.merge(df_portfolio, how='left', on='trade_date')
     # 拼接上指数
-    df_index = df_index[['trade_date','close']]
-    df_index = df_index.rename(columns={'close':'index_close'})
+    df_index = df_index[['trade_date', 'close']]
+    df_index = df_index.rename(columns={'close': 'index_close'})
     df_portfolio = df_portfolio.merge(df_index, how='left', on='trade_date')
     # 准备pct、next_pct_chg、和cumulative_xxxx
     df_portfolio = df_portfolio.sort_values('trade_date')
@@ -294,4 +297,5 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     plot(df_portfolio, start_date, end_date, factor_names)
 
     # 计算各项指标
+    logger.info("佣金总额：%.2f", broker.total_commission)
     metrics(df_portfolio)
