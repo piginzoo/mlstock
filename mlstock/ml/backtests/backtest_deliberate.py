@@ -294,7 +294,7 @@ def run_broker(df_data, df_daily, df_index, df_baseline, df_limit, df_calendar,
     df_portfolio = df_portfolio[~df_portfolio.cumulative_pct_chg.isna()]
 
     save_path = 'data/plot_{}_{}_top{}.jpg'.format(start_date, end_date, top_n)
-    plot(df_portfolio, start_date, end_date, factor_names, save_path)
+    plot(df_portfolio, save_path)
 
     # 计算各项指标
     logger.info("佣金总额：%.2f", broker.total_commission)
