@@ -69,6 +69,7 @@ if __name__ == '__main__':
 
     factor_names = factor_conf.get_factor_names()
 
+    start_time = time.time()
     main(
         args.type,
         args.data,
@@ -77,3 +78,4 @@ if __name__ == '__main__':
         args.model_pct,
         args.model_winloss,
         factor_names)
+    utils.time_elapse("整个回测过程")
