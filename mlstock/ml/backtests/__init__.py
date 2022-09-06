@@ -40,10 +40,9 @@ def select_top_n(df, df_limit):
     # 注意！这里是下期收益"next_pct_chg"的均值，实际上是提前了一期（这个细节可以留意一下）
     # .reset_index(level=0, drop=True)
     df_selected_stocks = df.groupby('trade_date').apply(lambda grp: grp.nlargest(TOP_30, 'pct_pred'))
-    logger.debug("按照预测收益率挑选出%d条股票信息",len(df_selected_stocks))
+    logger.debug("按照预测收益率挑选出%d条股票信息", len(df_selected_stocks))
 
-    df_selected_stocks.to_csv("data/top30.csv", header=0)
-    return df_selected_stocks
+    return df_selected_stocks.reset_index(drop=True)
 
 
 def predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names):
@@ -129,7 +128,6 @@ def plot(df, start_date, end_date, factor_names):
     plt.title(title)  # 添加标题
     plt.grid(axis="y")  # 背景网格
 
-
     # 画A股,参考：https://deepinout.com/matplotlib/matplotlib-axis/matplotlib-the-hidden-scale-mode-shows-the-three-y-axes.html
     # 创建第三条Y轴，把第三条Y轴的其它三边隐藏起来，只留下右边显示
     def make_patch_spines_invisible(ax):
@@ -137,6 +135,7 @@ def plot(df, start_date, end_date, factor_names):
         ax.patch.set_visible(False)
         for sp in ax.spines.values():
             sp.set_visible(False)
+
     par2 = ax1.twinx()
     par2.spines["right"].set_position(("axes", 1.2))
     make_patch_spines_invisible(par2)
