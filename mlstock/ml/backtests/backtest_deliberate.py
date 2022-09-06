@@ -64,9 +64,9 @@ class Broker:
         # assert len(df_stock) == 1, f"根据{trade_date}和{trade.ts_code}筛选出多于1行的数据：{len(df_stock)}行"
 
         if self.conservative:
-            price = df_stock.iloc[0].low
+            price = df_stock.low
         else:
-            price = df_stock.iloc[0].open
+            price = df_stock.open
         position = self.positions[trade.ts_code]
         amount = price * position.position
         commission = amount * sell_commission_rate
@@ -97,9 +97,9 @@ class Broker:
         
         # 保守取最高价
         if self.conservative:
-            price = df_stock.iloc[0].high
+            price = df_stock.high
         else:
-            price = df_stock.iloc[0].open
+            price = df_stock.open
         # 看看能分到多少钱
         cash4stock = self.distribute_cash()
         if cash4stock is None:
@@ -194,12 +194,12 @@ class Broker:
         """
         total_position_value = 0
         for ts_code, position in self.positions.items():
-            logger.debug("查找股票[%s] %s数据", ts_code, trade_date)
+            # logger.debug("查找股票[%s] %s数据", ts_code, trade_date)
 
             try:
                 df_the_stock = self.df_daily.loc[(trade_date, ts_code)]
                 # assert len(df_the_stock) == 1, f"根据{trade_date}和{ts_code}筛选出多于1行的数据：{len(df_the_stock)}行"
-                market_value = df_the_stock.iloc[0].close * position.position
+                market_value = df_the_stock.close * position.position
             except KeyError:
                 logger.warning(" %s 日没有股票 %s 的数据，当天它的市值计作 0 ", trade_date, ts_code)
                 market_value = 0
@@ -279,6 +279,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_portfolio = df_baseline.merge(df_portfolio, how='left', on='trade_date')
 
     # 准备pct、next_pct_chg、和cumulative_xxxx
+    df_portfolio = df_portfolio.sort_values('trade_date')
     df_portfolio['pct_chg'] = df_portfolio.total_value.pct_change()
     df_portfolio['next_pct_chg'] = df_portfolio.pct_chg.shift(-1)
     df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \

@@ -78,4 +78,4 @@ if __name__ == '__main__':
         args.model_pct,
         args.model_winloss,
         factor_names)
-    utils.time_elapse("整个回测过程")
+    utils.time_elapse(start_time,"整个回测过程")
