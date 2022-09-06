@@ -272,7 +272,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_selected_stocks = select_top_n(df_data, df_limit)
     df_calendar = datasource.trade_cal(start_date, end_date)
 
-    broker = Broker(cash, df_selected_stocks, df_daily, df_calendar, conservative=True)
+    broker = Broker(cash, df_selected_stocks, df_daily, df_calendar, conservative=False)
     broker.execute()
     df_portfolio = broker.df_values
     df_portfolio.sort_values('trade_date')

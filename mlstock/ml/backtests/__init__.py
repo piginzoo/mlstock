@@ -109,8 +109,8 @@ def plot(df, start_date, end_date, factor_names):
 
     color_y1 = '#2A9CAD'
     color_y2 = "#FAB03D"
-    color_y3 = "#FAFF0D"
-    color_y4 = "#00FF00"
+    color_y3 = "#D3D3D3"
+    color_y4 = "#008000"
 
     title = '资产组合收益率及累积收益率'
 
