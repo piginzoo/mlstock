@@ -21,7 +21,6 @@ class Trade:
         self.target_date = target_date
         self.action = action
         self.actual_date = None
-        self.total_commission = 0
 
 
 class Position:
@@ -42,6 +41,7 @@ class Broker:
         self.weekly_trade_dates = df_selected_stocks.trade_date.unique()
         self.df_calendar = df_calendar
         self.conservative = conservative
+        self.total_commission = 0
 
         # 存储数据的结构
         self.positions = {}
