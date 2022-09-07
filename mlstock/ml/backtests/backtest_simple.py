@@ -1,6 +1,7 @@
 import argparse
 import logging
 
+from mlstock.const import TOP_30
 from mlstock.data.datasource import DataSource
 from mlstock.ml.backtests import plot, predict, select_top_n
 from mlstock.ml.backtests.metrics import metrics
@@ -27,7 +28,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_data = predict(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
     df_limit = datasource.limit_list()
 
-    df_selected_stocks = select_top_n(df_data, df_limit)
+    df_selected_stocks = select_top_n(df_data, df_limit,TOP_30)
     df_selected_stocks = df_selected_stocks.reset_index(drop=True)
 
     # 组合的收益率情况
@@ -38,7 +39,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
         df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
 
     # 画出回测图
-    plot(df_portfolio, start_date, end_date, factor_names)
+    plot(df_portfolio, f"data/plot_simple_{start_date}_{end_date}")
 
     # 计算各项指标
     metrics(df_portfolio)

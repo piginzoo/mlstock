@@ -85,16 +85,11 @@ def main(args):
 
     df_data = load_and_filter_data(args.data, args.start_date, args.end_date)
 
-    logger.info("周收益平均值：%.2f%%", df_data.target.mean() * 100)
-    logger.info("周收益标准差：%.2f%%", df_data.target.std() * 100)
-    logger.info("周收益中位数：%.2f%%", df_data.target.median() * 100)
-    logger.info("绝对值平均值：%.2f%%", df_data.target.abs().mean() * 100)
-    logger.info("绝对值标准差：%.2f%%", df_data.target.abs().std() * 100)
-    logger.info("绝对值中位数：%.2f%%", df_data.target.abs().median() * 100)
 
     # 加载模型；如果参数未提供，为None
     model_pct = joblib.load(args.model_pct) if args.model_pct else None
     model_winloss = joblib.load(args.model_winloss) if args.model_winloss else None
+
 
     if model_pct:
         factor_weights(model_pct)
@@ -102,6 +97,14 @@ def main(args):
 
     if model_winloss:
         classification_metrics(df_data, model_winloss)
+
+    logger.info("原始数据统计：")
+    logger.info("周收益平均值：%.2f%%", df_data.target.mean() * 100)
+    logger.info("周收益标准差：%.2f%%", df_data.target.std() * 100)
+    logger.info("周收益中位数：%.2f%%", df_data.target.median() * 100)
+    logger.info("绝对值平均值：%.2f%%", df_data.target.abs().mean() * 100)
+    logger.info("绝对值标准差：%.2f%%", df_data.target.abs().std() * 100)
+    logger.info("绝对值中位数：%.2f%%", df_data.target.abs().median() * 100)
 
 
 """
