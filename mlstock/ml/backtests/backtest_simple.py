@@ -31,12 +31,21 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_selected_stocks = select_top_n(df_data, df_limit,TOP_30)
     df_selected_stocks = df_selected_stocks.reset_index(drop=True)
 
+
     # 组合的收益率情况
     df_portfolio = df_selected_stocks.groupby('trade_date')[['next_pct_chg', 'next_pct_chg_baseline']].mean().reset_index()
+
+    # 拼接上指数
+    df_index = datasource.index_weekly('000001.SH', start_date, end_date)
+    df_index = df_index[['trade_date', 'close']]
+    df_index = df_index.rename(columns={'close': 'index_close'})
+    df_portfolio = df_portfolio.merge(df_index, how='left', on='trade_date')
 
     df_portfolio.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
     df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
         df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
+
+    df_portfolio.sort_values('trade_date')
 
     # 画出回测图
     plot(df_portfolio, f"data/plot_simple_{start_date}_{end_date}")
