@@ -160,7 +160,7 @@ class Broker:
         处理调仓日
         """
 
-        if self.df_timing and self.df_timing[self.df_timing.trade_date==day_date].iloc[0].transaction:
+        if self.df_timing is not None and self.df_timing[self.df_timing.trade_date==day_date].iloc[0].transaction:
             # 到调仓日，所有的买交易都取消了，但保留卖交易(没有卖出的要持续尝试卖出)
             self.clear_buy_trades()
             logger.warning("[%s]接下来的下周不适合交易，清仓",day_date)
