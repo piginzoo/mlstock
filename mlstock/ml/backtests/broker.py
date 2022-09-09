@@ -161,7 +161,7 @@ class Broker:
         """
         next_trade_date = next_trade_day(day_date, self.df_calendar)
 
-        if self.df_timing and not self.df_timing[self.df_timing.trade_date==day_date].iloc[0].transaction:
+        if self.df_timing is not None and not self.df_timing[self.df_timing.trade_date==day_date].iloc[0].transaction:
             logger.warning("[%s]接下来的下周不适合交易，清仓",day_date)
             for ts_code, position in self.positions.items():
                 if self.is_in_sell_trades(ts_code):
