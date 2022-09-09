@@ -2,7 +2,7 @@ import logging
 
 from mlstock.const import TOP_30
 from mlstock.data.datasource import DataSource
-from mlstock.ml.backtests import predict, select_top_n, plot
+from mlstock.ml.backtests import predict, select_top_n, plot, timing
 from mlstock.ml.backtests.broker import Broker
 from mlstock.ml.backtests.metrics import metrics
 
@@ -25,10 +25,10 @@ def load_datas(data_path, start_date, end_date, model_pct_path, model_winloss_pa
 
 def run_broker(df_data, df_daily, df_index, df_baseline, df_limit, df_calendar,
                start_date, end_date, factor_names,
-               top_n):
+               top_n, df_timing):
     df_selected_stocks = select_top_n(df_data, df_limit, top_n)
 
-    broker = Broker(df_selected_stocks, df_daily, df_calendar, conservative=False)
+    broker = Broker(df_selected_stocks, df_daily, df_calendar, conservative=False, df_timing=df_timing)
     broker.execute()
     df_portfolio = broker.df_values
     df_portfolio.sort_values('trade_date')
@@ -68,5 +68,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_data, df_daily, df_index, df_baseline, df_limit, df_calendar = \
         load_datas(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
 
+    df_timing = timing.ma(df_index)
+
     run_broker(df_data, df_daily, df_index, df_baseline, df_limit, df_calendar, start_date, end_date, factor_names,
-               TOP_30)
+               TOP_30, df_timing)
