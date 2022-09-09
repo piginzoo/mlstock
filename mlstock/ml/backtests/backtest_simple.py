@@ -41,7 +41,7 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_index = df_index.rename(columns={'close': 'index_close'})
     df_portfolio = df_portfolio.merge(df_index, how='left', on='trade_date')
 
-    df_portfolio.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline']
+    df_portfolio.columns = ['trade_date', 'next_pct_chg', 'next_pct_chg_baseline','index_close']
     df_portfolio[['cumulative_pct_chg', 'cumulative_pct_chg_baseline']] = \
         df_portfolio[['next_pct_chg', 'next_pct_chg_baseline']].apply(lambda x: (x + 1).cumprod() - 1)
 

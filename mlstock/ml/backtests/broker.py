@@ -159,11 +159,16 @@ class Broker:
         """
         处理调仓日
         """
+        next_trade_date = next_trade_day(day_date, self.df_calendar)
 
-        if self.df_timing and self.df_timing[self.df_timing.trade_date==day_date].iloc[0].transaction:
-            # 到调仓日，所有的买交易都取消了，但保留卖交易(没有卖出的要持续尝试卖出)
-            self.clear_buy_trades()
+        if self.df_timing and not self.df_timing[self.df_timing.trade_date==day_date].iloc[0].transaction:
             logger.warning("[%s]接下来的下周不适合交易，清仓",day_date)
+            for ts_code, position in self.positions.items():
+                if self.is_in_sell_trades(ts_code):
+                    logger.warning("股票[%s]已经在卖单中，可能是还未卖出，无需再创建卖单了", ts_code)
+                    continue
+                self.trades.append(Trade(ts_code, next_trade_date, 'sell'))
+                logger.debug("%s ，创建下个交易日[%s]卖单，卖出持仓股票 [%s]", day_date, next_trade_date, ts_code)
             return
 
         df_buy_stocks = self.df_selected_stocks[self.df_selected_stocks.trade_date == day_date].ts_code
@@ -171,7 +176,6 @@ class Broker:
         # 到调仓日，所有的买交易都取消了，但保留卖交易(没有卖出的要持续尝试卖出)
         self.clear_buy_trades()
 
-        next_trade_date = next_trade_day(day_date, self.df_calendar)
         if next_trade_date is None:
             logger.warning("无法获得[%s]的下一个交易日,不做任何调仓", day_date)
             return
