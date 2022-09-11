@@ -48,9 +48,7 @@ class TrainPct(TrainAction):
         sorted_results = sorted(results.items(), key=lambda x: (x[1], x[0]), reverse=True)
 
         logger.info("超参数/样本和预测的均方误差：%r", results)
-        logger.info("最好的超参数为：%.0f, 对应的最好的均方误差的均值：%.2f",
-                    sorted_results[0][0],
-                    sorted_results[0][1])
+        logger.info("Best超参数为：%.0f, Best均方误差的均值：%.2f", sorted_results[0][0], sorted_results[0][1])
 
         # 保存超参的图像
         fig = plt.figure(figsize=(20, 5))
