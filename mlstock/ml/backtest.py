@@ -46,7 +46,7 @@ def main(type, data_path, start_date, end_date, model_pct_path, model_winloss_pa
 
 """
 python -m mlstock.ml.backtest \
--t simple \
+-t deliberate \
 -s 20190101 -e 20220901 \
 -mp model/pct_ridge_20220902112320.model \
 -mw model/winloss_xgboost_20220902112813.model \

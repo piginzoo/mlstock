@@ -68,7 +68,22 @@ def main(data_path, start_date, end_date, model_pct_path, model_winloss_path, fa
     df_data, df_daily, df_index, df_baseline, df_limit, df_calendar = \
         load_datas(data_path, start_date, end_date, model_pct_path, model_winloss_path, factor_names)
 
-    df_timing = timing.ma(df_index)
+    """
+    # df_timing = timing.ma(df_index)
+    # 加入择时模块，效果非常不好：，之前总收益还30%呢
+                                                                投资时长	 : 3年42月182周
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	累计收益	 : -11.9%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	累计基准收益	 : 239.3%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	年化收益率	 : -1.3%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	年化超额收益	 : nan%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	周波动率	 : 1.3%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	夏普比率	 : 452.9%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	最大回撤	 : -24.0%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	信息比率	 : -10.6%
+    2022-09-14 15:09:08,113 - DEBUG - metrics.py:131 P11460: 	PK基准胜率	 : 42.1%
+    """
+    # 去掉择时了
+    df_timing = None
 
     run_broker(df_data, df_daily, df_index, df_baseline, df_limit, df_calendar, start_date, end_date, factor_names,
                TOP_30, df_timing)
