@@ -29,37 +29,36 @@ pro = ts.pro_api(token)
 # 接下来，还要看看是不是随机序列：https://mlln.cn/2017/10/26/python%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%88%86%E6%9E%90-%E7%BA%AF%E9%9A%8F%E6%9C%BA%E6%80%A7%E6%A3%80%E9%AA%8C/
 def boxpierce_test(x, plt):
     from statsmodels.sandbox.stats.diagnostic import acorr_ljungbox
-    qljungbox, pval, qboxpierce, pvalbp = acorr_ljungbox(x, boxpierce=True)
-    for i in range(len(pval)):
-        print('真实数据：qljungbox, pval, qboxpierce, pvalbp:', qljungbox[i], pval[i], qboxpierce[i], pvalbp[i])
+    result = acorr_ljungbox(x, boxpierce=True)
+    print("box pierce 和 box ljung统计量:")
+    print(result)
 
     ax = plt.add_subplot(425)
-    ax.plot(qljungbox, label='qljungbox');
+    ax.plot(result.lb_stat, label='lb_stat');
     ax.set_ylabel('True-Q')
-    ax.plot(qboxpierce, label='qboxpierce')
+    ax.plot(result.bp_stat, label='bp_stat')
     ax.legend()
 
     ax = plt.add_subplot(426)
-    ax.plot(pval, label='pval');
+    ax.plot(result.lb_pvalue, label='lb_pvalue');
     ax.set_ylabel('P')
-    ax.plot(pvalbp, label='pvalbp')
+    ax.plot(result.bp_pvalue, label='bp_pvalue')
     ax.legend()
 
     ax = plt.add_subplot(427)
     x = [random.randint(1, 200) for i in range(len(x))]
-    qljungbox, pval, qboxpierce, pvalbp = acorr_ljungbox(x, boxpierce=True)
-    ax.plot(qljungbox, label='qljungbox');
+    result = acorr_ljungbox(x, boxpierce=True)
+
+    ax.plot(result.lb_stat, label='lb_stat');
     ax.set_ylabel('random-Q')
-    ax.plot(qboxpierce, label='qboxpierce')
+    ax.plot(result.bp_stat, label='bp_stat')
     ax.legend()
 
     ax = plt.add_subplot(428)
-    ax.plot(pval, label='pval');
+    ax.plot(result.lb_pvalue, label='lb_pvalue');
     ax.set_ylabel('P')
-    ax.plot(pvalbp, label='pvalbp')
+    ax.plot(result.bp_pvalue, label='bp_pvalue')
     ax.legend()
-
-    print('随机数据：qljungbox, pval, qboxpierce, pvalbp:', qljungbox, pval, qboxpierce, pvalbp)
 
 
 def test_kpss(df):
@@ -116,26 +115,26 @@ def test_stock(code):
     df = pro.daily(stock_code=code)
     fig = plt.figure(figsize=(16, 6))
 
-    plt.clf()
     rsi = ta.RSI(df['close'])
     rsi.dropna(inplace=True)
 
     print("** ADF平稳性检验 **")
     print("=" * 80)
 
-    test_acf(rsi)
+    # test_acf(rsi)
 
     print("** KPSS平稳性检验 **")
     print("="*80)
 
-    test_kpss(rsi)
+    # test_kpss(rsi)
 
-    print(f"** 画自相关图 debug/平稳性随机性_rsi_{code}.jpg **")
+    print(f"** 画自相关图 data/平稳性随机性_rsi_{code}.jpg **")
     print("="*80)
 
+    plt.clf()
     test_stationarity(rsi, fig)
     boxpierce_test(rsi, fig)
-    plt.savefig(f"debug/平稳性随机性_rsi_{code}.jpg")
+    plt.savefig(f"data/平稳性随机性_rsi_{code}.jpg")
 
     # plt.clf()
     # macd,macdsignal,macdhist = ta.MACD(df['close'])
