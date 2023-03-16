@@ -136,6 +136,10 @@ class FinanceFactor(ComplexMergeFactor):
     def get_cnames(self):
         return [_def.cname for _def in self.FIELDS_DEF]
 
+    def get_name_pair(self):
+        return [[_def.cname,_def.name] for _def in self.FIELDS_DEF]
+
+
     def get_ttm_fields(self):
         return [_def.name for _def in self.FIELDS_DEF if _def.ttm]
 
@@ -199,12 +203,13 @@ class FinanceFactor(ComplexMergeFactor):
         datasource = DataSource()
         stocks_info = StocksInfo(stocks, start_date, end_date)
         df_stocks = data_loader.load(datasource, stocks, start_date, end_date)
-        finance_indicator_cls = cls(datasource, stocks_info)
-        df_finance_indicator = finance_indicator_cls.calculate(df_stocks)
-        logger.debug("财务指标因子：\n%r", df_finance_indicator)
+        indicator_cls = cls(datasource, stocks_info)
+        df_indicator = indicator_cls.calculate(df_stocks)
+        logger.debug("财务指标因子：\n%r", df_indicator)
         logger.debug("-" * 80)
-        df_finance_indicator = finance_indicator_cls._rename_to_cnames(df_finance_indicator)
-        logger.debug("数据列统计:\n%r", df_finance_indicator.groupby('ts_code').count())
+        # 把名字改成中文
+        # df_indicator = indicator_cls._rename_to_cnames(df_indicator)
+        logger.debug("数据列统计:\n%r", df_indicator.groupby('ts_code').count())
         logger.debug("-" * 80)
-        logger.debug("NA列统计:\n%r", df_finance_indicator.groupby('ts_code').apply(lambda df: df.isna().sum()))
-        return df_finance_indicator
+        logger.debug("NA列统计:\n%r", df_indicator.groupby('ts_code').apply(lambda df: df.isna().sum()))
+        return df_indicator
