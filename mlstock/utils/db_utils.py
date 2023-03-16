@@ -5,14 +5,12 @@ import sqlalchemy
 from pandas import Series
 from sqlalchemy import create_engine
 
-from mlstock.utils.utils import CONF
-
 logger = logging.getLogger(__name__)
 
 EALIEST_DATE = '20080101'  # 最早的数据日期
 
 
-def connect_db():
+def connect_db(conf):
     """
     # https://stackoverflow.com/questions/8645250/how-to-close-sqlalchemy-connection-in-mysql:
         Engine is a factory for connections as well as a ** pool ** of connections, not the connection itself.
@@ -20,11 +18,11 @@ def connect_db():
         not actually closed.
     """
 
-    uid = CONF['database']['uid']
-    pwd = CONF['database']['pwd']
-    db = CONF['database']['db']
-    host = CONF['database']['host']
-    port = CONF['database']['port']
+    uid = conf['database']['uid']
+    pwd = conf['database']['pwd']
+    db = conf['database']['db']
+    host = conf['database']['host']
+    port = conf['database']['port']
     engine = create_engine("mysql+pymysql://{}:{}@{}:{}/{}?charset={}".format(uid, pwd, host, port, db, 'utf8'))
     # engine = create_engine('sqlite:///' + DB_FILE + '?check_same_thread=False', echo=echo)  # 是否显示SQL：, echo=True)
     return engine

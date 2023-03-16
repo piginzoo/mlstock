@@ -9,12 +9,15 @@ import pandas as pd
 from mlstock import const
 from mlstock.utils import db_utils, utils
 
+
 logger = logging.getLogger(__name__)
 
 
 class DataSource:
-    def __init__(self):
-        self.db_engine = db_utils.connect_db()
+    def __init__(self,conf=None):
+        if conf is None:
+            conf = utils.load_config()
+        self.db_engine = db_utils.connect_db(conf)
 
     def daily(self, stock_code, start_date=None, end_date=None, adjust='hfq'):
         if not start_date: start_date = const.EALIEST_DATE

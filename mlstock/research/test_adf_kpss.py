@@ -17,6 +17,7 @@ import talib as ta
 from matplotlib.font_manager import FontProperties
 from statsmodels.graphics.tsaplots import plot_acf
 import sys
+import numpy as np
 import tushare as ts
 
 matplotlib.rcParams['font.sans-serif'] = ['SimHei']  # 设置中文字体
@@ -148,38 +149,54 @@ def test_adf(df):
     print("检验结果（是否平稳）：",
           adftest[0] < adftest[4]['1%'] and adftest[0] < adftest[4]['5%'] and adftest[0] < adftest[4]['10%'],
           "<====================")
-
-
-def test_stock(code):
+def test(code):
     df = pro.daily(stock_code=code)
+
     fig = plt.figure(figsize=(16, 6))
 
+    # 1. test rsi
     rsi = ta.RSI(df['close'])
     rsi.dropna(inplace=True)
+    test_stock(rsi,'rsi',fig)
+
+    # 2. test return
+    df_pct = df['pct_chg'].dropna()
+    test_stock(df_pct,'pct',fig)
+
+    # 3. test return log
+    df_log = df_pct.apply(np.log)
+    df_log.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df_log.dropna(inplace=True)
+    test_stock(df_log,'pct_log',fig)
+
+def test_stock(data,name,fig):
+
+    print("\n\n")
+    print("="*80)
+    print(f" 检验 {name} !!!!")
+    print("=" * 80)
+    print("\n\n")
 
     print("\n\n================")
     print("** ADF平稳性检验 **")
     print("================")
-    print("=" * 80)
-    test_adf(rsi)
+    test_adf(data)
 
     print("\n\n================")
     print("** KPSS平稳性检验 **")
     print("================")
-    print("=" * 80)
-    test_kpss(rsi)
+    test_kpss(data)
 
     print("\n\n================")
     print("随机性检验")
-    print(f"** 画自相关图 data/平稳性随机性_rsi_{code}.jpg **")
+    print(f"** 画自相关图 data/平稳性随机性_{name}_{code}.jpg **")
     print("================")
-    print("=" * 80)
     plt.clf()
-    test_stationarity(rsi, fig)
-    boxpierce_test(rsi, fig)
-    plt.savefig(f"data/平稳性随机性_rsi_{code}.jpg")
+    test_stationarity(data, fig,name)
+    boxpierce_test(data, fig)
+    plt.savefig(f"data/平稳性随机性_{name}_{code}.jpg")
 
-def test_stationarity(x, fig):
+def test_stationarity(x, fig, name):
     """自相关图ACF
     https://blog.csdn.net/mfsdmlove/article/details/124769371
     """
@@ -189,7 +206,7 @@ def test_stationarity(x, fig):
     ax = fig.add_subplot(421)
     ax.set_ylabel("return", fontproperties=font, fontsize=16)
     ax.set_yticklabels([str(x * 100) + "0%" for x in ax.get_yticks()], fontproperties=font, fontsize=14)
-    ax.set_title("RSI", fontproperties=font, fontsize=16)
+    ax.set_title(name, fontproperties=font, fontsize=16)
     ax.grid()
     plt.plot(x)
 
@@ -207,7 +224,7 @@ def test_stationarity(x, fig):
 
 # python -m mlstock.research.test_adf_kpss xxxxxxxxxxxxxxxxxxxxxxx
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("格式：python -m mlstock.research.test_adf_kpss.py xxxxxxxxxxxxxxxxxxxxx(tushare的token)")
+    # if len(sys.argv) < 2:
+    #     print("格式：python -m mlstock.research.test_adf_kpss.py xxxxxxxxxxxxxxxxxxxxx(tushare的token)")
     for code in ["600495.SH"]:  # , "600540.SH", "600819.SH", "600138.SH", "002357.SZ", "002119.SZ"]:
-        test_stock(code)
+        test(code)

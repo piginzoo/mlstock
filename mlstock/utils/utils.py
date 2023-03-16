@@ -22,9 +22,6 @@ from mlstock import const
 
 logger = logging.getLogger(__name__)
 
-DB_FILE = "../data/tushare.db"
-
-
 def load_config():
     if not os.path.exists(const.CONF_PATH):
         raise ValueError("配置文件[conf/config.yml]不存在，请先创建它! (详细格式，可参考conf/config.sample.yml):" + const.CONF_PATH)
@@ -34,10 +31,6 @@ def load_config():
     data = yaml.load(result, Loader=yaml.FullLoader)
     logger.info("读取配置文件:%r", const.CONF_PATH)
     return data
-
-
-CONF = load_config()
-
 
 class StockQuery():
     def __init__(self, stock_code, start_date=None, end_date=None, baseline=None):
@@ -392,7 +385,7 @@ def init_logger(file=False, simple=False, log_level=logging.DEBUG):
         handler.setFormatter(formatter)
 
 
-def get_url(host=None, port=None, url=None, token=None):
+def get_url(CONF,host=None, port=None, url=None, token=None):
     if host is None:
         host = CONF['broker_client']['host']
         port = CONF['broker_client']['port']

@@ -207,3 +207,4 @@ class FinanceFactor(ComplexMergeFactor):
         logger.debug("数据列统计:\n%r", df_finance_indicator.groupby('ts_code').count())
         logger.debug("-" * 80)
         logger.debug("NA列统计:\n%r", df_finance_indicator.groupby('ts_code').apply(lambda df: df.isna().sum()))
+        return df_finance_indicator
